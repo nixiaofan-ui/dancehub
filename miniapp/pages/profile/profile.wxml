@@ -1,0 +1,69 @@
+<nav-bar title="我的" />
+
+<view class="body">
+  <view class="user-card">
+    <view class="user-avatar">我</view>
+    <view class="user-meta">
+      <view class="user-name">DanceHub 舞者</view>
+      <view class="user-sub">关注 · 预约 · 提醒 一站管理</view>
+    </view>
+    <view class="seg">
+      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" data-r="CN" bindtap="switchRegion">中国</view>
+      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
+    </view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{tab === 'follows' ? 'on' : ''}}" data-tab="follows" bindtap="switchTab">关注</view>
+    <view class="tab {{tab === 'bookings' ? 'on' : ''}}" data-tab="bookings" bindtap="switchTab">预约记录</view>
+    <view class="tab {{tab === 'reminders' ? 'on' : ''}}" data-tab="reminders" bindtap="switchTab">提醒设置</view>
+  </view>
+
+  <!-- 关注 -->
+  <view wx:if="{{tab === 'follows'}}">
+    <view wx:if="{{follows.length === 0}}" class="empty">
+      <view class="empty-title">暂无关注的舞室</view>
+      <view class="empty-sub">去「发现」搜索并关注舞室吧</view>
+    </view>
+    <view wx:for="{{follows}}" wx:key="id" class="follow-card" wx:if="{{item.studio.region === region}}">
+      <view class="follow-avatar">{{item.initial}}</view>
+      <view class="follow-info">
+        <view class="follow-name">{{item.studio.name}}</view>
+        <view class="follow-meta">{{item.studio.city}} · {{item.platformLabel}}</view>
+      </view>
+      <button class="unfollow" data-id="{{item.studio.id}}" bindtap="unfollow">取消</button>
+    </view>
+  </view>
+
+  <!-- 预约记录 -->
+  <view wx:if="{{tab === 'bookings'}}">
+    <view wx:if="{{bookings.length === 0}}" class="empty">
+      <view class="empty-title">暂无预约记录</view>
+      <view class="empty-sub">在首页点击课程「预约」即可标记</view>
+    </view>
+    <view wx:for="{{bookings}}" wx:key="id" class="record-card">
+      <view class="record-head">
+        <text class="record-course">{{item.schedule.courseName}}</text>
+        <text class="status {{item.status === 'CONFIRMED' ? 'ok' : 'pending'}}">{{item.statusLabel}}</text>
+      </view>
+      <view class="record-meta">{{item.schedule.studio}} · {{item.schedule.city}}</view>
+      <view class="record-meta">{{item.dateLabel}} {{item.schedule.startTime}} - {{item.schedule.endTime}} · {{item.schedule.coach || '教练待定'}}</view>
+    </view>
+  </view>
+
+  <!-- 提醒设置 -->
+  <view wx:if="{{tab === 'reminders'}}">
+    <view wx:if="{{reminders.length === 0}}" class="empty">
+      <view class="empty-title">暂无开课提醒</view>
+      <view class="empty-sub">在首页课程面板中开启「开课提醒」</view>
+    </view>
+    <view wx:for="{{reminders}}" wx:key="id" class="record-card">
+      <view class="record-head">
+        <text class="record-course">🔔 {{item.schedule.courseName}}</text>
+      </view>
+      <view class="record-meta">{{item.schedule.studio}} · {{item.dateLabel}} {{item.schedule.startTime}}</view>
+      <view class="remind-time">开课前 2 小时提醒（{{item.status}}）</view>
+      <button class="close-remind" data-id="{{item.schedule.id}}" bindtap="closeReminder">关闭提醒</button>
+    </view>
+  </view>
+</view>

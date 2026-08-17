@@ -1,0 +1,6 @@
+<nav-bar title="预约" show-back="{{true}}" />
+
+<web-view wx:if="{{url}}" src="{{url}}"></web-view>
+<view wx:else class="empty">
+  <view class="empty-title">没有可用的预约链接</view>
+</view>

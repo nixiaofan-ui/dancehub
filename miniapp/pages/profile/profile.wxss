@@ -1,0 +1,168 @@
+.body {
+  padding: 20rpx 24rpx 40rpx;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #1f2a44 0%, #3a4a6b 100%);
+  border-radius: 16rpx;
+  padding: 28rpx;
+  color: #ffffff;
+}
+.user-avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: #3a6df0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  flex-shrink: 0;
+}
+.user-meta {
+  flex: 1;
+  margin: 0 20rpx;
+}
+.user-name {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+.user-sub {
+  font-size: 24rpx;
+  opacity: 0.7;
+  margin-top: 6rpx;
+}
+.seg {
+  display: flex;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 36rpx;
+  padding: 4rpx;
+  flex-shrink: 0;
+}
+.seg-item {
+  padding: 8rpx 26rpx;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+}
+.seg-item.on {
+  background: #ffffff;
+  color: #1f2a44;
+  font-weight: 600;
+}
+
+.tabs {
+  display: flex;
+  background: #ffffff;
+  border-radius: 16rpx;
+  margin: 20rpx 0;
+  padding: 8rpx;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 16rpx 0;
+  font-size: 28rpx;
+  color: #606266;
+  border-radius: 12rpx;
+}
+.tab.on {
+  background: #ecf2ff;
+  color: #3a6df0;
+  font-weight: 600;
+}
+
+/* 关注 */
+.follow-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+.follow-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 12rpx;
+  background: #1f2a44;
+  color: #ffffff;
+  font-size: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.follow-info {
+  flex: 1;
+  margin: 0 16rpx;
+}
+.follow-name {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.follow-meta {
+  font-size: 24rpx;
+  color: #909399;
+  margin-top: 4rpx;
+}
+.unfollow {
+  font-size: 26rpx;
+  color: #f56c6c;
+  background: #fef0f0;
+  border-radius: 32rpx;
+  padding: 8rpx 28rpx;
+  line-height: 1.8;
+  flex-shrink: 0;
+}
+
+/* 记录 */
+.record-card {
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+.record-head {
+  display: flex;
+  align-items: center;
+}
+.record-course {
+  font-size: 30rpx;
+  font-weight: 700;
+  flex: 1;
+}
+.status {
+  font-size: 24rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 24rpx;
+}
+.status.ok {
+  color: #67c23a;
+  background: #f0f9eb;
+}
+.status.pending {
+  color: #e6a23c;
+  background: #fdf6ec;
+}
+.record-meta {
+  font-size: 24rpx;
+  color: #909399;
+  margin-top: 6rpx;
+}
+.remind-time {
+  font-size: 24rpx;
+  color: #ad6800;
+  margin-top: 8rpx;
+}
+.close-remind {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #909399;
+  background: #f0f2f5;
+  border-radius: 24rpx;
+  padding: 8rpx 24rpx;
+  display: inline-block;
+  line-height: 1.6;
+}

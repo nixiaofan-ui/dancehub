@@ -1,0 +1,103 @@
+<nav-bar title="DanceHub" show-avatar="{{true}}" bind:avatar="goProfile" />
+
+<view class="body">
+  <!-- 地区切换 -->
+  <view class="region-row">
+    <view class="seg">
+      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" data-r="CN" bindtap="switchRegion">中国</view>
+      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
+    </view>
+  </view>
+
+  <!-- 城市快捷选择 -->
+  <scroll-view scroll-x class="city-bar" enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{cities}}"
+      wx:key="id"
+      class="chip {{cityId === item.id ? 'on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="selectCity"
+    >{{item.name}}</view>
+  </scroll-view>
+
+  <!-- 悬浮提醒条 -->
+  <view wx:if="{{pendingCount > 0}}" class="reminder-strip" bindtap="goConfirm">
+    📌 您有 {{pendingCount}} 节未确认预约，记得点「我已约好」
+  </view>
+
+  <!-- 日期滑条 -->
+  <view class="date-nav">
+    <view class="arrow" bindtap="prevDay">‹</view>
+    <swiper class="date-swiper" current="{{swiperCurrent}}" duration="200" bindchange="onSwiperChange">
+      <swiper-item wx:for="{{dates}}" wx:key="key">
+        <view
+          class="date-item {{item.isToday ? 'today' : ''}} {{currentKey === item.key ? 'cur' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="onTapDate"
+        >
+          <view class="date-day">{{item.isToday ? '今天' : item.day}}</view>
+          <view class="date-num">{{item.date}}</view>
+        </view>
+      </swiper-item>
+    </swiper>
+    <view class="arrow" bindtap="nextDay">›</view>
+  </view>
+
+  <!-- 时间轴 -->
+  <view class="timeline" wx:if="{{!loading}}">
+    <view wx:if="{{items.length === 0}}" class="empty">
+      <view class="empty-title">今日暂无关注舞室的课程</view>
+      <view class="empty-sub">去「发现」页搜索并关注舞室吧</view>
+    </view>
+
+    <view wx:for="{{items}}" wx:key="id" class="row {{item.isPast ? 'past' : ''}}">
+      <view class="time-col">
+        <view class="t-start">{{item.startTime}}</view>
+        <view class="t-end">{{item.endTime}}</view>
+      </view>
+      <view class="line">
+        <view class="dot {{item.bookingStatus ? 'dot-booked' : ''}}"></view>
+        <view class="line-body"></view>
+      </view>
+      <view class="card">
+        <view class="card-head">
+          <text class="studio">{{item.studio.name}}</text>
+          <text wx:if="{{item.reminded}}" class="remind-flag">🔔</text>
+        </view>
+        <view class="course-name">
+          {{item.courseName}}
+          <text class="diff">{{item.diffLabel}}</text>
+        </view>
+        <view class="coach">教练：{{item.coachName}}</view>
+        <view class="btn-row">
+          <button wx:if="{{item.bookingStatus === 'CONFIRMED'}}" class="btn booked" disabled>✅ 已约</button>
+          <button wx:elif="{{item.bookingStatus === 'PENDING'}}" class="btn pending" data-id="{{item.id}}" bindtap="openPanel">待确认</button>
+          <button wx:else class="btn" data-id="{{item.id}}" bindtap="openPanel">预约</button>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:else class="loading-tip">加载中…</view>
+</view>
+
+<!-- 预约行动面板 -->
+<view wx:if="{{panel.visible}}" class="mask" bindtap="closePanel"></view>
+<view wx:if="{{panel.visible}}" class="sheet">
+  <view class="sheet-title">
+    {{panel.item.studio.name}} · {{panel.item.courseName}}
+  </view>
+  <view class="sheet-info">
+    {{panel.item.scheduleDate}} {{panel.item.startTime}} - {{panel.item.endTime}} · {{panel.item.diffLabel}}
+  </view>
+  <view class="sheet-info">教练：{{panel.item.coachName}}</view>
+  <view wx:if="{{panel.item.bookingStatus === 'PENDING'}}" class="sheet-warn">
+    已发起预约跳转，去原平台完成后记得标记
+  </view>
+  <view class="sheet-actions">
+    <button class="action primary" bindtap="goBook">去原平台预约</button>
+    <button class="action secondary" bindtap="markBooked">我已约好</button>
+    <button class="action remind" bindtap="toggleRemind">
+      {{panel.item.reminded ? '已开启提醒（点击关闭）' : '开启开课提醒'}}
+    </button>
+  </view>
+</view>

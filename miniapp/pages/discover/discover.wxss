@@ -1,0 +1,125 @@
+.body {
+  padding: 20rpx 24rpx 40rpx;
+}
+
+.region-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18rpx;
+}
+.seg {
+  display: flex;
+  background: #e8ebf2;
+  border-radius: 40rpx;
+  padding: 6rpx;
+}
+.seg-item {
+  padding: 10rpx 48rpx;
+  border-radius: 36rpx;
+  font-size: 28rpx;
+  color: #606266;
+}
+.seg-item.on {
+  background: #3a6df0;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.city-bar {
+  white-space: nowrap;
+  margin-bottom: 16rpx;
+}
+.chip {
+  display: inline-block;
+  padding: 10rpx 32rpx;
+  margin-right: 16rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: #606266;
+  border: 1rpx solid #e4e7ed;
+}
+.chip.on {
+  background: #3a6df0;
+  color: #ffffff;
+  border-color: #3a6df0;
+  font-weight: 600;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 40rpx;
+  padding: 10rpx 12rpx 10rpx 28rpx;
+  margin-bottom: 20rpx;
+  border: 1rpx solid #e4e7ed;
+}
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+}
+.clear {
+  padding: 0 16rpx;
+  color: #c0c4cc;
+}
+.search-btn {
+  background: #3a6df0;
+  color: #ffffff;
+  border-radius: 32rpx;
+  padding: 10rpx 28rpx;
+  font-size: 26rpx;
+}
+
+.studio-card {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+.avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 12rpx;
+  background: #1f2a44;
+  color: #ffffff;
+  font-size: 34rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.info {
+  flex: 1;
+  margin: 0 16rpx;
+}
+.name {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.meta {
+  font-size: 24rpx;
+  color: #909399;
+  margin-top: 4rpx;
+}
+.addr {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.follow {
+  font-size: 26rpx;
+  color: #3a6df0;
+  background: #ecf2ff;
+  border-radius: 32rpx;
+  padding: 8rpx 28rpx;
+  line-height: 1.8;
+  flex-shrink: 0;
+}
+.follow.followed {
+  color: #909399;
+  background: #f0f2f5;
+}

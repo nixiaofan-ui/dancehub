@@ -1,0 +1,36 @@
+.nav {
+  background: #1f2a44;
+  color: #ffffff;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24rpx;
+}
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+.nav-back {
+  font-size: 44rpx;
+  line-height: 1;
+  margin-right: 12rpx;
+  padding: 4rpx 12rpx 4rpx 0;
+}
+.nav-logo {
+  font-size: 34rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+.nav-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: #3a6df0;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+}

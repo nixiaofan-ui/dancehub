@@ -1,0 +1,267 @@
+.body {
+  padding: 20rpx 24rpx 40rpx;
+}
+
+/* 地区切换 */
+.region-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18rpx;
+}
+.seg {
+  display: flex;
+  background: #e8ebf2;
+  border-radius: 40rpx;
+  padding: 6rpx;
+}
+.seg-item {
+  padding: 10rpx 48rpx;
+  border-radius: 36rpx;
+  font-size: 28rpx;
+  color: #606266;
+}
+.seg-item.on {
+  background: #3a6df0;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* 城市 */
+.city-bar {
+  white-space: nowrap;
+  margin-bottom: 16rpx;
+}
+.chip {
+  display: inline-block;
+  padding: 10rpx 32rpx;
+  margin-right: 16rpx;
+  background: #ffffff;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: #606266;
+  border: 1rpx solid #e4e7ed;
+}
+.chip.on {
+  background: #3a6df0;
+  color: #ffffff;
+  border-color: #3a6df0;
+  font-weight: 600;
+}
+
+/* 提醒条 */
+.reminder-strip {
+  margin-bottom: 16rpx;
+  padding: 18rpx 24rpx;
+  background: #fff7e6;
+  color: #ad6800;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+}
+
+/* 日期 */
+.date-nav {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+.arrow {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #909399;
+}
+.date-swiper {
+  flex: 1;
+  height: 96rpx;
+}
+.date-item {
+  height: 96rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12rpx;
+}
+.date-item.cur {
+  background: #1f2a44;
+  color: #ffffff;
+}
+.date-day {
+  font-size: 26rpx;
+}
+.date-num {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+/* 时间轴 */
+.timeline {
+  padding-top: 8rpx;
+}
+.row {
+  display: flex;
+}
+.past {
+  opacity: 0.45;
+}
+.time-col {
+  width: 96rpx;
+  padding-top: 22rpx;
+  text-align: right;
+}
+.t-start {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.t-end {
+  font-size: 22rpx;
+  color: #909399;
+  margin-top: 4rpx;
+}
+.line {
+  width: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #c0c4cc;
+  margin-top: 30rpx;
+}
+.dot-booked {
+  background: #67c23a;
+}
+.line-body {
+  width: 2rpx;
+  flex: 1;
+  background: #dcdfe6;
+}
+.card {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin: 8rpx 0 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+}
+.studio {
+  font-size: 26rpx;
+  color: #3a6df0;
+  font-weight: 600;
+  flex: 1;
+}
+.remind-flag {
+  font-size: 26rpx;
+}
+.course-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-top: 8rpx;
+}
+.diff {
+  font-size: 22rpx;
+  font-weight: 400;
+  color: #909399;
+  background: #f0f2f5;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  margin-left: 10rpx;
+}
+.coach {
+  font-size: 24rpx;
+  color: #909399;
+  margin-top: 6rpx;
+}
+.btn-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12rpx;
+}
+.btn {
+  font-size: 26rpx;
+  color: #ffffff;
+  background: #3a6df0;
+  border-radius: 32rpx;
+  padding: 8rpx 32rpx;
+  line-height: 1.8;
+}
+.btn.pending {
+  background: #e6a23c;
+}
+.btn.booked {
+  background: #67c23a;
+}
+.loading-tip {
+  text-align: center;
+  color: #909399;
+  padding: 60rpx 0;
+}
+
+/* 行动面板 */
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  z-index: 100;
+}
+.sheet-title {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+.sheet-info {
+  font-size: 26rpx;
+  color: #606266;
+  margin-top: 10rpx;
+}
+.sheet-warn {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #ad6800;
+  background: #fff7e6;
+  padding: 12rpx;
+  border-radius: 8rpx;
+}
+.sheet-actions {
+  margin-top: 28rpx;
+}
+.action {
+  width: 100%;
+  margin-top: 16rpx;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  padding: 16rpx 0;
+  line-height: 1.6;
+}
+.action.primary {
+  background: #3a6df0;
+  color: #ffffff;
+}
+.action.secondary {
+  background: #f0f2f5;
+  color: #606266;
+}
+.action.remind {
+  background: #ffffff;
+  color: #e6a23c;
+  border: 2rpx solid #e6a23c;
+}

@@ -1,0 +1,28 @@
+page {
+  background: #f5f6f8;
+  font-size: 28rpx;
+  color: #2b2f36;
+  -webkit-font-smoothing: antialiased;
+}
+
+button::after {
+  border: none;
+}
+
+.page-padding {
+  padding: 24rpx;
+}
+
+.empty {
+  padding: 120rpx 0;
+  text-align: center;
+  color: #909399;
+}
+.empty-title {
+  font-size: 30rpx;
+  color: #606266;
+}
+.empty-sub {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+}

@@ -1,0 +1,54 @@
+<nav-bar title="发现" />
+
+<view class="body">
+  <view class="region-row">
+    <view class="seg">
+      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" data-r="CN" bindtap="switchRegion">中国</view>
+      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
+    </view>
+  </view>
+
+  <scroll-view scroll-x class="city-bar" enhanced show-scrollbar="{{false}}">
+    <view
+      wx:for="{{cities}}"
+      wx:key="id"
+      class="chip {{cityId === item.id ? 'on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="selectCity"
+    >{{item.name}}</view>
+  </scroll-view>
+
+  <view class="search-box">
+    <input
+      class="search-input"
+      placeholder="搜索舞室名称 / 地址"
+      confirm-type="search"
+      value="{{keyword}}"
+      bindinput="onSearch"
+      bindconfirm="onSearchConfirm"
+    />
+    <view wx:if="{{keyword}}" class="clear" bindtap="clearKeyword">✕</view>
+    <view class="search-btn" bindtap="onSearchConfirm">搜索</view>
+  </view>
+
+  <view wx:if="{{!loading && studios.length === 0}}" class="empty">
+    <view class="empty-title">未找到舞室</view>
+    <view class="empty-sub">换个关键词试试</view>
+  </view>
+
+  <view class="studio-list">
+    <view wx:for="{{studios}}" wx:key="id" class="studio-card">
+      <view class="avatar">{{item.initial}}</view>
+      <view class="info">
+        <view class="name">{{item.name}}</view>
+        <view class="meta">{{item.city ? item.city.name : ''}} · {{item.platformLabel}}</view>
+        <view wx:if="{{item.address}}" class="meta addr">{{item.address}}</view>
+      </view>
+      <button
+        class="follow {{item.followed ? 'followed' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="toggleFollow"
+      >{{item.followed ? '已关注' : '关注'}}</button>
+    </view>
+  </view>
+</view>

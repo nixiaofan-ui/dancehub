@@ -1,0 +1,15 @@
+{
+  "appid": "touristappid",
+  "projectname": "dancehub-miniapp",
+  "compileType": "miniprogram",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "minified": true,
+    "postcss": true,
+    "ignoreUploadUnusedFiles": true
+  },
+  "libVersion": "2.33.0",
+  "condition": {}
+}
