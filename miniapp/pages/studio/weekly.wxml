@@ -5,7 +5,7 @@
   <view class="studio-head">
     <view class="head-info">
       <view class="head-name">{{studio ? studio.name : '加载中…'}}</view>
-      <view class="head-meta">{{studio ? studio.cityName + ' · ' + studio.platformLabel : ''}}</view></view>
+      <view class="head-meta">{{studio ? studio.cityName + ' · ' + studio.platformLabel : ''}}</view>
     </view>
     <button
       class="head-follow {{followed ? 'followed' : ''}}"
@@ -70,4 +70,3 @@
       </view>
     </view>
   </view>
-</view>
