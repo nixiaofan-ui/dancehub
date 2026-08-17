@@ -3,6 +3,7 @@ const api = require("../../services/api");
 const jump = require("../../services/jump");
 const { dateKey, addDays, todayKey, formatChip } = require("../../utils/date");
 const { DIFF_LABEL } = require("../../utils/constants");
+const { requestSubscribe } = require("../../utils/subscribe");
 
 Page({
   data: {
@@ -163,8 +164,16 @@ Page({
     try {
       if (item.reminded) {
         await api.apiRemoveReminder(item.id);
+        wx.showToast({ title: "已关闭提醒", icon: "none" });
       } else {
-        await api.apiAddReminder(item.id);
+        // 请求订阅消息授权（一次性）
+        const tplId = app.globalData.classReminderTplId;
+        const granted = tplId ? await requestSubscribe(tplId) : false;
+        await api.apiAddReminder(item.id, granted);
+        wx.showToast({
+          title: granted ? "已开启订阅提醒" : "已开启本地提醒",
+          icon: "none",
+        });
       }
       item.reminded = !item.reminded;
       this.setData({ panel: { visible: true, item } });

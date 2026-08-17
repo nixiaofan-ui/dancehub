@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Reminder` MODIFY `type` ENUM('LOCAL', 'SUBSCRIBE') NOT NULL DEFAULT 'LOCAL';

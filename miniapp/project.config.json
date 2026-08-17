@@ -1,5 +1,5 @@
 {
-  "appid": "touristappid",
+  "appid": "wx16a08e754d0f646b",
   "projectname": "dancehub-miniapp",
   "compileType": "miniprogram",
   "setting": {
@@ -8,8 +8,32 @@
     "enhance": true,
     "minified": true,
     "postcss": true,
-    "ignoreUploadUnusedFiles": true
+    "ignoreUploadUnusedFiles": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "libVersion": "2.33.0",
-  "condition": {}
+  "condition": {},
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

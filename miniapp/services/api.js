@@ -34,8 +34,10 @@ const apiCreateBooking = (scheduleId, method) => req.post("/bookings", { schedul
 const apiBookings = () => req.get("/bookings");
 
 const apiReminders = () => req.get("/reminders");
-const apiAddReminder = (scheduleId) => req.post("/reminders", { scheduleId });
+const apiAddReminder = (scheduleId, subscribe) =>
+  req.post("/reminders", { scheduleId, subscribe: Boolean(subscribe) });
 const apiRemoveReminder = (scheduleId) => req.delete("/reminders/" + scheduleId);
+const apiSubscribeConfig = () => req.get("/config/subscribe");
 
 module.exports = {
   ensureReady,
@@ -51,4 +53,5 @@ module.exports = {
   apiReminders,
   apiAddReminder,
   apiRemoveReminder,
+  apiSubscribeConfig,
 };

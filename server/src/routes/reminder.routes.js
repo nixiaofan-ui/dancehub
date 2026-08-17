@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { config } from "../config.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
@@ -27,6 +28,7 @@ router.get(
       reminders.map((r) => ({
         id: r.id,
         status: r.status,
+        type: r.type,
         remindAt: r.remindAt,
         schedule: {
           id: r.schedule.id,
@@ -45,7 +47,7 @@ router.post(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const { scheduleId } = req.body || {};
+    const { scheduleId, subscribe } = req.body || {};
     if (!scheduleId) return fail(res, 400, "scheduleId 必填");
 
     const schedule = await prisma.schedule.findUnique({ where: { id: Number(scheduleId) } });
@@ -56,17 +58,29 @@ router.post(
     scheduleAt.setHours(h, m, 0, 0);
     const remindAt = new Date(scheduleAt.getTime() - REMIND_LEAD_MS);
 
+    // 仅当用户授权订阅且已配置模板时，才走订阅消息推送
+    const subscribeTplId =
+      subscribe && config.wechat.classReminderTplId ? config.wechat.classReminderTplId : null;
+
     const reminder = await prisma.reminder.upsert({
       where: { userId_scheduleId: { userId: req.userId, scheduleId: Number(scheduleId) } },
-      update: { remindAt, status: "PENDING" },
+      update: {
+        remindAt,
+        status: "PENDING",
+        sentAt: null,
+        subscribeTplId,
+        type: subscribeTplId ? "SUBSCRIBE" : "LOCAL",
+      },
       create: {
         userId: req.userId,
         scheduleId: Number(scheduleId),
         remindAt,
         status: "PENDING",
+        subscribeTplId,
+        type: subscribeTplId ? "SUBSCRIBE" : "LOCAL",
       },
     });
-    ok(res, reminder, "已开启提醒");
+    ok(res, reminder, subscribeTplId ? "已开启订阅消息提醒" : "已开启本地提醒");
   }),
 );
 

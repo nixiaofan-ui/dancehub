@@ -8,6 +8,7 @@ export const config = {
   wechat: {
     appId: process.env.WECHAT_APPID || "",
     appSecret: process.env.WECHAT_SECRET || "",
+    classReminderTplId: process.env.WX_CLASS_REMINDER_TMPL || "",
   },
 };
 

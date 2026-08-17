@@ -5,3 +5,4 @@ build/
 .DS_Store
 *.log
 coverage/
+miniapp/project.private.config.json

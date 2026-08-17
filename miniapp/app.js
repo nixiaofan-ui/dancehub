@@ -1,4 +1,4 @@
-const { apiLogin, apiCities } = require("./services/api");
+const { apiLogin, apiCities, apiSubscribeConfig } = require("./services/api");
 
 App({
   globalData: {
@@ -7,6 +7,7 @@ App({
     cityId: null,
     cities: [],
     pendingJump: false,
+    classReminderTplId: "",
   },
 
   onLaunch() {
@@ -34,6 +35,13 @@ App({
       this.globalData.cities = cities;
       this.globalData.region = "CN";
       this.globalData.cityId = cn ? cn.id : cities[0]?.id || null;
+
+      try {
+        const cfg = await apiSubscribeConfig();
+        this.globalData.classReminderTplId = cfg.classReminderTplId || "";
+      } catch (e) {
+        this.globalData.classReminderTplId = "";
+      }
     } catch (e) {
       console.error("[dancehub] init failed:", e);
     }

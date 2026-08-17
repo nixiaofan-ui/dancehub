@@ -38,6 +38,7 @@ enum BookingMethod {
 
 enum ReminderType {
   LOCAL
+  SUBSCRIBE
 }
 
 enum ReminderStatus {
@@ -146,6 +147,7 @@ model Reminder {
   scheduleId Int
   schedule   Schedule       @relation(fields: [scheduleId], references: [id])
   type       ReminderType   @default(LOCAL)
+  subscribeTplId String?
   remindAt   DateTime
   status     ReminderStatus @default(PENDING)
   sentAt     DateTime?
