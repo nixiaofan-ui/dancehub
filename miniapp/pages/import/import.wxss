@@ -1,0 +1,39 @@
+page {
+  background: #0e0e1c;
+}
+
+.body {
+  padding: 24rpx 32rpx 240rpx;
+}
+
+.empty {
+  margin-top: 200rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.icon {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: rgba(123, 47, 190, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72rpx;
+  margin-bottom: 32rpx;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #f2f3f8;
+  margin-bottom: 12rpx;
+}
+
+.empty-sub {
+  font-size: 26rpx;
+  color: #8a8fa3;
+  text-align: center;
+}

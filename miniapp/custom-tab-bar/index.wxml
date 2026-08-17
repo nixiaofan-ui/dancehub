@@ -1,0 +1,20 @@
+<view class="tab-bar">
+  <view
+    wx:for="{{list}}"
+    wx:key="pagePath"
+    class="tab {{item.isCenter ? 'center' : ''}} {{selected === index ? 'on' : ''}}"
+    data-index="{{index}}"
+    bindtap="switchTab"
+  >
+    <block wx:if="{{item.isCenter}}">
+      <view class="center-btn">
+        <view class="plus-h"></view>
+        <view class="plus-v"></view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="tab-emoji {{selected === index ? 'on' : ''}}">{{item.icon}}</view>
+      <view class="tab-text {{selected === index ? 'on' : ''}}">{{item.text}}</view>
+    </block>
+  </view>
+</view>

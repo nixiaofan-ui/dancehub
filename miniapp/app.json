@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/discover/discover",
     "pages/profile/profile",
+    "pages/import/import",
     "pages/webview/webview",
     "pages/studio/weekly",
     "pages/course/detail"
@@ -13,18 +14,23 @@
     "backgroundTextStyle": "light"
   },
   "tabBar": {
-    "color": "#a8adc2",
+    "custom": true,
+    "color": "#888888",
     "selectedColor": "#00F5D4",
     "backgroundColor": "#1A1A2E",
     "borderStyle": "black",
     "list": [
       {
         "pagePath": "pages/index/index",
-        "text": "首页"
+        "text": "课表"
       },
       {
         "pagePath": "pages/discover/discover",
         "text": "发现"
+      },
+      {
+        "pagePath": "pages/import/import",
+        "text": "录入"
       },
       {
         "pagePath": "pages/profile/profile",

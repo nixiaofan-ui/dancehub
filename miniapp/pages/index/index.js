@@ -35,6 +35,9 @@ Page({
   },
 
   async onShow() {
+    if (typeof this.getTabBar === "function" && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 0 });
+    }
     const g = app.globalData;
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
       this.setData({ region: g.region, cityId: g.cityId, cities: g.cities });

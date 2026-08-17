@@ -1,0 +1,9 @@
+<nav-bar title="课表录入" />
+
+<view class="body">
+  <view class="empty">
+    <view class="icon">{{region === 'CN' ? '🎫' : '🎟️'}}</view>
+    <view class="empty-title">课表录入功能开发中</view>
+    <view class="empty-sub">从舞室公众号复制课表文本，粘贴即可自动解析导入</view>
+  </view>
+</view>
