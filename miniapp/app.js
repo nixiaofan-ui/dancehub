@@ -7,6 +7,7 @@ App({
     cityId: null,
     cities: [],
     pendingJump: false,
+    pendingBookings: 0,
     classReminderTplId: "",
   },
 

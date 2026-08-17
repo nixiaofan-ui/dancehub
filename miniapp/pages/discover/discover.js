@@ -21,7 +21,9 @@ Page({
 
   async onShow() {
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 1 });
+      const tb = this.getTabBar();
+      tb.setData({ selected: 1 });
+      tb.refreshBadge();
     }
     const g = app.globalData;
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {

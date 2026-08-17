@@ -36,7 +36,9 @@ Page({
 
   async onShow() {
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 });
+      const tb = this.getTabBar();
+      tb.setData({ selected: 0 });
+      tb.refreshBadge();
     }
     const g = app.globalData;
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
@@ -142,6 +144,7 @@ Page({
       await api.apiCreateBooking(item.id, "JUMP");
       jump.jumpToPlatform(item.studio, item);
       this.setData({ panel: { visible: false, item: null } });
+      this.refreshBadge();
       this.load();
     } catch (e) {
       wx.showToast({ title: e.message, icon: "none" });
@@ -154,6 +157,7 @@ Page({
     try {
       await api.apiCreateBooking(item.id, "MANUAL");
       this.setData({ panel: { visible: false, item: null } });
+      this.refreshBadge();
       wx.showToast({ title: "已标记预约", icon: "success" });
       this.load();
     } catch (e) {
@@ -189,6 +193,12 @@ Page({
   goConfirm() {
     const pending = this.data.items.find((i) => i.bookingStatus === "PENDING");
     if (pending) this.setData({ panel: { visible: true, item: pending } });
+  },
+
+  refreshBadge() {
+    if (typeof this.getTabBar === "function" && this.getTabBar()) {
+      this.getTabBar().refreshBadge();
+    }
   },
 
   goProfile() {

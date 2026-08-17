@@ -19,7 +19,9 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 3 });
+      const tb = this.getTabBar();
+      tb.setData({ selected: 3 });
+      tb.refreshBadge();
     }
     if (this.data.region !== app.globalData.region) {
       this.setData({ region: app.globalData.region });

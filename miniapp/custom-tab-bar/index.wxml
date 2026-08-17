@@ -14,7 +14,7 @@
         </view>
       </block>
       <text wx:else class="tab-emoji {{selected === index ? 'on' : ''}} {{animating === index ? 'bounce' : ''}}">{{item.icon}}</text>
-      <view wx:if="{{item.dot}}" class="dot"></view>
+      <view wx:if="{{item.dot && badge}}" class="dot"></view>
     </view>
     <view class="tab-text {{selected === index ? 'on' : ''}}">{{item.text}}</view>
   </view>

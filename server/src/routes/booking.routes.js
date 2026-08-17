@@ -82,6 +82,17 @@ router.post(
   }),
 );
 
+router.get(
+  "/pending-count",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const count = await prisma.booking.count({
+      where: { userId: req.userId, status: "PENDING" },
+    });
+    ok(res, { count });
+  }),
+);
+
 router.put(
   "/:scheduleId/confirm",
   requireAuth,

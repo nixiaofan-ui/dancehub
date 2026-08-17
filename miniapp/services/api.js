@@ -39,6 +39,7 @@ const apiUnfollow = (studioId) => req.delete("/follows/" + studioId);
 
 const apiCreateBooking = (scheduleId, method) => req.post("/bookings", { scheduleId, method });
 const apiBookings = () => req.get("/bookings");
+const apiPendingCount = () => req.get("/bookings/pending-count");
 
 const apiReminders = () => req.get("/reminders");
 const apiAddReminder = (scheduleId, subscribe) =>
@@ -62,6 +63,7 @@ module.exports = {
   apiUnfollow,
   apiCreateBooking,
   apiBookings,
+  apiPendingCount,
   apiReminders,
   apiAddReminder,
   apiRemoveReminder,
