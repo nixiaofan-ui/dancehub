@@ -26,6 +26,7 @@ Page({
     followed: false,
     loading: true,
     weekIndex: 1,
+    weekSlots: [1, 2, 3],
     selectedKey: "",
     selectedTitle: "",
     weekDays: [],
@@ -51,6 +52,7 @@ Page({
     const monday = this.mondayOf(center);
     this.weekMonday = monday;
     this.buildWeek(monday);
+    this.loadWeek(monday);
   },
 
   buildWeek(monday) {
@@ -145,6 +147,21 @@ Page({
     this.loadWeek(this.weekMonday);
   },
 
+  prevWeek() {
+    this.moveWeek(-1);
+  },
+
+  nextWeek() {
+    this.moveWeek(1);
+  },
+
+  moveWeek(dir) {
+    this.weekMonday = addDays(this.weekMonday, dir * 7);
+    this.buildWeek(this.weekMonday);
+    this.setData({ weekIndex: 1 });
+    this.loadWeek(this.weekMonday);
+  },
+
   goToday() {
     const monday = this.mondayOf(new Date());
     this.weekMonday = monday;
@@ -168,6 +185,7 @@ Page({
       this.setData({
         studio: {
           ...detail,
+          cityName: detail.city ? detail.city.name : "",
           platformLabel: PLATFORM_LABEL[detail.platform] || detail.platform,
         },
         followed: follows.some((f) => f.studio.id === this.studioId),
