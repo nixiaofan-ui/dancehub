@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Region {
+  CN
+  OVERSEAS
+}
+
+enum StudioPlatform {
+  WECHAT
+  NAVER
+  INSTAGRAM
+  OTHER
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+}
+
+enum BookingMethod {
+  JUMP
+  MANUAL
+}
+
+enum ReminderType {
+  LOCAL
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  CANCELLED
+}
+
+model City {
+  id        Int      @id @default(autoincrement())
+  region    Region
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  studios   Studio[]
+  users     User[]
+
+  @@unique([region, name])
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  openid     String    @unique
+  nickname   String?
+  avatarUrl  String?
+  homeCityId Int?
+  homeCity   City?     @relation(fields: [homeCityId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  follows    Follow[]
+  bookings   Booking[]
+  reminders  Reminder[]
+}
+
+model Studio {
+  id        Int            @id @default(autoincrement())
+  cityId    Int
+  city      City           @relation(fields: [cityId], references: [id])
+  name      String
+  address   String?
+  contact   String?
+  logoUrl   String?
+  platform  StudioPlatform @default(WECHAT)
+  status    Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  coaches   Coach[]
+  schedules Schedule[]
+  follows   Follow[]
+
+  @@index([cityId])
+}
+
+model Coach {
+  id        Int       @id @default(autoincrement())
+  studioId  Int
+  studio    Studio    @relation(fields: [studioId], references: [id])
+  name      String
+  avatarUrl String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  schedules Schedule[]
+
+  @@index([studioId])
+}
+
+model Schedule {
+  id           Int        @id @default(autoincrement())
+  studioId     Int
+  studio       Studio     @relation(fields: [studioId], references: [id])
+  coachId      Int?
+  coach        Coach?     @relation(fields: [coachId], references: [id])
+  courseName   String
+  difficulty   Difficulty @default(ALL_LEVELS)
+  scheduleDate DateTime   @db.Date
+  startTime    DateTime   @db.Time
+  endTime      DateTime   @db.Time
+  bookingUrl   String?
+  remark       String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  bookings     Booking[]
+  reminders    Reminder[]
+
+  @@index([studioId, scheduleDate])
+}
+
+model Booking {
+  id         Int           @id @default(autoincrement())
+  userId     Int
+  user       User          @relation(fields: [userId], references: [id])
+  scheduleId Int
+  schedule   Schedule      @relation(fields: [scheduleId], references: [id])
+  status     BookingStatus @default(PENDING)
+  method     BookingMethod @default(JUMP)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([userId, scheduleId])
+}
+
+model Reminder {
+  id         Int            @id @default(autoincrement())
+  userId     Int
+  user       User           @relation(fields: [userId], references: [id])
+  scheduleId Int
+  schedule   Schedule       @relation(fields: [scheduleId], references: [id])
+  type       ReminderType   @default(LOCAL)
+  remindAt   DateTime
+  status     ReminderStatus @default(PENDING)
+  sentAt     DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([scheduleId])
+}
+
+model Follow {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  studioId  Int
+  studio    Studio   @relation(fields: [studioId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, studioId])
+  @@index([studioId])
+}
