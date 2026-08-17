@@ -1,7 +1,7 @@
 const app = getApp();
-const api = require("../../../services/api");
-const { PLATFORM_LABEL, DIFF_LABEL } = require("../../../utils/constants");
-const { dateKey, addDays, todayKey, parseKey } = require("../../../utils/date");
+const api = require("../../services/api");
+const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
+const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 
 const WEEK_LABEL = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];

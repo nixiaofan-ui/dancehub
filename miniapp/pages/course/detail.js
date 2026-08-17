@@ -1,9 +1,9 @@
 const app = getApp();
-const api = require("../../../services/api");
-const jump = require("../../../services/jump");
-const { PLATFORM_LABEL, DIFF_LABEL } = require("../../../utils/constants");
-const { requestSubscribe } = require("../../../utils/subscribe");
-const { parseKey } = require("../../../utils/date");
+const api = require("../../services/api");
+const jump = require("../../services/jump");
+const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
+const { requestSubscribe } = require("../../utils/subscribe");
+const { parseKey } = require("../../utils/date");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 const LV_LABEL = {
