@@ -10,6 +10,7 @@ import followRoutes from "./routes/follow.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 import reminderRoutes from "./routes/reminder.routes.js";
 import timelineRoutes from "./routes/timeline.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.js";
 
 export function createApp() {
@@ -28,6 +29,7 @@ export function createApp() {
   app.use("/api/bookings", bookingRoutes);
   app.use("/api/reminders", reminderRoutes);
   app.use("/api/timeline", timelineRoutes);
+  app.use("/api/admin", adminRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
