@@ -2,23 +2,20 @@
   <view
     wx:for="{{list}}"
     wx:key="pagePath"
-    class="tab {{item.isCenter ? 'center' : ''}} {{selected === index ? 'on' : ''}}"
+    class="tab {{selected === index ? 'on' : ''}}"
     data-index="{{index}}"
     bindtap="switchTab"
   >
-    <view wx:if="{{item.isCenter}}" class="center-group {{animating === index ? 'bounce' : ''}}">
-      <view class="center-btn">
-        <view class="plus-h"></view>
-        <view class="plus-v"></view>
-      </view>
-      <view class="center-text {{selected === index ? 'on' : ''}}">{{item.text}}</view>
+    <view class="tab-icon">
+      <block wx:if="{{item.isCenter}}">
+        <view class="center-btn {{animating === index ? 'bounce' : ''}}">
+          <view class="plus-h"></view>
+          <view class="plus-v"></view>
+        </view>
+      </block>
+      <text wx:else class="tab-emoji {{selected === index ? 'on' : ''}} {{animating === index ? 'bounce' : ''}}">{{item.icon}}</text>
+      <view wx:if="{{item.dot}}" class="dot"></view>
     </view>
-    <block wx:else>
-      <view class="tab-icon">
-        <text class="tab-emoji {{selected === index ? 'on' : ''}} {{animating === index ? 'bounce' : ''}}">{{item.icon}}</text>
-        <view wx:if="{{item.dot}}" class="dot"></view>
-      </view>
-      <view class="tab-text {{selected === index ? 'on' : ''}}">{{item.text}}</view>
-    </block>
+    <view class="tab-text {{selected === index ? 'on' : ''}}">{{item.text}}</view>
   </view>
 </view>
