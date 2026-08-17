@@ -136,3 +136,153 @@
   background: #1a1a2e;
   border: 2rpx solid #00f5d4;
 }
+
+/* 展开箭头 */
+.expand-arrow {
+  width: 40rpx;
+  margin-right: 12rpx;
+  color: #a8adc2;
+  font-size: 26rpx;
+  font-weight: 900;
+  text-align: center;
+  flex-shrink: 0;
+}
+.expand-arrow.on {
+  color: #00f5d4;
+}
+
+/* 展开课表 */
+.schedule-panel {
+  background: #16213e;
+  border-left: 10rpx solid #ff6b35;
+  border-radius: 0 0 16rpx 16rpx;
+  padding: 8rpx 20rpx 12rpx;
+  margin: -12rpx 0 16rpx;
+}
+.schedule-row {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 4rpx;
+  border-bottom: 2rpx solid #2b3050;
+}
+.schedule-row:last-child {
+  border-bottom: none;
+}
+.s-time {
+  background: #ff6b35;
+  color: #0e0e1c;
+  font-size: 24rpx;
+  font-weight: 900;
+  padding: 6rpx 14rpx;
+  border-radius: 24rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  letter-spacing: 1rpx;
+}
+.s-main {
+  flex: 1;
+  min-width: 0;
+}
+.s-course {
+  font-size: 30rpx;
+  font-weight: 900;
+  letter-spacing: 1rpx;
+}
+.s-meta {
+  font-size: 24rpx;
+  color: #a8adc2;
+  margin-top: 4rpx;
+  font-weight: 700;
+}
+.s-status {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  font-size: 22rpx;
+  font-weight: 900;
+  padding: 4rpx 16rpx;
+  border-radius: 24rpx;
+}
+.s-status.ok {
+  color: #00f5d4;
+  background: rgba(0, 245, 212, 0.15);
+}
+.s-status.pending {
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.15);
+}
+.s-status.none {
+  color: #a8adc2;
+  background: #1a1a2e;
+}
+.schedule-tip {
+  text-align: center;
+  color: #a8adc2;
+  padding: 30rpx 0;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+/* 预约行动面板 */
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 90;
+}
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #16213e;
+  border-top: 6rpx solid #ff6b35;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  z-index: 100;
+}
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: 900;
+  letter-spacing: 1rpx;
+}
+.sheet-info {
+  font-size: 26rpx;
+  color: #a8adc2;
+  margin-top: 10rpx;
+  font-weight: 700;
+}
+.sheet-warn {
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.14);
+  padding: 12rpx;
+  border-radius: 8rpx;
+  font-weight: 700;
+}
+.sheet-actions {
+  margin-top: 28rpx;
+}
+.action {
+  width: 100%;
+  margin-top: 16rpx;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  padding: 16rpx 0;
+  line-height: 1.6;
+  font-weight: 900;
+}
+.action.primary {
+  background: #ff6b35;
+  color: #0e0e1c;
+}
+.action.secondary {
+  background: #1a1a2e;
+  color: #ffffff;
+  border: 2rpx solid #2b3050;
+}
+.action.remind {
+  background: transparent;
+  color: #00f5d4;
+  border: 2rpx solid #00f5d4;
+}

@@ -42,18 +42,65 @@
   </view>
 
   <view class="studio-list">
-    <view wx:for="{{studios}}" wx:key="id" class="studio-card">
-      <view class="avatar">{{item.initial}}</view>
-      <view class="info">
-        <view class="name">{{item.name}}</view>
-        <view class="meta">{{item.city ? item.city.name : ''}} · {{item.platformLabel}}</view>
-        <view wx:if="{{item.address}}" class="meta addr">{{item.address}}</view>
+    <block wx:for="{{studios}}" wx:key="id">
+      <view class="studio-card" data-id="{{item.id}}" bindtap="toggleExpand">
+        <view class="avatar">{{item.initial}}</view>
+        <view class="info">
+          <view class="name">{{item.name}}</view>
+          <view class="meta">{{item.city ? item.city.name : ''}} · {{item.platformLabel}}</view>
+          <view wx:if="{{item.address}}" class="meta addr">{{item.address}}</view>
+        </view>
+        <view class="expand-arrow {{item.expanded ? 'on' : ''}}">{{item.expanded ? '▾' : '▸'}}</view>
+        <button
+          class="follow {{item.followed ? 'followed' : ''}}"
+          data-id="{{item.id}}"
+          catchtap="toggleFollow"
+        >{{item.followed ? '已关注' : '关注'}}</button>
       </view>
-      <button
-        class="follow {{item.followed ? 'followed' : ''}}"
-        data-id="{{item.id}}"
-        bindtap="toggleFollow"
-      >{{item.followed ? '已关注' : '关注'}}</button>
-    </view>
+
+      <view wx:if="{{item.expanded}}" class="schedule-panel">
+        <view wx:if="{{item.schedulesLoading}}" class="schedule-tip">课表加载中…</view>
+        <block wx:elif="{{item.schedules.length > 0}}">
+          <view
+            wx:for="{{item.schedules}}"
+            wx:for-item="s"
+            wx:key="id"
+            class="schedule-row"
+            data-id="{{s.id}}"
+            bindtap="openSchedulePanel"
+          >
+            <view class="s-time">{{s.startTime}}</view>
+            <view class="s-main">
+              <view class="s-course">{{s.courseName}}</view>
+              <view class="s-meta">教练：{{s.coachName}}</view>
+            </view>
+            <view class="s-status {{s.statusClass}}">{{s.statusLabel}}</view>
+          </view>
+        </block>
+        <view wx:else class="schedule-tip">今日暂无课程</view>
+      </view>
+    </block>
+  </view>
+</view>
+
+<!-- 预约行动面板（复用首页） -->
+<view wx:if="{{panel.visible}}" class="mask" bindtap="closePanel"></view>
+<view wx:if="{{panel.visible}}" class="sheet">
+  <view class="sheet-title">
+    {{panel.item.studio.name}} · {{panel.item.courseName}}
+  </view>
+  <view class="sheet-info">
+    {{panel.item.scheduleDate}} {{panel.item.startTime}} - {{panel.item.endTime}} · {{panel.item.diffLabel}}
+  </view>
+  <view class="sheet-info">教练：{{panel.item.coachName}}</view>
+  <view wx:if="{{panel.item.bookingStatus === 'PENDING'}}" class="sheet-warn">
+    已发起预约跳转，去原平台完成后记得标记
+  </view>
+  <view class="sheet-actions">
+    <button class="action primary" bindtap="goBook">去原平台预约</button>
+    <button class="action secondary" bindtap="markBooked">我已约好</button>
+    <button class="action remind" bindtap="toggleRemind">
+      {{panel.item.reminded ? '已开启提醒（点击关闭）' : '开启开课提醒'}}
+    </button>
   </view>
 </view>

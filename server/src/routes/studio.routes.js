@@ -1,8 +1,10 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/admin.js";
+import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
+import { toDateKey, parseDateKey } from "../services/schedule.service.js";
 
 const router = Router();
 
@@ -36,6 +38,58 @@ router.get(
     });
     if (!studio) return fail(res, 404, "舞室不存在");
     ok(res, studio);
+  }),
+);
+
+router.get(
+  "/:id/today-schedules",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const studioId = Number(req.params.id);
+    const studio = await prisma.studio.findUnique({
+      where: { id: studioId },
+      select: { id: true, status: true },
+    });
+    if (!studio || !studio.status) return fail(res, 404, "舞室不存在");
+
+    const dateKey = req.query.date || toDateKey(new Date());
+    const schedules = await prisma.schedule.findMany({
+      where: { studioId, scheduleDate: parseDateKey(dateKey) },
+      include: { coach: true },
+      orderBy: { startTime: "asc" },
+    });
+    const ids = schedules.map((s) => s.id);
+
+    const [bookings, reminders] = await Promise.all([
+      prisma.booking.findMany({
+        where: { userId: req.userId, scheduleId: { in: ids } },
+        select: { scheduleId: true, status: true },
+      }),
+      prisma.reminder.findMany({
+        where: { userId: req.userId, scheduleId: { in: ids } },
+        select: { scheduleId: true },
+      }),
+    ]);
+    const bookingMap = new Map(bookings.map((b) => [b.scheduleId, b.status]));
+    const reminderSet = new Set(reminders.map((r) => r.scheduleId));
+
+    ok(res, {
+      date: dateKey,
+      studioId,
+      items: schedules.map((s) => ({
+        id: s.id,
+        courseName: s.courseName,
+        difficulty: s.difficulty,
+        scheduleDate: toDateKey(s.scheduleDate),
+        startTime: s.startTime.toTimeString().slice(0, 5),
+        endTime: s.endTime.toTimeString().slice(0, 5),
+        bookingUrl: s.bookingUrl,
+        remark: s.remark,
+        coach: s.coach ? { id: s.coach.id, name: s.coach.name } : null,
+        bookingStatus: bookingMap.get(s.id) || null,
+        reminded: reminderSet.has(s.id),
+      })),
+    });
   }),
 );
 

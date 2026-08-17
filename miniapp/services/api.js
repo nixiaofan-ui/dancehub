@@ -25,6 +25,8 @@ function apiLogin() {
 const apiCities = (region) => req.get("/cities", region ? { region } : {});
 const apiTimeline = (cityId, date) => req.get("/timeline", { cityId, date });
 const apiStudios = (params) => req.get("/studios", params || {});
+const apiStudioTodaySchedules = (studioId) =>
+  req.get(`/studios/${studioId}/today-schedules`);
 
 const apiFollows = () => req.get("/follows");
 const apiFollow = (studioId) => req.post("/follows", { studioId });
@@ -45,6 +47,7 @@ module.exports = {
   apiCities,
   apiTimeline,
   apiStudios,
+  apiStudioTodaySchedules,
   apiFollows,
   apiFollow,
   apiUnfollow,
