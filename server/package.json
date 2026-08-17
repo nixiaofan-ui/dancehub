@@ -19,6 +19,7 @@
     "express": "^4.21.2",
     "ioredis": "^5.4.1",
     "jsonwebtoken": "^9.0.2",
+    "miniprogram-automator": "^0.12.1",
     "node-cron": "^3.0.3"
   },
   "devDependencies": {

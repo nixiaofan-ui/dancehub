@@ -26,7 +26,7 @@ function timelineCacheKey(cityId, dateKey) {
   return `timeline:${cityId}:${dateKey}`;
 }
 
-async function invalidateTimelineCache() {
+export async function invalidateTimelineCache() {
   try {
     const keys = await redis.keys("timeline:*");
     if (keys.length) await redis.del(...keys);

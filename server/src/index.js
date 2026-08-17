@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createApp } from "./app.js";
 import { redis } from "./lib/redis.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
+import { startCrawlScheduler } from "./crawler/index.js";
 
 const port = Number(process.env.PORT || 3000);
 
@@ -15,6 +16,7 @@ app.listen(port, () => {
     .then(() => {
       console.log("[dancehub] Redis connected");
       startReminderJob();
+      startCrawlScheduler();
     })
     .catch((err) =>
       console.warn(`[dancehub] Redis unavailable (${err.message}); API still serving`),

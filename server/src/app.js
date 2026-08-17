@@ -12,6 +12,7 @@ import reminderRoutes from "./routes/reminder.routes.js";
 import timelineRoutes from "./routes/timeline.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import configRoutes from "./routes/config.routes.js";
+import crawlerRoutes from "./crawler/routes.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.js";
 
 export function createApp() {
@@ -32,6 +33,7 @@ export function createApp() {
   app.use("/api/timeline", timelineRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/config", configRoutes);
+  app.use("/api/crawler", crawlerRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

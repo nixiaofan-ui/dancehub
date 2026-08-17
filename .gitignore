@@ -6,3 +6,4 @@ build/
 *.log
 coverage/
 miniapp/project.private.config.json
+wechat_mcp_server/
