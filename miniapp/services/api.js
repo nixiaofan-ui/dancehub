@@ -25,8 +25,13 @@ function apiLogin() {
 const apiCities = (region) => req.get("/cities", region ? { region } : {});
 const apiTimeline = (cityId, date) => req.get("/timeline", { cityId, date });
 const apiStudios = (params) => req.get("/studios", params || {});
+const apiStudioDetail = (id) => req.get(`/studios/${id}`);
 const apiStudioTodaySchedules = (studioId) =>
   req.get(`/studios/${studioId}/today-schedules`);
+const apiStudioSchedules = (studioId, from, to) =>
+  req.get("/schedules", { studioId, from, to });
+const apiScheduleDetail = (id) => req.get(`/schedules/${id}`);
+const apiScheduleVideoPreview = (id) => req.get(`/schedules/${id}/video-preview`);
 
 const apiFollows = () => req.get("/follows");
 const apiFollow = (studioId) => req.post("/follows", { studioId });
@@ -47,7 +52,11 @@ module.exports = {
   apiCities,
   apiTimeline,
   apiStudios,
+  apiStudioDetail,
   apiStudioTodaySchedules,
+  apiStudioSchedules,
+  apiScheduleDetail,
+  apiScheduleVideoPreview,
   apiFollows,
   apiFollow,
   apiUnfollow,

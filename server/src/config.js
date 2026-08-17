@@ -10,6 +10,9 @@ export const config = {
     appSecret: process.env.WECHAT_SECRET || "",
     classReminderTplId: process.env.WX_CLASS_REMINDER_TMPL || "",
   },
+  youtube: {
+    apiKey: process.env.YOUTUBE_API_KEY || "",
+  },
 };
 
 export const isDev = () => config.nodeEnv === "development";

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAdmin } from "../middleware/admin.js";
+import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import {
@@ -9,7 +10,9 @@ import {
   updateSchedule,
   deleteSchedule,
   copyPreviousWeek,
+  toDateKey,
 } from "../services/schedule.service.js";
+import { searchCourseVideo } from "../services/video.service.js";
 
 const router = Router();
 
@@ -19,6 +22,80 @@ router.get(
     const { studioId, coachId, from, to } = req.query;
     const rows = await listSchedules({ studioId, coachId, from, to });
     ok(res, rows);
+  }),
+);
+
+router.get(
+  "/:id/video-preview",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { studio: true, coach: true },
+    });
+    if (!schedule) return fail(res, 404, "课程不存在");
+
+    const keyword = [schedule.studio.name, schedule.courseName, schedule.coach?.name]
+      .filter(Boolean)
+      .join(" ");
+    const videos = await searchCourseVideo({ keyword });
+
+    ok(res, {
+      scheduleId: schedule.id,
+      platform: schedule.studio.platform,
+      keyword,
+      items: videos,
+    });
+  }),
+);
+
+router.get(
+  "/:id",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { studio: { include: { city: true } }, coach: true },
+    });
+    if (!schedule) return fail(res, 404, "课程不存在");
+
+    const [booking, reminder, bookedCount] = await Promise.all([
+      prisma.booking.findUnique({
+        where: { userId_scheduleId: { userId: req.userId, scheduleId: schedule.id } },
+        select: { status: true },
+      }),
+      prisma.reminder.findUnique({
+        where: { userId_scheduleId: { userId: req.userId, scheduleId: schedule.id } },
+        select: { type: true },
+      }),
+      prisma.booking.count({ where: { scheduleId: schedule.id } }),
+    ]);
+
+    ok(res, {
+      id: schedule.id,
+      courseName: schedule.courseName,
+      difficulty: schedule.difficulty,
+      scheduleDate: toDateKey(schedule.scheduleDate),
+      startTime: schedule.startTime.toTimeString().slice(0, 5),
+      endTime: schedule.endTime.toTimeString().slice(0, 5),
+      bookingUrl: schedule.bookingUrl,
+      capacity: schedule.capacity,
+      remark: schedule.remark,
+      coach: schedule.coach
+        ? { id: schedule.coach.id, name: schedule.coach.name, avatarUrl: schedule.coach.avatarUrl }
+        : null,
+      studio: {
+        id: schedule.studio.id,
+        name: schedule.studio.name,
+        address: schedule.studio.address,
+        platform: schedule.studio.platform,
+        logoUrl: schedule.studio.logoUrl,
+        city: schedule.studio.city?.name,
+      },
+      bookingStatus: booking ? booking.status : null,
+      reminded: Boolean(reminder),
+      bookedCount,
+    });
   }),
 );
 

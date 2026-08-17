@@ -16,6 +16,7 @@ enum StudioPlatform {
   WECHAT
   NAVER
   INSTAGRAM
+  YOUTUBE
   OTHER
 }
 
@@ -117,6 +118,7 @@ model Schedule {
   startTime    DateTime   @db.Time
   endTime      DateTime   @db.Time
   bookingUrl   String?
+  capacity     Int        @default(30)
   remark       String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

@@ -47,6 +47,7 @@ export const common = {
     WECHAT: "门店小程序",
     NAVER: "Naver",
     INSTAGRAM: "Instagram",
+    YOUTUBE: "YouTube",
     OTHER: "其他",
   },
   bookingStatusLabel: {

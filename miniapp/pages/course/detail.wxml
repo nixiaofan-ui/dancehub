@@ -1,0 +1,96 @@
+<nav-bar title="课程详情" show-back="{{true}}" />
+
+<view class="body" wx:if="{{detail}}">
+  <!-- 顶部：课程名 + 等级标签 -->
+  <view class="hero">
+    <view class="hero-tags">
+      <view class="hero-level {{diffClass}}">{{levelLabel}}</view>
+      <view class="hero-diff">{{diffLabel}}</view>
+    </view>
+    <view class="hero-title">{{detail.courseName}}</view>
+    <view class="hero-studio">{{detail.studio.name}}</view>
+  </view>
+
+  <!-- 课程信息卡片 -->
+  <view class="info-card">
+    <view class="info-row">
+      <view class="info-ico">🎓</view>
+      <view class="info-main">
+        <view class="info-label">教练</view>
+        <view class="info-val">{{coachName}}</view>
+      </view>
+      <view class="coach-avatar">{{coachInitial}}</view>
+    </view>
+
+    <view class="info-row">
+      <view class="info-ico">🕐</view>
+      <view class="info-main">
+        <view class="info-label">时间</view>
+        <view class="info-val">{{dateLabel}}</view>
+        <view class="info-sub">{{timeLabel}}</view>
+      </view>
+    </view>
+
+    <view class="info-row">
+      <view class="info-ico">📍</view>
+      <view class="info-main">
+        <view class="info-label">地点</view>
+        <view class="info-val">{{detail.studio.name}}</view>
+        <view wx:if="{{detail.studio.address}}" class="info-sub">{{detail.studio.address}}</view>
+      </view>
+    </view>
+
+    <view class="info-row">
+      <view class="info-ico">👥</view>
+      <view class="info-main">
+        <view class="info-label">预约人数</view>
+        <view class="info-val">{{bookedCount}} / {{capacity}} 人</view>
+        <view class="progress">
+          <view class="progress-bar" style="width: {{progress}}%;"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 按钮区 -->
+  <view class="actions">
+    <button
+      class="action primary"
+      bindtap="goBook"
+      disabled="{{busy || bookingStatus === 'CONFIRMED'}}"
+    >{{bookingStatus === 'CONFIRMED' ? '✅ 已预约' : '去原平台预约'}}</button>
+    <button
+      class="action secondary"
+      bindtap="markBooked"
+      disabled="{{busy || bookingStatus === 'CONFIRMED'}}"
+    >我已约好</button>
+    <button class="action remind {{reminded ? 'on' : ''}}" bindtap="toggleRemind" disabled="{{busy}}">
+      {{reminded ? '已开启开课提醒' : '开启开课提醒'}}
+    </button>
+  </view>
+
+  <!-- 视频预告 -->
+  <view wx:if="{{showVideo}}" class="video-sec">
+    <view class="video-title">🎬 课程预告</view>
+    <scroll-view scroll-x class="video-scroll" enhanced show-scrollbar="{{false}}">
+      <view wx:if="{{videos.length === 0}}" class="video-empty">暂无预告视频</view>
+      <view
+        wx:for="{{videos}}"
+        wx:key="videoId"
+        class="video-card"
+        data-url="{{item.url}}"
+        bindtap="openVideo"
+      >
+        <image
+          wx:if="{{item.thumbnail}}"
+          class="video-thumb"
+          src="{{item.thumbnail}}"
+          mode="aspectFill"
+        />
+        <view wx:else class="video-thumb video-ph">▶</view>
+        <view class="video-txt">{{item.title}}</view>
+        <view class="video-meta">{{item.platform}} · {{item.channelTitle}}</view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

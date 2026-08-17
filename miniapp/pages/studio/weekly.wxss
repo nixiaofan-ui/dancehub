@@ -1,0 +1,231 @@
+.body {
+  padding: 20rpx 24rpx 40rpx;
+}
+
+/* 舞室头 */
+.studio-head {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2rpx solid #2b3050;
+  border-left: 10rpx solid #ff6b35;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+.head-info {
+  flex: 1;
+  min-width: 0;
+}
+.head-name {
+  font-size: 36rpx;
+  font-weight: 900;
+  letter-spacing: 1rpx;
+}
+.head-meta {
+  font-size: 24rpx;
+  color: #a8adc2;
+  margin-top: 6rpx;
+  font-weight: 700;
+}
+.head-follow {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  color: #0e0e1c;
+  background: #ff6b35;
+  border-radius: 32rpx;
+  padding: 8rpx 28rpx;
+  line-height: 1.8;
+  font-weight: 900;
+}
+.head-follow.followed {
+  color: #00f5d4;
+  background: #1a1a2e;
+  border: 2rpx solid #00f5d4;
+}
+
+/* 星期横条 */
+.week-nav {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+.week-arrow {
+  width: 56rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #ff6b35;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.week-swiper {
+  flex: 1;
+  height: 112rpx;
+}
+.week-days {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  height: 112rpx;
+}
+.week-day {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 6rpx;
+  border-radius: 14rpx;
+  background: #16213e;
+  border: 2rpx solid #2b3050;
+}
+.week-day.today {
+  border-color: #00f5d4;
+}
+.week-day.on {
+  background: #ff6b35;
+  border-color: #ff6b35;
+}
+.week-day.on .wd-label,
+.week-day.on .wd-num {
+  color: #0e0e1c;
+}
+.wd-label {
+  font-size: 22rpx;
+  font-weight: 900;
+  color: #a8adc2;
+  letter-spacing: 2rpx;
+}
+.wd-num {
+  font-size: 30rpx;
+  font-weight: 900;
+  margin-top: 4rpx;
+}
+.wd-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  margin-top: 6rpx;
+  background: transparent;
+}
+.wd-dot.has {
+  background: #7b2fbe;
+}
+.week-day.on .wd-dot.has {
+  background: #0e0e1c;
+}
+
+/* 选中日标题 */
+.week-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+.week-title {
+  font-size: 32rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+}
+.today-btn {
+  font-size: 24rpx;
+  font-weight: 900;
+  color: #0e0e1c;
+  background: #00f5d4;
+  border-radius: 28rpx;
+  padding: 8rpx 26rpx;
+}
+
+/* 课程块 */
+.day-list {
+  padding-top: 4rpx;
+}
+.course-card {
+  display: flex;
+  align-items: center;
+  background: #16213e;
+  border-left: 10rpx solid #ff6b35;
+  border-radius: 16rpx;
+  padding: 22rpx 20rpx;
+  margin-bottom: 16rpx;
+}
+.course-card.beginner {
+  border-left-color: #00f5d4;
+}
+.course-card.intermediate {
+  border-left-color: #ff6b35;
+}
+.course-card.advanced {
+  border-left-color: #7b2fbe;
+}
+.course-card.all_levels {
+  border-left-color: #a8adc2;
+}
+.c-time {
+  width: 150rpx;
+  flex-shrink: 0;
+  font-size: 24rpx;
+  font-weight: 900;
+  color: #ff6b35;
+  letter-spacing: 1rpx;
+}
+.c-main {
+  flex: 1;
+  min-width: 0;
+  margin: 0 16rpx;
+}
+.c-name {
+  font-size: 32rpx;
+  font-weight: 900;
+  letter-spacing: 1rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.c-coach {
+  font-size: 24rpx;
+  color: #a8adc2;
+  margin-top: 6rpx;
+  font-weight: 700;
+}
+.c-level {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #1a1a2e;
+  border-radius: 12rpx;
+  padding: 8rpx 18rpx;
+}
+.course-card.beginner .lv-text {
+  color: #00f5d4;
+}
+.course-card.intermediate .lv-text {
+  color: #ff6b35;
+}
+.course-card.advanced .lv-text {
+  color: #b18cff;
+}
+.course-card.all_levels .lv-text {
+  color: #a8adc2;
+}
+.lv-text {
+  font-size: 28rpx;
+  font-weight: 900;
+}
+.lv-diff {
+  font-size: 20rpx;
+  color: #a8adc2;
+  margin-top: 2rpx;
+  font-weight: 700;
+}
+.empty-tip {
+  text-align: center;
+  color: #a8adc2;
+  padding: 80rpx 0;
+  font-size: 26rpx;
+  font-weight: 700;
+}

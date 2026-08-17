@@ -1,0 +1,73 @@
+<nav-bar title="课表" show-back="{{true}}" />
+
+<view class="body">
+  <!-- 舞室头 -->
+  <view class="studio-head">
+    <view class="head-info">
+      <view class="head-name">{{studio ? studio.name : '加载中…'}}</view>
+      <view class="head-meta">{{studio ? studio.city + ' · ' + studio.platformLabel : ''}}</view>
+    </view>
+    <button
+      class="head-follow {{followed ? 'followed' : ''}}"
+      bindtap="toggleFollow"
+    >{{followed ? '已关注' : '关注'}}</button>
+  </view>
+
+  <!-- 星期横条 -->
+  <view class="week-nav">
+    <view class="week-arrow" bindtap="prevWeek">‹</view>
+    <swiper
+      class="week-swiper"
+      current="{{weekIndex}}"
+      duration="200"
+      bindchange="onWeekChange"
+    >
+      <swiper-item wx:for="{{[1, 2, 3]}}" wx:key="*this">
+        <view class="week-days">
+          <view
+            wx:for="{{weekDays}}"
+            wx:for-item="d"
+            wx:key="key"
+            class="week-day {{d.isToday ? 'today' : ''}} {{selectedKey === d.key ? 'on' : ''}}"
+            data-key="{{d.key}}"
+            bindtap="selectDay"
+          >
+            <view class="wd-label">{{d.label}}</view>
+            <view class="wd-num">{{d.num}}</view>
+            <view class="wd-dot {{d.hasClass ? 'has' : ''}}"></view>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+    <view class="week-arrow" bindtap="nextWeek">›</view>
+  </view>
+
+  <!-- 选中日标题 -->
+  <view class="week-bar">
+    <view class="week-title">{{selectedTitle}}</view>
+    <view class="today-btn" bindtap="goToday">今天</view>
+  </view>
+
+  <!-- 课程块 -->
+  <view class="day-list">
+    <view wx:if="{{loading}}" class="empty-tip">课表加载中…</view>
+    <view wx:elif="{{dayItems.length === 0}}" class="empty-tip">当天暂无课程</view>
+    <view
+      wx:for="{{dayItems}}"
+      wx:key="id"
+      class="course-card {{item.diffClass}}"
+      data-id="{{item.id}}"
+      bindtap="goCourse"
+    >
+      <view class="c-time">{{item.timeLabel}}</view>
+      <view class="c-main">
+        <view class="c-name">{{item.courseName}}</view>
+        <view class="c-coach">教练：{{item.coachName}}</view>
+      </view>
+      <view class="c-level">
+        <view class="lv-text">{{item.level}}</view>
+        <view class="lv-diff">{{item.diffLabel}}</view>
+      </view>
+    </view>
+  </view>
+</view>
