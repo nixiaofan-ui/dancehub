@@ -7,13 +7,13 @@
   ],
   "window": {
     "navigationStyle": "custom",
-    "backgroundColor": "#f5f6f8",
-    "backgroundTextStyle": "dark"
+    "backgroundColor": "#0e0e1c",
+    "backgroundTextStyle": "light"
   },
   "tabBar": {
-    "color": "#909399",
-    "selectedColor": "#3a6df0",
-    "backgroundColor": "#ffffff",
+    "color": "#a8adc2",
+    "selectedColor": "#00F5D4",
+    "backgroundColor": "#1A1A2E",
     "borderStyle": "black",
     "list": [
       {

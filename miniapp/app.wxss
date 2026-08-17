@@ -1,7 +1,8 @@
 page {
-  background: #f5f6f8;
+  background: #0e0e1c;
   font-size: 28rpx;
-  color: #2b2f36;
+  color: #ffffff;
+  font-family: "Arial Black", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -9,20 +10,53 @@ button::after {
   border: none;
 }
 
-.page-padding {
-  padding: 24rpx;
-}
-
+/* 空状态 */
 .empty {
-  padding: 120rpx 0;
+  padding: 120rpx 40rpx;
   text-align: center;
-  color: #909399;
 }
 .empty-title {
-  font-size: 30rpx;
-  color: #606266;
+  font-size: 34rpx;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 2rpx;
 }
 .empty-sub {
-  margin-top: 12rpx;
+  margin-top: 14rpx;
   font-size: 26rpx;
+  color: #a8adc2;
+}
+
+/* 空状态几何图形（街头色块撞色） */
+.jam-graphic {
+  position: relative;
+  width: 180rpx;
+  height: 150rpx;
+  margin: 0 auto 28rpx;
+}
+.jam-a,
+.jam-b,
+.jam-c {
+  position: absolute;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 16rpx;
+}
+.jam-a {
+  background: #ff6b35;
+  left: 0;
+  top: 28rpx;
+  transform: rotate(45deg);
+}
+.jam-b {
+  background: #7b2fbe;
+  right: 0;
+  top: 0;
+  transform: rotate(45deg);
+}
+.jam-c {
+  background: #00f5d4;
+  bottom: 0;
+  right: 26rpx;
+  transform: rotate(45deg);
 }

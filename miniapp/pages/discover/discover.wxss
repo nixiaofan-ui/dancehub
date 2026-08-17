@@ -9,7 +9,8 @@
 }
 .seg {
   display: flex;
-  background: #e8ebf2;
+  background: #1a1a2e;
+  border: 2rpx solid #ff6b35;
   border-radius: 40rpx;
   padding: 6rpx;
 }
@@ -17,12 +18,13 @@
   padding: 10rpx 48rpx;
   border-radius: 36rpx;
   font-size: 28rpx;
-  color: #606266;
+  color: #a8adc2;
+  font-weight: 700;
 }
 .seg-item.on {
-  background: #3a6df0;
-  color: #ffffff;
-  font-weight: 600;
+  background: #ff6b35;
+  color: #0e0e1c;
+  font-weight: 900;
 }
 
 .city-bar {
@@ -33,60 +35,67 @@
   display: inline-block;
   padding: 10rpx 32rpx;
   margin-right: 16rpx;
-  background: #ffffff;
+  background: #16213e;
   border-radius: 32rpx;
   font-size: 26rpx;
-  color: #606266;
-  border: 1rpx solid #e4e7ed;
+  color: #a8adc2;
+  border: 2rpx solid #2b3050;
+  font-weight: 700;
 }
 .chip.on {
-  background: #3a6df0;
+  background: #7b2fbe;
   color: #ffffff;
-  border-color: #3a6df0;
-  font-weight: 600;
+  border-color: #7b2fbe;
+  font-weight: 900;
 }
 
 .search-box {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: #1a1a2e;
+  border: 2rpx solid #ff6b35;
   border-radius: 40rpx;
   padding: 10rpx 12rpx 10rpx 28rpx;
   margin-bottom: 20rpx;
-  border: 1rpx solid #e4e7ed;
 }
 .search-input {
   flex: 1;
   font-size: 28rpx;
+  color: #ffffff;
+}
+.search-input::placeholder {
+  color: #6f7590;
 }
 .clear {
   padding: 0 16rpx;
-  color: #c0c4cc;
+  color: #a8adc2;
+  font-weight: 900;
 }
 .search-btn {
-  background: #3a6df0;
-  color: #ffffff;
+  background: #ff6b35;
+  color: #0e0e1c;
   border-radius: 32rpx;
   padding: 10rpx 28rpx;
   font-size: 26rpx;
+  font-weight: 900;
 }
 
 .studio-card {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: #16213e;
   border-radius: 16rpx;
   padding: 20rpx;
   margin-bottom: 16rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 .avatar {
   width: 88rpx;
   height: 88rpx;
   border-radius: 12rpx;
-  background: #1f2a44;
+  background: #7b2fbe;
   color: #ffffff;
   font-size: 34rpx;
+  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,12 +107,14 @@
 }
 .name {
   font-size: 30rpx;
-  font-weight: 700;
+  font-weight: 900;
+  letter-spacing: 1rpx;
 }
 .meta {
   font-size: 24rpx;
-  color: #909399;
+  color: #a8adc2;
   margin-top: 4rpx;
+  font-weight: 700;
 }
 .addr {
   overflow: hidden;
@@ -112,14 +123,16 @@
 }
 .follow {
   font-size: 26rpx;
-  color: #3a6df0;
-  background: #ecf2ff;
+  color: #0e0e1c;
+  background: #ff6b35;
   border-radius: 32rpx;
   padding: 8rpx 28rpx;
   line-height: 1.8;
+  font-weight: 900;
   flex-shrink: 0;
 }
 .follow.followed {
-  color: #909399;
-  background: #f0f2f5;
+  color: #00f5d4;
+  background: #1a1a2e;
+  border: 2rpx solid #00f5d4;
 }

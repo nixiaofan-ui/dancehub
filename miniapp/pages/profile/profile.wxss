@@ -5,7 +5,9 @@
 .user-card {
   display: flex;
   align-items: center;
-  background: linear-gradient(135deg, #1f2a44 0%, #3a4a6b 100%);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2rpx solid #2b3050;
+  border-left: 10rpx solid #7b2fbe;
   border-radius: 16rpx;
   padding: 28rpx;
   color: #ffffff;
@@ -14,11 +16,14 @@
   width: 88rpx;
   height: 88rpx;
   border-radius: 50%;
-  background: #3a6df0;
+  background: #ff6b35;
+  border: 3rpx solid #00f5d4;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 34rpx;
+  font-weight: 900;
+  color: #0e0e1c;
   flex-shrink: 0;
 }
 .user-meta {
@@ -26,17 +31,19 @@
   margin: 0 20rpx;
 }
 .user-name {
-  font-size: 32rpx;
-  font-weight: 700;
+  font-size: 34rpx;
+  font-weight: 900;
+  letter-spacing: 1rpx;
 }
 .user-sub {
   font-size: 24rpx;
   opacity: 0.7;
   margin-top: 6rpx;
+  font-weight: 700;
 }
 .seg {
   display: flex;
-  background: rgba(255, 255, 255, 0.15);
+  background: #0e0e1c;
   border-radius: 36rpx;
   padding: 4rpx;
   flex-shrink: 0;
@@ -45,16 +52,18 @@
   padding: 8rpx 26rpx;
   border-radius: 32rpx;
   font-size: 26rpx;
+  font-weight: 700;
+  color: #a8adc2;
 }
 .seg-item.on {
-  background: #ffffff;
-  color: #1f2a44;
-  font-weight: 600;
+  background: #00f5d4;
+  color: #0e0e1c;
+  font-weight: 900;
 }
 
 .tabs {
   display: flex;
-  background: #ffffff;
+  background: #1a1a2e;
   border-radius: 16rpx;
   margin: 20rpx 0;
   padding: 8rpx;
@@ -64,20 +73,21 @@
   text-align: center;
   padding: 16rpx 0;
   font-size: 28rpx;
-  color: #606266;
+  color: #a8adc2;
   border-radius: 12rpx;
+  font-weight: 700;
 }
 .tab.on {
-  background: #ecf2ff;
-  color: #3a6df0;
-  font-weight: 600;
+  background: #ff6b35;
+  color: #0e0e1c;
+  font-weight: 900;
 }
 
 /* 关注 */
 .follow-card {
   display: flex;
   align-items: center;
-  background: #ffffff;
+  background: #16213e;
   border-radius: 16rpx;
   padding: 20rpx;
   margin-bottom: 16rpx;
@@ -86,9 +96,10 @@
   width: 80rpx;
   height: 80rpx;
   border-radius: 12rpx;
-  background: #1f2a44;
+  background: #7b2fbe;
   color: #ffffff;
   font-size: 30rpx;
+  font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -100,26 +111,30 @@
 }
 .follow-name {
   font-size: 30rpx;
-  font-weight: 700;
+  font-weight: 900;
+  letter-spacing: 1rpx;
 }
 .follow-meta {
   font-size: 24rpx;
-  color: #909399;
+  color: #a8adc2;
   margin-top: 4rpx;
+  font-weight: 700;
 }
 .unfollow {
   font-size: 26rpx;
-  color: #f56c6c;
-  background: #fef0f0;
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.12);
   border-radius: 32rpx;
   padding: 8rpx 28rpx;
   line-height: 1.8;
+  font-weight: 900;
   flex-shrink: 0;
 }
 
 /* 记录 */
 .record-card {
-  background: #ffffff;
+  background: #16213e;
+  border-left: 8rpx solid #2b3050;
   border-radius: 16rpx;
   padding: 20rpx;
   margin-bottom: 16rpx;
@@ -130,39 +145,45 @@
 }
 .record-course {
   font-size: 30rpx;
-  font-weight: 700;
+  font-weight: 900;
   flex: 1;
+  letter-spacing: 1rpx;
 }
 .status {
   font-size: 24rpx;
   padding: 6rpx 16rpx;
   border-radius: 24rpx;
+  font-weight: 900;
 }
 .status.ok {
-  color: #67c23a;
-  background: #f0f9eb;
+  color: #00f5d4;
+  background: rgba(0, 245, 212, 0.15);
 }
 .status.pending {
-  color: #e6a23c;
-  background: #fdf6ec;
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.15);
 }
 .record-meta {
   font-size: 24rpx;
-  color: #909399;
+  color: #a8adc2;
   margin-top: 6rpx;
+  font-weight: 700;
 }
 .remind-time {
   font-size: 24rpx;
-  color: #ad6800;
+  color: #00f5d4;
   margin-top: 8rpx;
+  font-weight: 700;
 }
 .close-remind {
   margin-top: 12rpx;
   font-size: 24rpx;
-  color: #909399;
-  background: #f0f2f5;
+  color: #a8adc2;
+  background: #1a1a2e;
+  border: 2rpx solid #2b3050;
   border-radius: 24rpx;
   padding: 8rpx 24rpx;
   display: inline-block;
   line-height: 1.6;
+  font-weight: 700;
 }

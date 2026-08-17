@@ -1,6 +1,7 @@
 .nav {
-  background: #1f2a44;
+  background: #1a1a2e;
   color: #ffffff;
+  border-bottom: 6rpx solid #ff6b35;
 }
 .nav-inner {
   display: flex;
@@ -13,24 +14,35 @@
   align-items: center;
 }
 .nav-back {
-  font-size: 44rpx;
+  font-size: 48rpx;
   line-height: 1;
   margin-right: 12rpx;
   padding: 4rpx 12rpx 4rpx 0;
+  color: #00f5d4;
+  font-weight: 900;
+}
+.nav-tag {
+  width: 16rpx;
+  height: 40rpx;
+  background: #ff6b35;
+  border-radius: 4rpx;
+  margin-right: 14rpx;
 }
 .nav-logo {
-  font-size: 34rpx;
-  font-weight: 700;
-  letter-spacing: 1rpx;
+  font-size: 38rpx;
+  font-weight: 900;
+  letter-spacing: 3rpx;
 }
 .nav-avatar {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
-  background: #3a6df0;
+  background: #7b2fbe;
+  border: 3rpx solid #00f5d4;
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28rpx;
+  font-weight: 900;
 }
