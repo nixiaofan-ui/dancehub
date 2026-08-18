@@ -1,5 +1,6 @@
 const app = getApp();
 const api = require("../../services/api");
+const { toast } = require("../../utils/toast");
 const jump = require("../../services/jump");
 const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
 const { requestSubscribe } = require("../../utils/subscribe");
@@ -83,7 +84,7 @@ Page({
         videos: showVideo ? video.items || [] : [],
       });
     } catch (e) {
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -107,7 +108,7 @@ Page({
       this.load();
     } catch (e) {
       this.setData({ busy: false });
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -118,11 +119,11 @@ Page({
     try {
       await api.apiCreateBooking(d.id, "MANUAL");
       this.setData({ busy: false });
-      wx.showToast({ title: "已标记预约", icon: "success" });
+      toast(this, "已标记预约", "success");
       this.load();
     } catch (e) {
       this.setData({ busy: false });
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -140,11 +141,11 @@ Page({
       }
       const reminded = !this.data.reminded;
       this.setData({ reminded, busy: false });
-      wx.showToast({ title: reminded ? "已开启开课提醒" : "已关闭提醒", icon: "none" });
+      toast(this, reminded ? "已开启开课提醒" : "已关闭提醒");
       this.load();
     } catch (e) {
       this.setData({ busy: false });
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 

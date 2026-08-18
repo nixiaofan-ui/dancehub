@@ -33,6 +33,13 @@
   font-weight: 900;
   letter-spacing: 3rpx;
 }
+.nav-logo.accent {
+  background: linear-gradient(90deg, #00f5d4, #ff6b35);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 20rpx rgba(0, 245, 212, 0.25);
+}
 .nav-avatar {
   width: 64rpx;
   height: 64rpx;

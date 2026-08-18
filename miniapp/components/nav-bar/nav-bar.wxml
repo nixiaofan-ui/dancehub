@@ -3,7 +3,7 @@
     <view class="nav-left">
       <view wx:if="{{showBack}}" class="nav-back" bindtap="onBack">‹</view>
       <view class="nav-tag"></view>
-      <view class="nav-logo">{{title}}</view>
+      <view class="nav-logo {{accent ? 'accent' : ''}}">{{title}}</view>
     </view>
     <view wx:if="{{showAvatar}}" class="nav-avatar" bindtap="onAvatar">我</view>
   </view>

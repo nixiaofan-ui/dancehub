@@ -1,5 +1,5 @@
 page {
-  background: #0e0e1c;
+  background: #1a1a2e;
   font-size: 28rpx;
   color: #ffffff;
   font-family: "Arial Black", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -10,7 +10,50 @@ button::after {
   border: none;
 }
 
-/* 空状态 */
+/* ===== 通用卡片 ===== */
+.card {
+  background: #16213e;
+  border-radius: 32rpx;
+  padding: 32rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
+}
+
+/* ===== 通用按钮 ===== */
+.btn-pri {
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
+  border-radius: 24rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+}
+.btn-pri[disabled] {
+  opacity: 0.5;
+  color: #ffffff;
+}
+.btn-sec {
+  background: transparent;
+  color: #00f5d4;
+  border: 2rpx solid #00f5d4;
+  border-radius: 24rpx;
+  font-weight: 900;
+  letter-spacing: 2rpx;
+}
+.btn-danger {
+  background: #ff3b30;
+  color: #ffffff;
+  border-radius: 24rpx;
+  font-weight: 900;
+}
+
+/* 点击反馈：缩放 0.95（配合 hover-class="press"） */
+.press {
+  transform: scale(0.95);
+  opacity: 0.92;
+  transition: transform 0.12s ease;
+}
+
+/* ===== 空状态 ===== */
 .empty {
   padding: 120rpx 40rpx;
   text-align: center;
@@ -24,10 +67,17 @@ button::after {
 .empty-sub {
   margin-top: 14rpx;
   font-size: 26rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
+}
+.empty-btn {
+  margin: 32rpx auto 0;
+  width: 320rpx;
+  padding: 18rpx 0;
+  line-height: 1.6;
+  font-size: 28rpx;
 }
 
-/* 空状态几何图形（街头色块撞色） */
+/* ===== 空状态几何图形（街头色块撞色） ===== */
 .jam-graphic {
   position: relative;
   width: 180rpx;
@@ -59,4 +109,12 @@ button::after {
   bottom: 0;
   right: 26rpx;
   transform: rotate(45deg);
+}
+
+/* 霓虹文本 */
+.neon-text {
+  background: linear-gradient(90deg, #00f5d4, #ff6b35);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

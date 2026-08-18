@@ -9,13 +9,14 @@
     </view>
     <button
       class="head-follow {{followed ? 'followed' : ''}}"
+      hover-class="press"
       bindtap="toggleFollow"
     >{{followed ? '已关注' : '关注'}}</button>
   </view>
 
   <!-- 星期横条 -->
   <view class="week-nav">
-    <view class="week-arrow" bindtap="prevWeek">‹</view>
+    <view class="week-arrow" hover-class="press" bindtap="prevWeek">‹</view>
     <swiper
       class="week-swiper"
       current="{{weekIndex}}"
@@ -29,6 +30,7 @@
             wx:for-item="d"
             wx:key="key"
             class="week-day {{d.isToday ? 'today' : ''}} {{selectedKey === d.key ? 'on' : ''}}"
+            hover-class="press"
             data-key="{{d.key}}"
             bindtap="selectDay"
           >
@@ -39,13 +41,13 @@
         </view>
       </swiper-item>
     </swiper>
-    <view class="week-arrow" bindtap="nextWeek">›</view>
+    <view class="week-arrow" hover-class="press" bindtap="nextWeek">›</view>
   </view>
 
   <!-- 选中日标题 -->
   <view class="week-bar">
     <view class="week-title">{{selectedTitle}}</view>
-    <view class="today-btn" bindtap="goToday">今天</view>
+    <view class="today-btn" hover-class="press" bindtap="goToday">今天</view>
   </view>
 
   <!-- 课程块 -->
@@ -56,6 +58,7 @@
       wx:for="{{dayItems}}"
       wx:key="id"
       class="course-card {{item.diffClass}}"
+      hover-class="press"
       data-id="{{item.id}}"
       bindtap="goCourse"
     >
@@ -71,3 +74,5 @@
     </view>
   </view>
 </view>
+
+<toast id="toast" />

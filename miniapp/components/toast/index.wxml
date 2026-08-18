@@ -1,0 +1,6 @@
+<view wx:if="{{visible}}" class="toast-wrap">
+  <view class="toast {{type}}">
+    <text class="toast-icon" wx:if="{{type === 'success'}}">✓</text>
+    {{text}}
+  </view>
+</view>

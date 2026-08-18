@@ -1,6 +1,7 @@
 const app = getApp();
 const api = require("../../services/api");
 const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
+const { toast } = require("../../utils/toast");
 const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 
 const WEEK_LABEL = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -101,7 +102,7 @@ Page({
       .catch((e) => {
         this.weeksCache[from] = {};
         this.setData({ loading: false });
-        wx.showToast({ title: e.message, icon: "none" });
+        toast(this, e.message);
       });
   },
 
@@ -191,7 +192,7 @@ Page({
         followed: follows.some((f) => f.studio.id === this.studioId),
       });
     } catch (e) {
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -203,12 +204,9 @@ Page({
         await api.apiFollow(this.studioId);
       }
       this.setData({ followed: !this.data.followed });
-      wx.showToast({
-        title: this.data.followed ? "已关注" : "已取消关注",
-        icon: "none",
-      });
+      toast(this, this.data.followed ? "已关注" : "已取消关注", "success");
     } catch (err) {
-      wx.showToast({ title: err.message, icon: "none" });
+      toast(this, err.message);
     }
   },
 });

@@ -1,5 +1,6 @@
 const app = getApp();
 const api = require("../../services/api");
+const { toast } = require("../../utils/toast");
 const { PLATFORM_LABEL } = require("../../utils/constants");
 
 Page({
@@ -53,7 +54,7 @@ Page({
       this.setData({ studios, followedIds, loading: false });
     } catch (e) {
       this.setData({ loading: false });
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -111,9 +112,9 @@ Page({
         s.id === id ? { ...s, followed: !isFollowed } : s,
       );
       this.setData({ followedIds, studios });
-      wx.showToast({ title: isFollowed ? "已取消关注" : "已关注", icon: "none" });
+      toast(this, isFollowed ? "已取消关注" : "已关注", "success");
     } catch (err) {
-      wx.showToast({ title: err.message, icon: "none" });
+      toast(this, err.message);
     }
   },
 });

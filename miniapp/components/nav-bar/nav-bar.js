@@ -12,6 +12,10 @@ Component({
       type: Boolean,
       value: false,
     },
+    accent: {
+      type: Boolean,
+      value: false,
+    },
   },
 
   data: {

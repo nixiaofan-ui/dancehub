@@ -82,3 +82,5 @@
     </view>
   </view>
 </view>
+
+<toast id="toast" />

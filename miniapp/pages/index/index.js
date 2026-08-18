@@ -4,6 +4,7 @@ const jump = require("../../services/jump");
 const { dateKey, addDays, todayKey, formatChip } = require("../../utils/date");
 const { DIFF_LABEL } = require("../../utils/constants");
 const { requestSubscribe } = require("../../utils/subscribe");
+const { toast } = require("../../utils/toast");
 
 Page({
   data: {
@@ -66,18 +67,39 @@ Page({
       const items = (res.items || []).map((item) => {
         const [h, m] = item.startTime.split(":").map(Number);
         const isPast = isToday && h * 60 + m < nowMin;
+        let slotClass = "";
+        let slotText = "";
+        if (item.bookingStatus === "CONFIRMED") {
+          slotClass = "ok";
+          slotText = "✅ 已约";
+        } else if (item.bookingStatus === "PENDING") {
+          slotClass = "warn";
+          slotText = "待确认";
+        } else {
+          const rm = item.remark || "";
+          if (rm.indexOf("满") >= 0) {
+            slotClass = "full";
+            slotText = "已截止";
+          } else if (rm.indexOf("预约中") >= 0) {
+            slotClass = "ok";
+            slotText = "余位充足";
+          }
+        }
         return {
           ...item,
           isPast,
           diffLabel: DIFF_LABEL[item.difficulty] || item.difficulty,
           coachName: item.coach ? item.coach.name : "待定",
+          edgeClass: "edge-" + (item.difficulty || "ALL_LEVELS").toLowerCase(),
+          slotClass,
+          slotText,
         };
       });
       const pendingCount = items.filter((i) => i.bookingStatus === "PENDING").length;
       this.setData({ items, pendingCount, loading: false });
     } catch (e) {
       this.setData({ loading: false });
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -147,7 +169,7 @@ Page({
       this.refreshBadge();
       this.load();
     } catch (e) {
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -158,10 +180,10 @@ Page({
       await api.apiCreateBooking(item.id, "MANUAL");
       this.setData({ panel: { visible: false, item: null } });
       this.refreshBadge();
-      wx.showToast({ title: "已标记预约", icon: "success" });
+      toast(this, "已标记预约", "success");
       this.load();
     } catch (e) {
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -171,22 +193,19 @@ Page({
     try {
       if (item.reminded) {
         await api.apiRemoveReminder(item.id);
-        wx.showToast({ title: "已关闭提醒", icon: "none" });
+        toast(this, "已关闭提醒");
       } else {
         // 请求订阅消息授权（一次性）
         const tplId = app.globalData.classReminderTplId;
         const granted = tplId ? await requestSubscribe(tplId) : false;
         await api.apiAddReminder(item.id, granted);
-        wx.showToast({
-          title: granted ? "已开启订阅提醒" : "已开启本地提醒",
-          icon: "none",
-        });
+        toast(this, granted ? "已开启订阅提醒" : "已开启本地提醒");
       }
       item.reminded = !item.reminded;
       this.setData({ panel: { visible: true, item } });
       this.load();
     } catch (e) {
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -199,6 +218,10 @@ Page({
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
       this.getTabBar().refreshBadge();
     }
+  },
+
+  goDiscover() {
+    wx.switchTab({ url: "/pages/discover/discover" });
   },
 
   goProfile() {

@@ -1,11 +1,11 @@
-<nav-bar title="DanceHub" show-avatar="{{true}}" bind:avatar="goProfile" />
+<nav-bar title="DanceHub" show-avatar="{{true}}" bind:avatar="goProfile" accent />
 
 <view class="body">
   <!-- 地区切换 -->
   <view class="region-row">
     <view class="seg">
-      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" data-r="CN" bindtap="switchRegion">中国</view>
-      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
+      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" hover-class="press" data-r="CN" bindtap="switchRegion">中国</view>
+      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" hover-class="press" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
     </view>
   </view>
 
@@ -15,23 +15,25 @@
       wx:for="{{cities}}"
       wx:key="id"
       class="chip {{cityId === item.id ? 'on' : ''}}"
+      hover-class="press"
       data-id="{{item.id}}"
       bindtap="selectCity"
     >{{item.name}}</view>
   </scroll-view>
 
   <!-- 悬浮提醒条 -->
-  <view wx:if="{{pendingCount > 0}}" class="reminder-strip" bindtap="goConfirm">
+  <view wx:if="{{pendingCount > 0}}" class="reminder-strip" hover-class="press" bindtap="goConfirm">
     📌 您有 {{pendingCount}} 节未确认预约，记得点「我已约好」
   </view>
 
   <!-- 日期滑条 -->
   <view class="date-nav">
-    <view class="arrow" bindtap="prevDay">‹</view>
+    <view class="arrow" hover-class="press" bindtap="prevDay">‹</view>
     <swiper class="date-swiper" current="{{swiperCurrent}}" duration="200" bindchange="onSwiperChange">
       <swiper-item wx:for="{{dates}}" wx:key="key">
         <view
           class="date-item {{item.isToday ? 'today' : ''}} {{currentKey === item.key ? 'cur' : ''}}"
+          hover-class="press"
           data-key="{{item.key}}"
           bindtap="onTapDate"
         >
@@ -40,7 +42,7 @@
         </view>
       </swiper-item>
     </swiper>
-    <view class="arrow" bindtap="nextDay">›</view>
+    <view class="arrow" hover-class="press" bindtap="nextDay">›</view>
   </view>
 
   <!-- 时间轴 -->
@@ -51,11 +53,16 @@
         <view class="jam-b"></view>
         <view class="jam-c"></view>
       </view>
-      <view class="empty-title">今天舞池空着</view>
-      <view class="empty-sub">去「发现」捞个舞室，燥起来</view>
+      <view class="empty-title">今日暂无课程</view>
+      <view class="empty-sub">去「发现」页搜索并关注舞室吧</view>
+      <button class="btn-pri empty-btn" hover-class="press" bindtap="goDiscover">去发现</button>
     </view>
 
-    <view wx:for="{{items}}" wx:key="id" class="row {{item.isPast ? 'past' : ''}}">
+    <view
+      wx:for="{{items}}"
+      wx:key="id"
+      class="row {{item.isPast ? 'past' : ''}} {{item.bookingStatus === 'CONFIRMED' ? 'booked' : ''}}"
+    >
       <view class="time-col">
         <view class="t-start">{{item.startTime}}</view>
         <view class="t-end">{{item.endTime}}</view>
@@ -64,7 +71,7 @@
         <view class="dot {{item.bookingStatus ? 'dot-booked' : ''}}"></view>
         <view class="line-body"></view>
       </view>
-      <view class="card">
+      <view class="card" hover-class="press">
         <view class="card-head">
           <text class="studio">{{item.studio.name}}</text>
           <text wx:if="{{item.reminded}}" class="remind-flag">🔔</text>
@@ -74,10 +81,13 @@
           <text class="diff">{{item.diffLabel}}</text>
         </view>
         <view class="coach">教练：{{item.coachName}}</view>
-        <view class="btn-row">
-          <button wx:if="{{item.bookingStatus === 'CONFIRMED'}}" class="btn booked" disabled>✅ 已约</button>
-          <button wx:elif="{{item.bookingStatus === 'PENDING'}}" class="btn pending" data-id="{{item.id}}" bindtap="openPanel">待确认</button>
-          <button wx:else class="btn" data-id="{{item.id}}" bindtap="openPanel">预约</button>
+        <view class="card-foot">
+          <view wx:if="{{item.slotText}}" class="slot {{item.slotClass}}">{{item.slotText}}</view>
+          <view class="btn-row">
+            <button wx:if="{{item.bookingStatus === 'CONFIRMED'}}" class="btn booked" disabled>✅ 已约</button>
+            <button wx:elif="{{item.bookingStatus === 'PENDING'}}" class="btn pending" data-id="{{item.id}}" bindtap="openPanel">待确认</button>
+            <button wx:else class="btn" data-id="{{item.id}}" bindtap="openPanel">预约</button>
+          </view>
         </view>
       </view>
     </view>
@@ -99,10 +109,12 @@
     已发起预约跳转，去原平台完成后记得标记
   </view>
   <view class="sheet-actions">
-    <button class="action primary" bindtap="goBook">去原平台预约</button>
-    <button class="action secondary" bindtap="markBooked">我已约好</button>
-    <button class="action remind" bindtap="toggleRemind">
+    <button class="action primary" hover-class="press" bindtap="goBook">去原平台预约</button>
+    <button class="action secondary" hover-class="press" bindtap="markBooked">我已约好</button>
+    <button class="action remind" hover-class="press" bindtap="toggleRemind">
       {{panel.item.reminded ? '已开启提醒（点击关闭）' : '开启开课提醒'}}
     </button>
   </view>
 </view>
+
+<toast id="toast" />

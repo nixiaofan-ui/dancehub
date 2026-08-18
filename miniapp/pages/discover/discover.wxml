@@ -3,8 +3,8 @@
 <view class="body">
   <view class="region-row">
     <view class="seg">
-      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" data-r="CN" bindtap="switchRegion">中国</view>
-      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
+      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" hover-class="press" data-r="CN" bindtap="switchRegion">中国</view>
+      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" hover-class="press" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
     </view>
   </view>
 
@@ -13,22 +13,28 @@
       wx:for="{{cities}}"
       wx:key="id"
       class="chip {{cityId === item.id ? 'on' : ''}}"
+      hover-class="press"
       data-id="{{item.id}}"
       bindtap="selectCity"
     >{{item.name}}</view>
   </scroll-view>
 
   <view class="search-box">
+    <view class="search-ico">
+      <view class="mag-circle"></view>
+      <view class="mag-bar"></view>
+    </view>
     <input
       class="search-input"
       placeholder="搜索舞室名称 / 地址"
+      placeholder-class="search-ph"
       confirm-type="search"
       value="{{keyword}}"
       bindinput="onSearch"
       bindconfirm="onSearchConfirm"
     />
-    <view wx:if="{{keyword}}" class="clear" bindtap="clearKeyword">✕</view>
-    <view class="search-btn" bindtap="onSearchConfirm">搜索</view>
+    <view wx:if="{{keyword}}" class="clear" hover-class="press" bindtap="clearKeyword">✕</view>
+    <view class="search-btn" hover-class="press" bindtap="onSearchConfirm">搜索</view>
   </view>
 
   <view wx:if="{{!loading && studios.length === 0}}" class="empty">
@@ -46,6 +52,7 @@
       wx:for="{{studios}}"
       wx:key="id"
       class="studio-card"
+      hover-class="press"
       data-id="{{item.id}}"
       bindtap="goWeekly"
     >
@@ -58,9 +65,12 @@
       <view class="card-arrow">›</view>
       <button
         class="follow {{item.followed ? 'followed' : ''}}"
+        hover-class="press"
         data-id="{{item.id}}"
         catchtap="toggleFollow"
       >{{item.followed ? '已关注' : '关注'}}</button>
     </view>
   </view>
 </view>
+
+<toast id="toast" />

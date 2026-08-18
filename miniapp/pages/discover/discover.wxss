@@ -9,8 +9,8 @@
 }
 .seg {
   display: flex;
-  background: #1a1a2e;
-  border: 2rpx solid #ff6b35;
+  background: rgba(26, 26, 46, 0.7);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
   border-radius: 40rpx;
   padding: 6rpx;
 }
@@ -18,12 +18,12 @@
   padding: 10rpx 48rpx;
   border-radius: 36rpx;
   font-size: 28rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   font-weight: 700;
 }
 .seg-item.on {
-  background: #ff6b35;
-  color: #0e0e1c;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
   font-weight: 900;
 }
 
@@ -38,48 +38,77 @@
   background: #16213e;
   border-radius: 32rpx;
   font-size: 26rpx;
-  color: #a8adc2;
-  border: 2rpx solid #2b3050;
+  color: #aaaaaa;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
   font-weight: 700;
 }
 .chip.on {
-  background: #7b2fbe;
+  background: linear-gradient(135deg, #7b2fbe, #9b5cff);
   color: #ffffff;
   border-color: #7b2fbe;
   font-weight: 900;
 }
 
+/* 搜索框 */
 .search-box {
   display: flex;
   align-items: center;
-  background: #1a1a2e;
-  border: 2rpx solid #ff6b35;
-  border-radius: 40rpx;
-  padding: 10rpx 12rpx 10rpx 28rpx;
+  background: #16213e;
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-radius: 48rpx;
+  padding: 12rpx 12rpx 12rpx 28rpx;
   margin-bottom: 20rpx;
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
+}
+.search-ico {
+  position: relative;
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+.mag-circle {
+  position: absolute;
+  left: 2rpx;
+  top: 2rpx;
+  width: 22rpx;
+  height: 22rpx;
+  border: 4rpx solid #00f5d4;
+  border-radius: 50%;
+}
+.mag-bar {
+  position: absolute;
+  right: 0;
+  bottom: 4rpx;
+  width: 4rpx;
+  height: 14rpx;
+  background: #00f5d4;
+  border-radius: 4rpx;
+  transform: rotate(45deg);
 }
 .search-input {
   flex: 1;
   font-size: 28rpx;
   color: #ffffff;
 }
-.search-input::placeholder {
+.search-ph {
   color: #6f7590;
 }
 .clear {
   padding: 0 16rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   font-weight: 900;
 }
 .search-btn {
-  background: #ff6b35;
-  color: #0e0e1c;
-  border-radius: 32rpx;
-  padding: 10rpx 28rpx;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
+  border-radius: 40rpx;
+  padding: 12rpx 28rpx;
   font-size: 26rpx;
   font-weight: 900;
 }
 
+/* 舞室卡片 */
 .studio-card {
   display: flex;
   align-items: center;
@@ -87,12 +116,14 @@
   border-radius: 16rpx;
   padding: 20rpx;
   margin-bottom: 16rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
 }
 .avatar {
   width: 88rpx;
   height: 88rpx;
-  border-radius: 12rpx;
-  background: #7b2fbe;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #7b2fbe, #9b5cff);
   color: #ffffff;
   font-size: 34rpx;
   font-weight: 900;
@@ -106,13 +137,13 @@
   margin: 0 16rpx;
 }
 .name {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 900;
   letter-spacing: 1rpx;
 }
 .meta {
   font-size: 24rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   margin-top: 4rpx;
   font-weight: 700;
 }
@@ -121,10 +152,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 关注按钮：默认霓虹青描边，关注后填充霓虹青 */
 .follow {
   font-size: 26rpx;
-  color: #0e0e1c;
-  background: #ff6b35;
+  color: #00f5d4;
+  background: transparent;
+  border: 2rpx solid #00f5d4;
   border-radius: 32rpx;
   padding: 8rpx 28rpx;
   line-height: 1.8;
@@ -132,12 +165,11 @@
   flex-shrink: 0;
 }
 .follow.followed {
-  color: #00f5d4;
-  background: #1a1a2e;
-  border: 2rpx solid #00f5d4;
+  color: #0e0e1c;
+  background: #00f5d4;
+  border-color: #00f5d4;
 }
 
-/* 卡片右箭头（可进周视图） */
 .card-arrow {
   width: 40rpx;
   margin-right: 12rpx;

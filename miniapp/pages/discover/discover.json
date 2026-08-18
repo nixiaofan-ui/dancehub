@@ -1,5 +1,6 @@
 {
   "usingComponents": {
-    "nav-bar": "/components/nav-bar/nav-bar"
+    "nav-bar": "/components/nav-bar/nav-bar",
+    "toast": "/components/toast/index"
   }
 }

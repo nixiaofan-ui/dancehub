@@ -56,15 +56,17 @@
   <view class="actions">
     <button
       class="action primary"
+      hover-class="press"
       bindtap="goBook"
       disabled="{{busy || bookingStatus === 'CONFIRMED'}}"
     >{{bookingStatus === 'CONFIRMED' ? '✅ 已预约' : '去原平台预约'}}</button>
     <button
       class="action secondary"
+      hover-class="press"
       bindtap="markBooked"
       disabled="{{busy || bookingStatus === 'CONFIRMED'}}"
     >我已约好</button>
-    <button class="action remind {{reminded ? 'on' : ''}}" bindtap="toggleRemind" disabled="{{busy}}">
+    <button class="action remind {{reminded ? 'on' : ''}}" hover-class="press" bindtap="toggleRemind" disabled="{{busy}}">
       {{reminded ? '已开启开课提醒' : '开启开课提醒'}}
     </button>
   </view>
@@ -78,6 +80,7 @@
         wx:for="{{videos}}"
         wx:key="videoId"
         class="video-card"
+        hover-class="press"
         data-url="{{item.url}}"
         bindtap="openVideo"
       >
@@ -94,3 +97,5 @@
     </scroll-view>
   </view>
 </view>
+
+<toast id="toast" />

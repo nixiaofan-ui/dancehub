@@ -2,7 +2,7 @@
   padding: 20rpx 24rpx 220rpx;
 }
 
-/* 地区切换 */
+/* 地区切换（半透明胶囊） */
 .region-row {
   display: flex;
   justify-content: center;
@@ -10,21 +10,22 @@
 }
 .seg {
   display: flex;
-  background: #1a1a2e;
-  border: 2rpx solid #ff6b35;
+  background: rgba(26, 26, 46, 0.7);
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
   border-radius: 40rpx;
   padding: 6rpx;
+  backdrop-filter: blur(20rpx);
 }
 .seg-item {
   padding: 10rpx 48rpx;
   border-radius: 36rpx;
   font-size: 28rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   font-weight: 700;
 }
 .seg-item.on {
-  background: #ff6b35;
-  color: #0e0e1c;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
   font-weight: 900;
 }
 
@@ -40,12 +41,12 @@
   background: #16213e;
   border-radius: 32rpx;
   font-size: 26rpx;
-  color: #a8adc2;
-  border: 2rpx solid #2b3050;
+  color: #aaaaaa;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
   font-weight: 700;
 }
 .chip.on {
-  background: #7b2fbe;
+  background: linear-gradient(135deg, #7b2fbe, #9b5cff);
   color: #ffffff;
   border-color: #7b2fbe;
   font-weight: 900;
@@ -55,9 +56,9 @@
 .reminder-strip {
   margin-bottom: 16rpx;
   padding: 18rpx 24rpx;
-  background: #00f5d4;
+  background: linear-gradient(90deg, #00f5d4, #00d9ff);
   color: #0e0e1c;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   font-size: 26rpx;
   font-weight: 900;
   letter-spacing: 1rpx;
@@ -76,7 +77,7 @@
   align-items: center;
   justify-content: center;
   font-size: 44rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   font-weight: 900;
 }
 .date-swiper {
@@ -89,26 +90,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
+  background: #16213e;
+  margin: 0 6rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
 }
 .date-item.cur {
-  background: #ff6b35;
-  color: #0e0e1c;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  border-color: #ff6b35;
 }
 .date-item.today .date-day {
   color: #00f5d4;
 }
 .date-item.cur .date-day,
 .date-item.cur .date-num {
-  color: #0e0e1c;
+  color: #ffffff;
 }
 .date-day {
-  font-size: 26rpx;
+  font-size: 24rpx;
   font-weight: 700;
+  color: #aaaaaa;
 }
 .date-num {
   font-size: 30rpx;
   font-weight: 900;
+  margin-top: 2rpx;
 }
 
 /* 时间轴 */
@@ -121,6 +127,9 @@
 .past {
   opacity: 0.35;
 }
+.row.booked {
+  opacity: 0.6;
+}
 .time-col {
   width: 118rpx;
   padding-top: 26rpx;
@@ -128,17 +137,18 @@
 }
 .t-start {
   display: inline-block;
-  background: #ff6b35;
-  color: #0e0e1c;
-  font-size: 26rpx;
+  background: rgba(0, 245, 212, 0.16);
+  color: #00f5d4;
+  font-size: 24rpx;
   font-weight: 900;
   padding: 6rpx 14rpx;
   border-radius: 24rpx;
   letter-spacing: 1rpx;
+  border: 1rpx solid rgba(0, 245, 212, 0.35);
 }
 .t-end {
   font-size: 22rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   margin-top: 6rpx;
   font-weight: 700;
 }
@@ -157,6 +167,7 @@
 }
 .dot-booked {
   background: #00f5d4;
+  box-shadow: 0 0 12rpx rgba(0, 245, 212, 0.7);
 }
 .line-body {
   width: 2rpx;
@@ -170,14 +181,30 @@
   border-radius: 16rpx;
   padding: 20rpx;
   margin: 8rpx 0 20rpx;
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-right: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+.card.edge-beginner {
+  border-left-color: #00f5d4;
+}
+.card.edge-intermediate {
+  border-left-color: #ff6b35;
+}
+.card.edge-advanced {
+  border-left-color: #7b2fbe;
+}
+.card.edge-all_levels {
+  border-left-color: #aaaaaa;
 }
 .card-head {
   display: flex;
   align-items: center;
 }
 .studio {
-  font-size: 28rpx;
-  color: #ff6b35;
+  font-size: 26rpx;
+  color: #ff8a5c;
   font-weight: 900;
   flex: 1;
   letter-spacing: 1rpx;
@@ -186,7 +213,7 @@
   font-size: 26rpx;
 }
 .course-name {
-  font-size: 34rpx;
+  font-size: 36rpx;
   font-weight: 900;
   margin-top: 8rpx;
   letter-spacing: 1rpx;
@@ -202,35 +229,59 @@
 }
 .coach {
   font-size: 24rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   margin-top: 6rpx;
   font-weight: 700;
+}
+.card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14rpx;
+}
+.slot {
+  font-size: 22rpx;
+  font-weight: 900;
+  padding: 6rpx 18rpx;
+  border-radius: 24rpx;
+  letter-spacing: 1rpx;
+}
+.slot.ok {
+  color: #00c853;
+  background: rgba(0, 200, 83, 0.12);
+}
+.slot.warn {
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.14);
+}
+.slot.full {
+  color: #ff3b30;
+  background: rgba(255, 59, 48, 0.12);
 }
 .btn-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: 12rpx;
 }
 .btn {
   font-size: 26rpx;
-  color: #0e0e1c;
-  background: #ff6b35;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
   border-radius: 32rpx;
   padding: 8rpx 32rpx;
   line-height: 1.8;
   font-weight: 900;
 }
 .btn.pending {
-  background: #7b2fbe;
+  background: linear-gradient(135deg, #7b2fbe, #9b5cff);
   color: #ffffff;
 }
 .btn.booked {
-  background: #00f5d4;
-  color: #0e0e1c;
+  background: rgba(0, 245, 212, 0.14);
+  color: #00f5d4;
 }
 .loading-tip {
   text-align: center;
-  color: #a8adc2;
+  color: #aaaaaa;
   padding: 60rpx 0;
   font-weight: 700;
 }
@@ -248,10 +299,11 @@
   right: 0;
   bottom: 0;
   background: #16213e;
-  border-top: 6rpx solid #ff6b35;
-  border-radius: 24rpx 24rpx 0 0;
+  border-top: 4rpx solid rgba(255, 255, 255, 0.06);
+  border-radius: 32rpx 32rpx 0 0;
   padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
   z-index: 100;
+  box-shadow: 0 -8rpx 40rpx rgba(0, 0, 0, 0.4);
 }
 .sheet-title {
   font-size: 34rpx;
@@ -260,7 +312,7 @@
 }
 .sheet-info {
   font-size: 26rpx;
-  color: #a8adc2;
+  color: #aaaaaa;
   margin-top: 10rpx;
   font-weight: 700;
 }
@@ -270,7 +322,7 @@
   color: #ff6b35;
   background: rgba(255, 107, 53, 0.14);
   padding: 12rpx;
-  border-radius: 8rpx;
+  border-radius: 12rpx;
   font-weight: 700;
 }
 .sheet-actions {
@@ -279,23 +331,24 @@
 .action {
   width: 100%;
   margin-top: 16rpx;
-  border-radius: 40rpx;
+  border-radius: 24rpx;
   font-size: 30rpx;
   padding: 16rpx 0;
   line-height: 1.6;
   font-weight: 900;
+  letter-spacing: 2rpx;
 }
 .action.primary {
-  background: #ff6b35;
-  color: #0e0e1c;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
 }
 .action.secondary {
-  background: #1a1a2e;
-  color: #ffffff;
-  border: 2rpx solid #2b3050;
+  background: transparent;
+  color: #00f5d4;
+  border: 2rpx solid #00f5d4;
 }
 .action.remind {
   background: transparent;
   color: #00f5d4;
-  border: 2rpx solid #00f5d4;
+  border: 2rpx solid rgba(0, 245, 212, 0.4);
 }

@@ -5,11 +5,12 @@
 /* 顶部 hero */
 .hero {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border: 2rpx solid #2b3050;
-  border-left: 10rpx solid #ff6b35;
-  border-radius: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-left: 10rpx solid #00f5d4;
+  border-radius: 32rpx;
   padding: 30rpx 26rpx;
   margin-bottom: 20rpx;
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
 }
 .hero-tags {
   display: flex;
@@ -61,15 +62,17 @@
 /* 信息卡片 */
 .info-card {
   background: #16213e;
-  border-radius: 20rpx;
-  padding: 8rpx 24rpx;
+  border-radius: 32rpx;
+  padding: 8rpx 28rpx;
   margin-bottom: 20rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
 }
 .info-row {
   display: flex;
   align-items: center;
   padding: 22rpx 0;
-  border-bottom: 2rpx solid #2b3050;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
 }
 .info-row:last-child {
   border-bottom: none;
@@ -118,7 +121,7 @@
 /* 预约进度条 */
 .progress {
   height: 14rpx;
-  background: #1a1a2e;
+  background: #2a2a4a;
   border-radius: 8rpx;
   overflow: hidden;
   margin-top: 14rpx;
@@ -144,18 +147,18 @@
   letter-spacing: 1rpx;
 }
 .action.primary {
-  background: #ff6b35;
-  color: #0e0e1c;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
 }
 .action.primary[disabled] {
-  color: #0e0e1c;
-  background: #ff6b35;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
   opacity: 0.6;
 }
 .action.secondary {
-  background: #1a1a2e;
-  color: #ffffff;
-  border: 2rpx solid #2b3050;
+  background: transparent;
+  color: #00f5d4;
+  border: 2rpx solid #00f5d4;
 }
 .action.remind {
   background: transparent;
@@ -193,10 +196,11 @@
   width: 300rpx;
   margin-right: 20rpx;
   background: #16213e;
-  border: 2rpx solid #2b3050;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
   border-radius: 16rpx;
   overflow: hidden;
   vertical-align: top;
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
 }
 .video-thumb {
   width: 100%;

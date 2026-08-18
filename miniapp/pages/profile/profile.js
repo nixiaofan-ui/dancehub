@@ -1,6 +1,7 @@
 const app = getApp();
 const api = require("../../services/api");
 const { BOOKING_STATUS_LABEL, PLATFORM_LABEL } = require("../../utils/constants");
+const { toast } = require("../../utils/toast");
 
 Page({
   data: {
@@ -57,7 +58,7 @@ Page({
       });
     } catch (e) {
       this.setData({ loading: false });
-      wx.showToast({ title: e.message, icon: "none" });
+      toast(this, e.message);
     }
   },
 
@@ -78,10 +79,10 @@ Page({
     const id = e.currentTarget.dataset.id;
     try {
       await api.apiUnfollow(id);
-      wx.showToast({ title: "已取消关注", icon: "none" });
+      toast(this, "已取消关注", "success");
       this.loadAll();
     } catch (err) {
-      wx.showToast({ title: err.message, icon: "none" });
+      toast(this, err.message);
     }
   },
 
@@ -89,10 +90,10 @@ Page({
     const scheduleId = e.currentTarget.dataset.id;
     try {
       await api.apiRemoveReminder(scheduleId);
-      wx.showToast({ title: "已关闭提醒", icon: "none" });
+      toast(this, "已关闭提醒");
       this.loadAll();
     } catch (err) {
-      wx.showToast({ title: err.message, icon: "none" });
+      toast(this, err.message);
     }
   },
 
