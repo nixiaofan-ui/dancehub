@@ -222,7 +222,14 @@ Page({
         const tplId = app.globalData.classReminderTplId;
         const granted = tplId ? await requestSubscribe(tplId) : false;
         await api.apiAddReminder(item.id, granted);
-        toast(this, granted ? "已开启订阅提醒" : "已开启本地提醒");
+        toast(
+          this,
+          granted
+            ? "已开启订阅提醒"
+            : tplId
+              ? "仅本地提醒（未授权推送）"
+              : "仅本地提醒（订阅模板未配置）",
+        );
       }
       item.reminded = !item.reminded;
       this.setData({ panel: { visible: true, item } });

@@ -146,6 +146,7 @@ Page({
     const d = this.data.detail;
     if (!d || this.data.busy) return;
     this.setData({ busy: true });
+    let opening = "已开启开课提醒";
     try {
       if (this.data.reminded) {
         await api.apiRemoveReminder(d.id);
@@ -153,10 +154,16 @@ Page({
         const tplId = app.globalData.classReminderTplId;
         const granted = tplId ? await requestSubscribe(tplId) : false;
         await api.apiAddReminder(d.id, granted);
+        // 说真话：没拿到授权就只是本地提醒，收不到微信推送
+        opening = granted
+          ? "已开启订阅提醒"
+          : tplId
+            ? "仅本地提醒（未授权推送）"
+            : "仅本地提醒（订阅模板未配置）";
       }
       const reminded = !this.data.reminded;
       this.setData({ reminded, busy: false });
-      toast(this, reminded ? "已开启开课提醒" : "已关闭提醒");
+      toast(this, reminded ? opening || "已开启开课提醒" : "已关闭提醒");
       this.load();
     } catch (e) {
       this.setData({ busy: false });
