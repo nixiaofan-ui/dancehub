@@ -5,6 +5,26 @@ const { toast } = require("../../utils/toast");
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
 
+/** 卡片上最多平铺几个舞种标签，多出来的收成「+N」 */
+const MAX_TAGS = 3;
+
+/**
+ * 把「MAX POWER STUDIO（苏河湾店）」拆成主名 + 分店名。
+ *
+ * 为什么要拆：原来的排版把整串名字用 32rpx/900 的字重一股脑塞在一行，
+ * 品牌名和「（苏河湾店）」一样重，加上全大写的英文品牌名，
+ * 视觉上就是一块砖头，而且长名会撑破卡片把「关注」按钮顶出去。
+ * 拆成两级后主名吃掉视觉重量，分店名降级成辅助信息，还能各自截断。
+ *
+ * 中英文括号都兼容；「（某某）」这种主名为空的角落情况不拆，原样返回。
+ */
+function splitStudioName(name) {
+  const raw = (name || "").trim();
+  const m = raw.match(/^(.*?)\s*[（(]\s*([^）)]+?)\s*[)）]\s*$/);
+  if (!m || !m[1]) return { brand: raw, branch: "" };
+  return { brand: m[1].trim(), branch: m[2].trim() };
+}
+
 /** 字母排序：「#」垫底，其余 A-Z */
 function compareLetter(a, b) {
   if (a === b) return 0;
@@ -90,14 +110,21 @@ Page({
         api.apiFollows(),
       ]);
       const followedIds = follows.map((f) => f.studio.id);
-      const studios = rawStudios.map((s) => ({
-        ...s,
-        followed: followedIds.includes(s.id),
-        // 头像仍显示名称首字符（中文名一眼可辨），分组字母由服务端按拼音算好
-        avatarText: (s.name || "?").charAt(0),
-        groupLetter: s.initial || (s.name || "?").charAt(0),
-        styles: Array.isArray(s.styles) ? s.styles : [],
-      }));
+      const studios = rawStudios.map((s) => {
+        const { brand, branch } = splitStudioName(s.name);
+        const allStyles = Array.isArray(s.styles) ? s.styles : [];
+        return {
+          ...s,
+          followed: followedIds.includes(s.id),
+          // 头像仍显示名称首字符（中文名一眼可辨），分组字母由服务端按拼音算好
+          avatarText: (s.name || "?").charAt(0),
+          groupLetter: s.initial || (s.name || "?").charAt(0),
+          brand,
+          branch,
+          styles: allStyles.slice(0, MAX_TAGS),
+          extraStyles: Math.max(0, allStyles.length - MAX_TAGS),
+        };
+      });
       const { letters, sections } = buildSections(studios);
       // 扁平列表只留在实例上（关注状态回写用），视图只吃 sections，避免同一份数据被传两遍
       this._studios = studios;

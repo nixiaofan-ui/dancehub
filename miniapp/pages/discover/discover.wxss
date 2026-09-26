@@ -108,67 +108,121 @@
   font-weight: 900;
 }
 
-/* 舞室卡片 */
+/*
+ * 舞室卡片
+ *
+ * 视觉层次：左侧紫色竖条定位 → 头像 → 店名（主名实/分店名虚）
+ *          → 地址（淡）→ 舞种标签（最轻）。
+ * 只有店名是白色高字重，其余逐级降级，避免整张卡片都在「喊」。
+ */
 .studio-card {
   display: flex;
   align-items: center;
-  background: #16213e;
-  border-radius: 16rpx;
-  padding: 20rpx;
-  margin-bottom: 16rpx;
-  /* 右侧给字母索引条让位，避免压住卡片上的「关注」按钮 */
-  margin-right: 24rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
+  padding: 22rpx 24rpx;
+  margin-bottom: 14rpx;
+  /* 右侧给字母索引条让位（索引条固定宽约 44rpx，right: 2rpx） */
+  margin-right: 28rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.07);
+  border-left: 5rpx solid rgba(123, 47, 190, 0.9);
+  border-radius: 20rpx;
+  /* 比纯色 #16213e 多一层明暗，卡片才从页面底色上浮起来 */
+  background: linear-gradient(160deg, #1c2547 0%, #151c35 100%);
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.25);
 }
+
 .avatar {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 24rpx;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 22rpx;
   background: linear-gradient(135deg, #7b2fbe, #9b5cff);
   color: #ffffff;
-  font-size: 34rpx;
-  font-weight: 900;
+  font-size: 30rpx;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.22);
 }
+
 .info {
   flex: 1;
-  margin: 0 16rpx;
+  /*
+   * ⚠ min-width: 0 不能删。
+   * flex item 默认 min-width: auto，下限是内容的 min-content 宽度，
+   * 长店名（如 MAX POWER STUDIO（苏河湾店））会把 .info 撑得比剩余空间还宽，
+   * 右侧「关注」按钮就被顶出卡片外——这正是之前截图里只剩半个「关」字的原因。
+   * 归零之后下面的 ellipsis 才真正生效。
+   */
+  min-width: 0;
+  margin: 0 18rpx;
+}
+
+/* 店名两级：主名 30rpx/800 白，分店名 21rpx/600 灰蓝 */
+.name-row {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
 }
 .name {
-  font-size: 32rpx;
-  font-weight: 900;
-  letter-spacing: 1rpx;
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5rpx;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.branch {
+  font-size: 21rpx;
+  font-weight: 600;
+  color: #8f97b4;
+  margin-left: 10rpx;
+  flex-shrink: 0;
+}
+
 .addr-line {
-  font-size: 24rpx;
-  color: #aaaaaa;
-  margin-top: 6rpx;
-  font-weight: 700;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #767e99;
+  margin-top: 8rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* 舞种标签（由后端从课名自动解析） */
+/*
+ * 舞种标签（由后端从课名自动解析）
+ *
+ * 原来每个标签都是 900 字重 + 霓虹青描边，四个排开像一排警示灯，
+ * 比店名还抢眼。改成「淡底、无边框、正常字重」，
+ * 让它退回辅助信息的层级；青色只留在文字上。
+ */
 .tag-row {
   display: flex;
-  flex-wrap: wrap;
-  margin-top: 10rpx;
+  /* 不换行：标签超出时由 .info 的 overflow 裁掉，卡片高度才整齐
+     （换行会让带长地址的卡片比邻居高一截，列表看起来是歪的） */
+  flex-wrap: nowrap;
+  overflow: hidden;
+  margin-top: 12rpx;
 }
 .style-tag {
-  font-size: 22rpx;
-  font-weight: 900;
-  color: #00f5d4;
-  background: rgba(0, 245, 212, 0.12);
-  border: 1rpx solid rgba(0, 245, 212, 0.35);
-  border-radius: 8rpx;
-  padding: 2rpx 12rpx;
-  line-height: 1.6;
-  margin: 0 8rpx 6rpx 0;
+  flex-shrink: 0;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #5eead4;
+  background: rgba(0, 245, 212, 0.1);
+  border-radius: 6rpx;
+  padding: 3rpx 12rpx;
+  line-height: 1.5;
+  margin-right: 8rpx;
+}
+/* 超出 MAX_TAGS 的收成一个中性色的 +N，不跟舞种抢青色 */
+.style-tag.more {
+  color: #79819c;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* 加载中：舞者剪影（样式定义在 app.wxss 的 .dancer-lg） */
@@ -182,33 +236,35 @@
   color: #6f7590;
   letter-spacing: 2rpx;
 }
-/* 关注按钮：默认霓虹青描边，关注后填充霓虹青 */
+/*
+ * 关注按钮
+ *
+ * ⚠ 小程序 button 自带 margin: auto 和一层 ::after 边框，
+ * 不重置的话胶囊外面会多出一个圆角方框（描边款尤其明显），必须显式关掉。
+ * 尺寸也收了一圈：右侧还有字母索引条，按钮过大就会挤到内容上。
+ */
 .follow {
-  font-size: 26rpx;
+  flex-shrink: 0;
+  width: auto;
+  margin: 0;
+  font-size: 23rpx;
+  font-weight: 700;
   color: #00f5d4;
-  background: transparent;
-  border: 2rpx solid #00f5d4;
-  border-radius: 32rpx;
-  padding: 8rpx 28rpx;
-  line-height: 1.8;
-  font-weight: 900;
-  flex-shrink: 0;
+  background: rgba(0, 245, 212, 0.1);
+  border: 1rpx solid rgba(0, 245, 212, 0.4);
+  border-radius: 28rpx;
+  padding: 6rpx 22rpx;
+  line-height: 1.7;
 }
+.follow::after {
+  border: none;
+}
+/* 已关注态走中性色：原来未关注/已关注是两个极端（描边 vs 实心高亮），
+   一屏里全是亮块，反而分不清哪个是待操作 */
 .follow.followed {
-  color: #0e0e1c;
-  background: #00f5d4;
-  border-color: #00f5d4;
-}
-
-.card-arrow {
-  width: 40rpx;
-  margin-right: 12rpx;
-  color: #ff6b35;
-  font-size: 40rpx;
-  font-weight: 900;
-  line-height: 1;
-  text-align: center;
-  flex-shrink: 0;
+  color: #79819c;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 /* ───────────────── 首字母分组 ───────────────── */

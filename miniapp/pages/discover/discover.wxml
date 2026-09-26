@@ -89,7 +89,11 @@
         >
           <view class="avatar">{{item.avatarText}}</view>
           <view class="info">
-            <view class="name">{{item.name}}</view>
+            <!-- 店名分两级：主名实、分店名虚，长名各自截断而不是撑破卡片 -->
+            <view class="name-row">
+              <text class="name">{{item.brand}}</text>
+              <text wx:if="{{item.branch}}" class="branch">{{item.branch}}</text>
+            </view>
             <view wx:if="{{item.address}}" class="addr-line">{{item.address}}</view>
             <view wx:if="{{item.styles.length}}" class="tag-row">
               <view
@@ -98,9 +102,9 @@
                 wx:key="*this"
                 class="style-tag"
               >{{st}}</view>
+              <view wx:if="{{item.extraStyles}}" class="style-tag more">+{{item.extraStyles}}</view>
             </view>
           </view>
-          <view class="card-arrow">›</view>
           <button
             class="follow {{item.followed ? 'followed' : ''}}"
             hover-class="press"
