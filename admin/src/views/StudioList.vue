@@ -23,7 +23,8 @@ async function loadCities() {
 async function load() {
   loading.value = true;
   try {
-    const params = {};
+    // 管理端需要看到已停用的舞室，才能恢复它们
+    const params = { includeInactive: 1 };
     if (query.value.cityId) params.cityId = query.value.cityId;
     if (query.value.keyword) params.keyword = query.value.keyword;
     list.value = await studioApi.list(params);
