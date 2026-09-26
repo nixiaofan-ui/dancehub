@@ -31,15 +31,40 @@ Page({
     selectedTitle: "",
     weekDays: [],
     dayItems: [],
+    bookedCount: 0,
+    weekBookedCount: 0,
   },
 
   onLoad(query) {
     this.studioId = Number(query.id);
     this.weeksCache = {};
     this.weekMonday = null;
+    this.bookedIds = new Set();
     this.setData({ studioId: this.studioId, selectedKey: todayKey() });
     this.initWeek(new Date());
     this.loadStudio();
+  },
+
+  onShow() {
+    // 从课程详情返回时预约可能已经取消/新增，课表上的标记得跟着变
+    this.loadBookings();
+  },
+
+  /**
+   * 拉一次「我的预约」，只取 scheduleId 集合。
+   * 失败就当没有预约 —— 看课表不该被登录状态打断，所以静默吞掉。
+   */
+  async loadBookings() {
+    try {
+      await api.ensureReady();
+      const list = await api.apiBookings();
+      this.bookedIds = new Set(
+        (list || []).map((b) => b.schedule && b.schedule.id).filter((id) => id)
+      );
+    } catch (e) {
+      this.bookedIds = new Set();
+    }
+    if (this.weeksCache && this.weekMonday) this.applyWeekData();
   },
 
   mondayOf(d) {
@@ -107,17 +132,29 @@ Page({
 
   applyWeekData() {
     const grouped = this.weeksCache[dateKey(this.weekMonday)] || {};
-    const weekDays = this.data.weekDays.map((d) => ({
-      ...d,
-      hasClass: (grouped[d.key] || []).length > 0,
-    }));
+    const booked = this.bookedIds || new Set();
+    // 标记不写进 weeksCache —— 缓存的是课表本身，预约状态每次重算
+    const weekDays = this.data.weekDays.map((d) => {
+      const list = grouped[d.key] || [];
+      return {
+        ...d,
+        hasClass: list.length > 0,
+        bookedCount: list.filter((i) => booked.has(i.id)).length,
+      };
+    });
     const selectedKey = this.data.selectedKey || todayKey();
+    const dayItems = (grouped[selectedKey] || []).map((i) => ({
+      ...i,
+      booked: booked.has(i.id),
+    }));
     this.setData({
       weekDays,
       loading: false,
       selectedKey,
       selectedTitle: this.dayTitle(selectedKey),
-      dayItems: grouped[selectedKey] || [],
+      dayItems,
+      bookedCount: dayItems.filter((i) => i.booked).length,
+      weekBookedCount: weekDays.reduce((n, d) => n + d.bookedCount, 0),
     });
   },
 
@@ -130,10 +167,13 @@ Page({
     const key = e.currentTarget.dataset.key;
     if (key === this.data.selectedKey) return;
     const grouped = this.weeksCache[dateKey(this.weekMonday)] || {};
+    const booked = this.bookedIds || new Set();
+    const dayItems = (grouped[key] || []).map((i) => ({ ...i, booked: booked.has(i.id) }));
     this.setData({
       selectedKey: key,
       selectedTitle: this.dayTitle(key),
-      dayItems: grouped[key] || [],
+      dayItems,
+      bookedCount: dayItems.filter((i) => i.booked).length,
     });
   },
 

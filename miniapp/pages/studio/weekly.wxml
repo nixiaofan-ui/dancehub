@@ -36,7 +36,7 @@
           >
             <view class="wd-label">{{d.label}}</view>
             <view class="wd-num">{{d.num}}</view>
-            <view class="wd-dot {{d.hasClass ? 'has' : ''}}"></view>
+            <view class="wd-dot {{d.hasClass ? 'has' : ''}} {{d.bookedCount ? 'booked' : ''}}"></view>
           </view>
         </view>
       </swiper-item>
@@ -46,25 +46,32 @@
 
   <!-- 选中日标题 -->
   <view class="week-bar">
-    <view class="week-title">{{selectedTitle}}</view>
+    <view class="week-title">
+      {{selectedTitle}}
+      <text wx:if="{{bookedCount > 0}}" class="booked-chip">已约 {{bookedCount}} 节</text>
+    </view>
     <view class="today-btn" hover-class="press" bindtap="goToday">今天</view>
   </view>
 
   <!-- 课程块 -->
   <view class="day-list">
+    <view wx:if="{{!loading && bookedCount > 0}}" class="booked-hint">✅ 带「已约」标记的是你预约过的课，点进去可以取消</view>
     <view wx:if="{{loading}}" class="empty-tip">课表加载中…</view>
     <view wx:elif="{{dayItems.length === 0}}" class="empty-tip">当天暂无课程</view>
     <view
       wx:for="{{dayItems}}"
       wx:key="id"
-      class="course-card {{item.diffClass}}"
+      class="course-card {{item.diffClass}} {{item.booked ? 'booked' : ''}}"
       hover-class="press"
       data-id="{{item.id}}"
       bindtap="goCourse"
     >
       <view class="c-time">{{item.timeLabel}}</view>
       <view class="c-main">
-        <view class="c-name">{{item.courseName}}</view>
+        <view class="c-name-row">
+          <view class="c-name">{{item.courseName}}</view>
+          <view wx:if="{{item.booked}}" class="c-booked">✅ 已约</view>
+        </view>
         <view class="c-coach">教练：{{item.coachName}}</view>
       </view>
       <view class="c-level">
