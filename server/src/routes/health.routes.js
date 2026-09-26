@@ -88,9 +88,25 @@ const CHANNEL_ERRCODES = new Set([40001, 40013, 40125, 40164, 41002, 48001, 4800
  *   40003/40037/47003（参数类）  → ✅ 鉴权已通过，云调用通了
  * 这样不用等到真的有人开课提醒就能判断配置对不对。
  */
-router.get("/diag/cloudcall", async (_req, res) => {
+router.get("/diag/cloudcall", async (req, res) => {
+  // ?real=1 → 用库里最后一个真实 openid 发，验证「参数已被微信接受，只差用户授权」。
+  // 一次性订阅每授权只能发一条，所以在让用户点授权前先用这个确认字段没问题。
+  const useReal = String(req.query?.real || "") === "1";
+  let touser = "diag-invalid-openid";
+  if (useReal) {
+    const u = await prisma.user.findFirst({
+      where: { openid: { not: { startsWith: "dev:" } } },
+      orderBy: { id: "desc" },
+      select: { openid: true },
+    });
+    touser = u?.openid || "diag-invalid-openid";
+  }
+
   const out = {
     target: "http://api.weixin.qq.com/cgi-bin/message/subscribe/send",
+    mode: useReal ? "real-openid" : "fake-openid",
+    // 真实 openid 只在末 4 位，避免整个响应体泄露用户标识
+    touser: touser === "diag-invalid-openid" ? touser : touser.slice(0, 6) + "***" + touser.slice(-4),
     errcode: null,
     errmsg: "",
     ms: 0,
@@ -104,7 +120,7 @@ router.get("/diag/cloudcall", async (_req, res) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        touser: "diag-invalid-openid",
+        touser,
         template_id: config.wechat.classReminderTplId || "diag-invalid-template",
         page: "pages/index/index",
         // 直接复用真实构造逻辑：字段名与实现永远同步，字段错会返回 47003
@@ -131,7 +147,9 @@ router.get("/diag/cloudcall", async (_req, res) => {
           ? "模板字段不匹配：buildClassReminderData 的键名与后台模板详情不一致"
           : j.errcode === 40003
             ? "✅ 云调用生效 + 模板 ID 有效（invalid openid 是自检故意传错的）"
-            : "云调用已生效（返回参数类错误，属预期）";
+            : j.errcode === 43101
+              ? "✅ 参数已通过微信校验，只差用户授权（用户未订阅或已取消授权）"
+              : "云调用已生效（返回参数类错误，属预期）";
   } catch (e) {
     out.errmsg = String(e?.message || e);
     out.verdict = "云调用不可达：容器内 http://api.weixin.qq.com 请求失败";
