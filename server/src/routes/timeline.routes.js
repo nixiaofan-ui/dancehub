@@ -36,12 +36,16 @@ router.get(
     const bookingMap = new Map(bookings.map((b) => [b.scheduleId, b.status]));
     const reminderSet = new Set(reminders.map((r) => r.scheduleId));
 
+    // 课表默认只给「已关注舞室」的课 —— 但我自己约过的课必须看得见。
+    // 否则会出现「我的-预约记录」里有、课表里却没有，用户以为数据没同步。
+    // 典型场景：从发现页/舞室页直接约了课，但并没关注那家舞室。
     const items = schedules
-      .filter((s) => followedStudioIds.has(s.studio.id))
+      .filter((s) => followedStudioIds.has(s.studio.id) || bookingMap.has(s.id))
       .map((s) => ({
         ...s,
         bookingStatus: bookingMap.get(s.id) || null,
         reminded: reminderSet.has(s.id),
+        followed: followedStudioIds.has(s.studio.id),
       }));
 
     ok(res, {

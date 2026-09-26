@@ -53,7 +53,14 @@ Page({
       const filteredCities = cities.filter((c) => c.region === g.region);
       this.setData({ region: g.region, cityId: g.cityId, cities: cities, filteredCities: filteredCities });
       this.load();
+      return;
     }
+    // tabBar 页面切走不会被销毁，onLoad 只跑一次。在课程详情或「我的」里
+    // 预约/取消之后回到课表，必须自己刷一次，否则「✅ 已约」还停留在上一次
+    // 请求时的状态。静默刷新（不切骨架屏），并做一点节流，避免频繁切 tab
+    // 把列表刷得来回闪。
+    const stale = Date.now() - (this.lastLoadedAt || 0) > 1500;
+    if (stale) this.load({ silent: true });
   },
 
   rebuildDates(center) {
@@ -61,10 +68,12 @@ Page({
     this.setData({ dates, swiperCurrent: 1, currentKey: dateKey(center) });
   },
 
-  async load() {
+  async load(opts) {
+    const silent = !!(opts && opts.silent);
     if (!this.data.cityId) return;
     await api.ensureReady();
-    this.setData({ loading: true });
+    // 静默刷新（onShow 触发）不动 loading，否则每次切回 tab 都闪一下骨架屏
+    if (!silent) this.setData({ loading: true });
     const key = dateKey(this.currentDate);
     try {
       const res = await api.apiTimeline(this.data.cityId, key);
@@ -105,9 +114,12 @@ Page({
       });
       const pendingCount = items.filter((i) => i.bookingStatus === "PENDING").length;
       this.setData({ items, pendingCount, loading: false });
+      this.lastLoadedAt = Date.now();
     } catch (e) {
       this.setData({ loading: false });
-      toast(this, e.message);
+      this.lastLoadedAt = Date.now();
+      // 后台静默刷新失败就不弹提示了：用户没主动操作，不该被报错打断
+      if (!silent) toast(this, e.message);
     }
   },
 
