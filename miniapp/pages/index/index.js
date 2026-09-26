@@ -114,11 +114,17 @@ Page({
     if (region === this.data.region) return;
     const cities = app.globalData.cities || [];
     const filteredCities = cities.filter((c) => c.region === region);
-    // 该地区一个城市都没有（例如海外数据源全部抓取失败）时给个明确提示，
-    // 否则只是静默切过去显示空白，用户会以为是 bug
+    // 该地区一个城市都没有时给提示，否则只是静默切过去显示空白。
+    // ⚠ 两种情况要分开：城市列表整个为空，说明 /api/cities 就没拉到
+    // （服务端没起 / 连不上），这跟「海外没开放」完全是两回事，
+    // 混为一谈会把真实故障掩盖掉。
     if (!filteredCities.length) {
       wx.showToast({
-        title: region === "OVERSEAS" ? "海外场馆暂未开放" : "暂无可选城市",
+        title: !cities.length
+          ? "城市列表加载失败，请检查服务端"
+          : region === "OVERSEAS"
+            ? "海外场馆暂未开放"
+            : "暂无可选城市",
         icon: "none",
       });
       return;

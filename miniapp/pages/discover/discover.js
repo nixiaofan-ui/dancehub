@@ -115,10 +115,17 @@ Page({
     const region = e.currentTarget.dataset.r;
     if (region === this.data.region) return;
     const filteredCities = (app.globalData.cities || []).filter(c => c.region === region);
-    // 该地区暂无城市（海外源全挂时）给明确提示，避免切过去一片空白像 bug
+    // 该地区暂无城市时给提示，避免切过去一片空白像 bug。
+    // ⚠ 城市列表整个为空 = /api/cities 没拉到（服务端没起/连不上），
+    // 与「海外没开放」是两回事，提示必须区分开。
     if (!filteredCities.length) {
+      const cities = app.globalData.cities || [];
       wx.showToast({
-        title: region === "OVERSEAS" ? "海外场馆暂未开放" : "暂无可选城市",
+        title: !cities.length
+          ? "城市列表加载失败，请检查服务端"
+          : region === "OVERSEAS"
+            ? "海外场馆暂未开放"
+            : "暂无可选城市",
         icon: "none",
       });
       return;
