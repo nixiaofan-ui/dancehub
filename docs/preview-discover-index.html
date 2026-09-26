@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>发现页 · 首字母索引预览</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center; gap: 40px;
+    background: #f0f2f7;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .note { max-width: 320px; color: #3a3f52; font-size: 14px; line-height: 1.9; }
+  .note h1 { font-size: 18px; margin: 0 0 12px; }
+  .note code { background: #e3e6ef; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .note li { margin-bottom: 6px; }
+
+  .phone {
+    position: relative;
+    width: 375px; height: 812px;
+    background: #1a1a2e;
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px rgba(20, 24, 50, .35);
+    color: #fff;
+  }
+  /* 状态栏 + 自定义导航栏 */
+  .statusbar { height: 47px; }
+  .nav {
+    display: flex; align-items: center; height: 44px; padding: 0 12px;
+    border-bottom: 3px solid #ff6b35;
+  }
+  .nav-tag { width: 8px; height: 20px; background: #ff6b35; border-radius: 2px; margin-right: 7px; }
+  .nav-logo { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+
+  .scroll { height: calc(100% - 94px); overflow-y: auto; padding: 10px 12px 40px; }
+  .scroll::-webkit-scrollbar { width: 0; }
+
+  .seg-row { display: flex; justify-content: center; margin-bottom: 9px; }
+  .seg {
+    display: flex; background: rgba(26,26,46,.7);
+    border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 3px;
+  }
+  .seg-item { padding: 5px 24px; border-radius: 18px; font-size: 14px; color: #aaa; font-weight: 700; }
+  .seg-item.on { background: linear-gradient(135deg,#ff6b35,#ff8a5c); color: #fff; font-weight: 900; }
+
+  .city-bar { display: flex; gap: 8px; margin-bottom: 8px; overflow-x: auto; }
+  .city-bar::-webkit-scrollbar { height: 0; }
+  .chip {
+    flex-shrink: 0; padding: 5px 16px; background: #16213e; border-radius: 16px;
+    font-size: 13px; color: #aaa; border: 1px solid rgba(255,255,255,.08); font-weight: 700;
+  }
+  .chip.on { background: linear-gradient(135deg,#7b2fbe,#9b5cff); color: #fff; border-color: #7b2fbe; font-weight: 900; }
+
+  .search-box {
+    display: flex; align-items: center; background: #16213e;
+    border: 1px solid rgba(255,255,255,.06); border-radius: 24px;
+    padding: 6px 6px 6px 14px; margin-bottom: 10px; box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  }
+  .search-input { flex: 1; font-size: 14px; color: #6f7590; border: 0; background: none; outline: none; }
+  .search-btn {
+    background: linear-gradient(135deg,#ff6b35,#ff8a5c); color: #fff;
+    border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 900;
+  }
+
+  /* 吸顶分组标题 */
+  .sec-head {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; align-items: baseline; height: 26px; margin-bottom: 5px;
+    background: #1a1a2e; font-size: 13px; font-weight: 900; color: #00f5d4; letter-spacing: 1px;
+  }
+  .sec-count { margin-left: 5px; font-size: 10px; color: #6f7590; letter-spacing: 0; }
+
+  .card {
+    display: flex; align-items: center; background: #16213e; border-radius: 8px;
+    padding: 10px; margin: 0 12px 8px 0;
+    border: 1px solid rgba(255,255,255,.05); box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg,#7b2fbe,#9b5cff); color: #fff;
+    font-size: 17px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .info { flex: 1; margin: 0 8px; min-width: 0; }
+  .name { font-size: 16px; font-weight: 900; letter-spacing: .5px; }
+  .addr { font-size: 12px; color: #aaa; margin-top: 3px; font-weight: 700;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tags { display: flex; flex-wrap: wrap; margin-top: 5px; }
+  .tag {
+    font-size: 11px; font-weight: 900; color: #00f5d4; background: rgba(0,245,212,.12);
+    border: 1px solid rgba(0,245,212,.35); border-radius: 4px;
+    padding: 1px 6px; line-height: 1.6; margin: 0 4px 3px 0;
+  }
+  .arrow { width: 20px; margin-right: 6px; color: #ff6b35; font-size: 20px; font-weight: 900; flex-shrink: 0; }
+  .follow {
+    font-size: 13px; color: #00f5d4; background: transparent;
+    border: 1px solid #00f5d4; border-radius: 16px; padding: 4px 14px;
+    font-weight: 900; flex-shrink: 0; cursor: pointer;
+  }
+  .follow.on { color: #0e0e1c; background: #00f5d4; }
+
+  /* 右侧字母索引条 */
+  .index-bar {
+    position: absolute; right: 1px; top: 50%; transform: translateY(-50%);
+    z-index: 20; display: flex; flex-direction: column; align-items: center;
+    padding: 0 2px; background: rgba(22,33,62,.9);
+    border: 1px solid rgba(255,255,255,.08); border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    touch-action: none; user-select: none;
+  }
+  .index-item {
+    width: 17px; height: 15px; line-height: 15px; text-align: center;
+    font-size: 10px; font-weight: 900; color: #8b90a8;
+  }
+  .index-item.on { color: #00f5d4; transform: scale(1.3); }
+
+  .index-tip {
+    position: absolute; left: 50%; top: 50%;
+    width: 75px; height: 75px; margin: -37.5px 0 0 -37.5px;
+    z-index: 30; display: none; align-items: center; justify-content: center;
+    border-radius: 16px; background: rgba(0,245,212,.94); color: #0e0e1c;
+    font-size: 36px; font-weight: 900; box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  }
+  .index-tip.show { display: flex; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="statusbar"></div>
+  <div class="nav"><div class="nav-tag"></div><div class="nav-logo">发现</div></div>
+
+  <div class="scroll" id="scroll">
+    <div class="seg-row">
+      <div class="seg">
+        <div class="seg-item on">中国</div>
+        <div class="seg-item">海外</div>
+      </div>
+    </div>
+    <div class="city-bar">
+      <div class="chip on">上海</div><div class="chip">北京</div>
+      <div class="chip">广州</div><div class="chip">深圳</div><div class="chip">成都</div>
+    </div>
+    <div class="search-box">
+      <input class="search-input" placeholder="搜索舞室名称 / 地址" readonly>
+      <div class="search-btn">搜索</div>
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <div class="index-bar" id="bar"></div>
+  <div class="index-tip" id="tip"></div>
+</div>
+
+<div class="note">
+  <h1>发现页 · 首字母索引</h1>
+  <ul>
+    <li>按<a>首字母 A→Z</a> 分组，中文按拼音归位（「壹栋贰楼」在 Y、「郦悦」在 L）</li>
+    <li>右侧字母条：<b>按住上下滑动</b>即可跳转，屏幕中央会弹出当前字母</li>
+    <li>分组标题 <b>吸顶</b> 显示</li>
+    <li>数字 / 符号开头的归入最后的 <code>#</code> 组</li>
+  </ul>
+  <p style="color:#8a90a6;font-size:12px;margin-top:18px">
+    这是浏览器里的 1:1 效果预览，数据取自本地接口（共 <span id="cnt"></span> 家）。<br>
+    实际运行在小程序里，交互一致。
+  </p>
+</div>
+
+<script>
+const DATA = [{"name": "Akm小恶魔 (宝山精品店）", "initial": "A", "address": "", "styles": ["HipHop", "Jazz", "Kpop"]}, {"name": "Akm小恶魔陆家嘴旗舰店", "initial": "A", "address": "", "styles": ["Jazz", "Kpop", "HipHop"]}, {"name": "Arkuma Dance Studio(惠南店）（浦东）", "initial": "A", "address": "", "styles": ["HipHop", "Jazz", "Popping"]}, {"name": "Arkuma Dance天山店（长宁）", "initial": "A", "address": "", "styles": ["Jazz", "基本功", "HipHop"]}, {"name": "ArtJAM Shanghai 徐汇", "initial": "A", "address": "", "styles": ["Jazz", "现代舞", "芭蕾"]}, {"name": "ArtJAM Shanghai 静安", "initial": "A", "address": "", "styles": ["Jazz", "芭蕾", "现代舞"]}, {"name": "A·C·E Keep moving 舞蹈（青浦）", "initial": "A", "address": "", "styles": ["Jazz", "中国舞", "HipHop"]}, {"name": "Baila Asi（静安）", "initial": "B", "address": "", "styles": ["社交舞", "Afro"]}, {"name": "芭蕾明元（黄浦）", "initial": "B", "address": "", "styles": ["芭蕾", "基本功"]}, {"name": "芭蕾之星（长宁）", "initial": "B", "address": "", "styles": ["芭蕾", "基本功"]}, {"name": "Ballet Weekly 芭蕾周刊（徐汇）", "initial": "B", "address": "", "styles": ["芭蕾", "基本功"]}, {"name": "BALTER DANCE-巴特舞室", "initial": "B", "address": "", "styles": ["Jazz", "Kpop", "HipHop"]}, {"name": "BLAZER舞蹈工作室", "initial": "B", "address": "", "styles": ["Jazz", "HipHop", "编舞"]}, {"name": "Circle dance studio 圆舞室（杨浦）", "initial": "C", "address": "", "styles": ["Popping", "HipHop"]}, {"name": "D7dance少儿舞蹈工作室（虹口）", "initial": "D", "address": "", "styles": ["HipHop", "Jazz", "中国舞"]}, {"name": "DANCE+舞蹈工作室（杨浦）", "initial": "D", "address": "", "styles": ["Jazz", "Kpop", "拉丁"]}, {"name": "DANCEPLUS·万象城校区（闵行）", "initial": "D", "address": "", "styles": ["芭蕾", "基本功"]}, {"name": "DANCEPLUS·人广校区（黄浦）", "initial": "D", "address": "", "styles": ["芭蕾", "基本功"]}, {"name": "DANCEPLUS·华漕艺术中心（闵行）", "initial": "D", "address": "", "styles": ["芭蕾"]}, {"name": "大上海时代广场 旗舰店（黄浦）", "initial": "D", "address": "", "styles": ["Urban", "基本功"]}, {"name": "DELIGHT街舞工作室（奉贤）", "initial": "D", "address": "", "styles": ["HipHop", "Jazz", "Breaking"]}, {"name": "DKL Dance Studio 天和店（浦东）", "initial": "D", "address": "", "styles": ["Jazz", "HipHop", "中国舞"]}, {"name": "DKL Dance Studio 川沙店（浦东）", "initial": "D", "address": "", "styles": ["Jazz", "中国舞", "HipHop"]}, {"name": "DKL Dance Studio爱琴海店（闵行）", "initial": "D", "address": "", "styles": ["Jazz", "HipHop", "编舞"]}, {"name": "DOUBLE DANCE 张江店", "initial": "D", "address": "", "styles": ["Jazz", "HipHop", "Kpop"]}, {"name": "DOUBLE DANCE 金桥国际店", "initial": "D", "address": "", "styles": ["Jazz", "Kpop"]}, {"name": "DOUBLE DANCE唐镇店", "initial": "D", "address": "", "styles": ["Jazz", "编舞", "Kpop"]}, {"name": "DOUBLE DANCE宝山万达店", "initial": "D", "address": "", "styles": ["Jazz", "HipHop", "Kpop"]}, {"name": "Double&Newlook川沙绿地店", "initial": "D", "address": "", "styles": ["Jazz", "HipHop", "编舞"]}, {"name": "Eleve Dance Studio 浦江店（闵行）", "initial": "E", "address": "", "styles": ["芭蕾", "Jazz"]}, {"name": "Elevé Dance Studio（黄浦）", "initial": "E", "address": "", "styles": ["芭蕾", "Jazz", "现代舞"]}, {"name": "Flow Theory（普陀）", "initial": "F", "address": "", "styles": ["社交舞", "编舞"]}, {"name": "FReeee Bop Dance", "initial": "F", "address": "", "styles": ["Jazz", "编舞", "Kpop"]}, {"name": "FS Dance Center（静安）", "initial": "F", "address": "", "styles": ["社交舞", "芭蕾", "中国舞"]}, {"name": "GH5·中山公园店（长宁）", "initial": "G", "address": "", "styles": ["Jazz", "HipHop", "Urban"]}, {"name": "GM街舞基地（联航路）店", "initial": "G", "address": "", "styles": ["Jazz", "HipHop", "Urban"]}, {"name": "GUEST舞蹈工作室", "initial": "G", "address": "", "styles": ["Jazz", "HipHop", "Kpop"]}, {"name": "H2O街舞工作室（嘉定）", "initial": "H", "address": "", "styles": ["Jazz", "编舞", "HipHop"]}, {"name": "HC DANCE STUDIO", "initial": "H", "address": "", "styles": ["HipHop", "Jazz"]}, {"name": "HO STAR 星禾舞蹈（浦东）", "initial": "H", "address": "", "styles": ["中国舞", "Jazz", "编舞"]}, {"name": "INSIDE舞蹈艺术中心", "initial": "I", "address": "", "styles": ["Jazz", "中国舞", "HipHop"]}, {"name": "JAD舞蹈工作室", "initial": "J", "address": "", "styles": ["Kpop", "Jazz"]}, {"name": "聚集地街舞", "initial": "J", "address": "", "styles": ["Jazz", "编舞", "Kpop"]}, {"name": "KDS舞蹈工作室（普陀）", "initial": "K", "address": "", "styles": ["社交舞"]}, {"name": "Kikott Ballet（静安）", "initial": "K", "address": "", "styles": ["芭蕾"]}, {"name": "Le Pas 芭蕾足迹（浦东）", "initial": "L", "address": "", "styles": ["芭蕾"]}, {"name": "郦悦瑜伽.舞蹈.普拉提", "initial": "L", "address": "", "styles": ["肚皮舞", "Jazz", "HipHop"]}, {"name": "Lohas Dance·上影店（长宁）", "initial": "L", "address": "", "styles": ["Jazz", "Urban", "高跟鞋"]}, {"name": "Lohas Dance·日月光店（黄浦）", "initial": "L", "address": "", "styles": ["Jazz", "Urban", "HipHop"]}, {"name": "Lohas Dance·普陀店（普陀）", "initial": "L", "address": "", "styles": ["Jazz", "HipHop", "Urban"]}, {"name": "Lohas Dance·杨浦RE店（杨浦）", "initial": "L", "address": "", "styles": ["Jazz", "Kpop", "HipHop"]}, {"name": "MADE IN V舞蹈工作室（徐汇）", "initial": "M", "address": "", "styles": ["Jazz", "Urban", "水系"]}, {"name": "麦田舞蹈星舞会（金谊广场店）", "initial": "M", "address": "", "styles": ["Jazz", "中国舞", "HipHop"]}, {"name": "麦田舞蹈星舞会（周浦360广场店）", "initial": "M", "address": "", "styles": ["Jazz", "中国舞", "Kpop"]}, {"name": "MAX POWER STUDIO （苏河湾店）", "initial": "M", "address": "上海市静安区福建北路100号苏河湾万象天地LG265-266", "styles": ["HipHop", "Jazz", "编舞"]}, {"name": "MAX POWER STUDIO（汶水路店）", "initial": "M", "address": "上海市静安区汶水路52号宏慧视界3号楼105室", "styles": ["Jazz", "HipHop", "编舞"]}, {"name": "MAX POWER STUDIO（陆家嘴店）", "initial": "M", "address": "上海市浦东新区陆家嘴街道陆家嘴中心L701A-702（陆家嘴中心L+Mall 7楼）", "styles": ["Jazz", "编舞", "HipHop"]}, {"name": "MCLOCK·STAR.LINE店（黄浦）", "initial": "M", "address": "", "styles": ["MV编舞", "Jazz", "HipHop"]}, {"name": "MR.LZ灵子舞蹈（上海嘉定校区）", "initial": "M", "address": "", "styles": ["Jazz", "基本功", "Kpop"]}, {"name": "Mstar 舞蹈社（浦东）", "initial": "M", "address": "", "styles": ["中国舞", "拉丁", "Jazz"]}, {"name": "NLD奈洛达舞蹈（海上世界店）", "initial": "N", "address": "", "styles": ["Jazz", "中国舞", "HipHop"]}, {"name": "OKEY舞蹈工作室（徐汇）", "initial": "O", "address": "", "styles": ["HipHop", "Urban", "基本功"]}, {"name": "Phoenix·世纪大道店（浦东）", "initial": "P", "address": "", "styles": ["Jazz", "Swag", "编舞"]}, {"name": "Phoenix·中山公园店（长宁）", "initial": "P", "address": "", "styles": ["编舞", "Swag", "Jazz"]}, {"name": "Phoenix·新天地店（黄浦）", "initial": "P", "address": "", "styles": ["编舞", "Jazz", "Swag"]}, {"name": "Phoenix·长寿路店（普陀）", "initial": "P", "address": "", "styles": ["编舞", "Jazz", "Swag"]}, {"name": "PINKDANCE宝山店", "initial": "P", "address": "", "styles": ["Jazz", "HipHop", "Kpop"]}, {"name": "PINK舞蹈工作室普陀店", "initial": "P", "address": "", "styles": ["Jazz", "HipHop", "Kpop"]}, {"name": "浦东前滩公园巷 伊始店", "initial": "P", "address": "", "styles": ["Urban", "基本功"]}, {"name": "QueenKA昆卡舞蹈(叁宸里总店)（浦东）", "initial": "Q", "address": "", "styles": ["Jazz", "编舞", "中国舞"]}, {"name": "QueenKA昆卡舞蹈(复地活力城店)（浦东）", "initial": "Q", "address": "", "styles": ["Jazz", "HipHop", "中国舞"]}, {"name": "QueenKA昆卡舞蹈(新田360店)（浦东）", "initial": "Q", "address": "", "styles": ["Jazz", "Kpop", "基本功"]}, {"name": "QueenKA昆卡舞蹈(龙阳旗舰店)（浦东）", "initial": "Q", "address": "", "styles": ["Jazz", "Kpop", "中国舞"]}, {"name": "燃舞社舞蹈工作室（长宁）", "initial": "R", "address": "", "styles": ["Jazz", "基本功", "HipHop"]}, {"name": "RB Dance Studio（普陀）", "initial": "R", "address": "", "styles": ["Jazz", "编舞", "基本功"]}, {"name": "R平方舞蹈工作室（东方路店）（浦东）", "initial": "R", "address": "", "styles": ["中国舞", "基本功", "芭蕾"]}, {"name": "S Pole朝文空中舞蹈（徐汇）", "initial": "S", "address": "", "styles": ["钢管舞", "现代舞", "编舞"]}, {"name": "S.V2 Dance Studio（嘉定）", "initial": "S", "address": "", "styles": ["Jazz", "HipHop", "Urban"]}, {"name": "上海利园 甄世店（静安）", "initial": "S", "address": "", "styles": ["Urban", "基本功"]}, {"name": "上海闵行 WIGGLE DANCE 舞蹈教室", "initial": "S", "address": "", "styles": ["Jazz", "Kpop", "HipHop"]}, {"name": "上海PINK舞蹈工作室金桥店（浦东）", "initial": "S", "address": "", "styles": ["Jazz", "拉丁", "HipHop"]}, {"name": "上海Win Dance舞蹈（普陀）", "initial": "S", "address": "", "styles": ["拉丁"]}, {"name": "上海雅琴钢管舞蹈（静安店汉中路）", "initial": "S", "address": "", "styles": ["钢管舞", "基本功", "高跟鞋"]}, {"name": "上海雅琴钢管舞蹈（徐汇区宜山路）", "initial": "S", "address": "", "styles": ["钢管舞", "基本功", "编舞"]}, {"name": "上海雅婷钢管舞蹈", "initial": "S", "address": "", "styles": ["钢管舞"]}, {"name": "SOLAR DANCE（徐汇）", "initial": "S", "address": "", "styles": ["Jazz", "现代舞", "高跟鞋"]}, {"name": "Souldancing GuBei（闵行）", "initial": "S", "address": "", "styles": ["芭蕾", "拉丁", "Kpop"]}, {"name": "Souldancing PuDong（浦东）", "initial": "S", "address": "", "styles": ["拉丁", "芭蕾", "HipHop"]}, {"name": "Starsea&bro舞蹈工作室", "initial": "S", "address": "", "styles": ["Jazz", "HipHop", "编舞"]}, {"name": "STUDIO ONEWAY普陀店", "initial": "S", "address": "", "styles": ["HipHop", "House", "Popping"]}, {"name": "Supershag Dance Art", "initial": "S", "address": "", "styles": ["拉丁", "社交舞"]}, {"name": "SYNC DANCE STUDIO（徐汇）", "initial": "S", "address": "", "styles": ["Locking", "House", "Popping"]}, {"name": "The Happyfeet Dance Project（普陀）", "initial": "T", "address": "", "styles": ["社交舞", "Urban", "Afro"]}, {"name": "TRIANGLE DANCESTUDIO（徐汇）", "initial": "T", "address": "", "styles": ["HipHop", "Jazz", "Kpop"]}, {"name": "Villa Rella芭蕾（普陀）", "initial": "V", "address": "", "styles": ["基本功", "芭蕾"]}, {"name": "外滩潮方 尊享店（黄浦）", "initial": "W", "address": "", "styles": ["基本功", "Urban"]}, {"name": "舞琇婵舞蹈形体美学空间", "initial": "W", "address": "", "styles": ["中国舞", "基本功"]}, {"name": "XDT Education", "initial": "X", "address": "", "styles": ["芭蕾", "现代舞", "基本功"]}, {"name": "信业店-FLY街舞", "initial": "X", "address": "", "styles": ["Jazz", "Kpop", "HipHop"]}, {"name": "西云楼-FLY街舞", "initial": "X", "address": "", "styles": ["Jazz", "Kpop"]}, {"name": "Y5 Studio（普陀）", "initial": "Y", "address": "", "styles": ["社交舞"]}, {"name": "Yami Yummy 舞蹈私教空间（东明路店）", "initial": "Y", "address": "", "styles": ["Jazz", "中国舞", "Kpop"]}, {"name": "YH街舞品牌", "initial": "Y", "address": "", "styles": ["Jazz", "Kpop", "HipHop"]}, {"name": "壹栋贰楼（杨浦）", "initial": "Y", "address": "", "styles": ["中国舞"]}, {"name": "Young label（静安）", "initial": "Y", "address": "", "styles": ["Jazz", "芭蕾", "HipHop"]}, {"name": "至燥街舞（宝龙广场店）", "initial": "Z", "address": "", "styles": ["Jazz", "编舞", "Kpop"]}, {"name": "至燥街舞（龙光蓝鲸店）", "initial": "Z", "address": "", "styles": ["Jazz", "编舞", "基本功"]}, {"name": "15 dance studio", "initial": "#", "address": "", "styles": ["Jazz", "Kpop", "编舞"]}];
+const OTHER = "#";
+const cmp = (a, b) => a === b ? 0 : a === OTHER ? 1 : b === OTHER ? -1 : (a < b ? -1 : 1);
+
+// 保序分组（与服务端排序结果配合）
+const bucket = new Map();
+for (const s of DATA) {
+  if (!bucket.has(s.initial)) bucket.set(s.initial, []);
+  bucket.get(s.initial).push(s);
+}
+const letters = [...bucket.keys()].sort(cmp);
+
+const list = document.getElementById("list");
+list.innerHTML = letters.map((L) =>
+  `<div class="sec-head" id="sec-${L === OTHER ? "SHARP" : L}">${L}<span class="sec-count">${bucket.get(L).length}</span></div>` +
+  bucket.get(L).map((s) => `
+    <div class="card">
+      <div class="avatar">${s.name.charAt(0)}</div>
+      <div class="info">
+        <div class="name">${s.name}</div>
+        ${s.address ? `<div class="addr">${s.address}</div>` : ""}
+        ${s.styles.length ? `<div class="tags">${s.styles.map((t) => `<div class="tag">${t}</div>`).join("")}</div>` : ""}
+      </div>
+      <div class="arrow">›</div>
+      <div class="follow">关注</div>
+    </div>`).join("")
+).join("");
+document.getElementById("cnt").textContent = DATA.length;
+
+// 索引条
+const bar = document.getElementById("bar");
+const tip = document.getElementById("tip");
+const scroll = document.getElementById("scroll");
+bar.innerHTML = letters.map((L) => `<div class="index-item">${L}</div>`).join("");
+const items = [...bar.querySelectorAll(".index-item")];
+
+let active = null;
+function jumpAt(clientY) {
+  const r = bar.getBoundingClientRect();
+  const step = r.height / letters.length;
+  const i = Math.max(0, Math.min(letters.length - 1, Math.floor((clientY - r.top) / step)));
+  const L = letters[i];
+  if (L === active) return;
+  active = L;
+  items.forEach((el, k) => el.classList.toggle("on", k === i));
+  tip.textContent = L;
+  tip.classList.add("show");
+  const target = document.getElementById("sec-" + (L === OTHER ? "SHARP" : L));
+  if (target) scroll.scrollTop = target.offsetTop - scroll.offsetTop;
+}
+function end() {
+  active = null;
+  tip.classList.remove("show");
+  items.forEach((el) => el.classList.remove("on"));
+}
+
+let dragging = false;
+bar.addEventListener("pointerdown", (e) => { dragging = true; bar.setPointerCapture(e.pointerId); jumpAt(e.clientY); });
+bar.addEventListener("pointermove", (e) => { if (dragging) jumpAt(e.clientY); });
+bar.addEventListener("pointerup", end);
+bar.addEventListener("pointercancel", end);
+
+// 手动滚动时清掉高亮
+scroll.addEventListener("scroll", () => { if (!dragging && active) end(); });
+</script>
+</body>
+</html>

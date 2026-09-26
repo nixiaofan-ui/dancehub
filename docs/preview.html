@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DanceHub 预览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0f0f0f; color: #fff; min-height: 100vh; }
+    .container { max-width: 414px; margin: 0 auto; padding: 20px; }
+    h1 { font-size: 24px; margin-bottom: 10px; color: #00F5D4; }
+    .status { padding: 15px; background: #1a1a2e; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+    .status.success { border-color: #00F5D4; }
+    .status.error { border-color: #ff6b6b; }
+    .btn { display: inline-block; padding: 10px 20px; background: #00F5D4; color: #000; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+    pre { background: #1a1a2e; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+    .cities-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+    .city-card { background: #1a1a2e; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #333; }
+    .city-name { font-size: 16px; font-weight: bold; color: #00F5D4; }
+    .city-count { font-size: 12px; color: #888; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 DanceHub 预览</h1>
+    <div id="status" class="status">正在测试连接...</div>
+    <div><button class="btn" onclick="testCities()">测试城市接口</button><button class="btn" onclick="testStudios()">测试舞室接口</button></div>
+    <div id="log"></div>
+  </div>
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+    async function callAPI(endpoint) {
+      try { const res = await fetch(API_BASE + endpoint); return { success: true, data: await res.json() }; }
+      catch (e) { return { success: false, error: e.message }; }
+    }
+    function log(msg, type = 'info') {
+      const div = document.createElement('pre');
+      div.style.color = type === 'error' ? '#ff6b6b' : '#00F5D4';
+      div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+      document.getElementById('log').prepend(div);
+    }
+    async function testCities() {
+      const status = document.getElementById('status');
+      status.textContent = '正在请求城市列表...'; status.className = 'status';
+      const result = await callAPI('/cities');
+      if (result.success) {
+        status.textContent = '✅ 连接成功！'; status.className = 'status success';
+        log('城市数: ' + (result.data.data || []).length);
+      } else {
+        status.textContent = '❌ 失败: ' + result.error; status.className = 'status error';
+        log('错误: ' + result.error, 'error');
+      }
+    }
+    async function testStudios() {
+      const status = document.getElementById('status');
+      status.textContent = '正在请求舞室...'; status.className = 'status';
+      const result = await callAPI('/studios?cityId=1&limit=3');
+      if (result.success) {
+        status.textContent = '✅ 舞室数据正常'; status.className = 'status success';
+        log('舞室数: ' + (result.data.data || []).length);
+      } else {
+        status.textContent = '❌ 失败: ' + result.error; status.className = 'status error';
+        log('错误: ' + result.error, 'error');
+      }
+    }
+    window.onload = testCities;
+  </script>
+</body>
+</html>

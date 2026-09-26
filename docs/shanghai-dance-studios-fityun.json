@@ -1,0 +1,831 @@
+[
+ {
+  "orgId": "11054206",
+  "label": "Phoenix 火凤凰",
+  "tag": "老板名单",
+  "note": "中山公园 / 长寿路 / 新天地 / 世纪大道",
+  "branches": [
+   {
+    "id": "",
+    "name": "Phoenix·世纪大道店（浦东）",
+    "courses": 35,
+    "styles": [
+     "Jazz",
+     "Swag",
+     "编舞",
+     "基本功"
+    ]
+   },
+   {
+    "id": "",
+    "name": "Phoenix·新天地店（黄浦）",
+    "courses": 34,
+    "styles": [
+     "编舞",
+     "Jazz",
+     "Swag",
+     "基本功"
+    ]
+   },
+   {
+    "id": "",
+    "name": "Phoenix·长寿路店（普陀）",
+    "courses": 30,
+    "styles": [
+     "编舞",
+     "Jazz",
+     "Swag",
+     "基本功"
+    ]
+   },
+   {
+    "id": "",
+    "name": "Phoenix·中山公园店（长宁）",
+    "courses": 38,
+    "styles": [
+     "编舞",
+     "Swag",
+     "Jazz",
+     "基本功"
+    ]
+   }
+  ],
+  "manual": true
+ },
+ {
+  "orgId": "11044551",
+  "label": "Lohas Dance",
+  "tag": "老板名单",
+  "note": "上影 / 日月光 / 普陀 / 杨浦RE / MCLOCK",
+  "branches": [
+   {
+    "id": "",
+    "name": "Lohas Dance·杨浦RE店（杨浦）",
+    "courses": 58,
+    "styles": [
+     "Jazz",
+     "Kpop",
+     "HipHop",
+     "Urban"
+    ]
+   },
+   {
+    "id": "",
+    "name": "Lohas Dance·普陀店（普陀）",
+    "courses": 54,
+    "styles": [
+     "Jazz",
+     "HipHop",
+     "Urban",
+     "Kpop"
+    ]
+   },
+   {
+    "id": "",
+    "name": "Lohas Dance·日月光店（黄浦）",
+    "courses": 82,
+    "styles": [
+     "Jazz",
+     "Urban",
+     "HipHop",
+     "Kpop"
+    ]
+   },
+   {
+    "id": "",
+    "name": "Lohas Dance·上影店（长宁）",
+    "courses": 105,
+    "styles": [
+     "Jazz",
+     "Urban",
+     "高跟鞋",
+     "HipHop"
+    ]
+   },
+   {
+    "id": "",
+    "name": "MCLOCK·STAR.LINE店（黄浦）",
+    "courses": 40,
+    "styles": [
+     "MV编舞",
+     "Jazz",
+     "HipHop",
+     "Urban"
+    ]
+   }
+  ],
+  "manual": true
+ },
+ {
+  "orgId": "11005244",
+  "label": "GH5",
+  "tag": "老板名单",
+  "note": "中山公园玫瑰坊",
+  "branches": [
+   {
+    "id": "",
+    "name": "GH5·中山公园店（长宁）",
+    "courses": 147,
+    "styles": [
+     "Jazz",
+     "HipHop",
+     "Urban",
+     "Kpop"
+    ]
+   }
+  ],
+  "manual": true
+ },
+ {
+  "orgId": "11057351",
+  "label": "RB Dance Studio",
+  "tag": "老板名单",
+  "note": "澳门路中华1912",
+  "branches": [
+   {
+    "id": "",
+    "name": "RB Dance Studio（普陀）",
+    "courses": 229,
+    "styles": [
+     "Jazz",
+     "编舞",
+     "基本功",
+     "MV编舞"
+    ]
+   }
+  ],
+  "manual": true
+ },
+ {
+  "orgId": "11042242",
+  "label": "BLAZER舞蹈工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "BLAZER舞蹈工作室"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 1.0,
+  "danceCourses": 12,
+  "address": "BLAZER舞蹈工作室"
+ },
+ {
+  "orgId": "11045005",
+  "label": "GM街舞基地（联航路）店",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "GM街舞基地（联航路）店"
+   }
+  ],
+  "district": "闵行",
+  "danceScore": 1.0,
+  "danceCourses": 10,
+  "address": "上海"
+ },
+ {
+  "orgId": "11047276",
+  "label": "上海闵行 WIGGLE DANCE 舞蹈教室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "上海闵行 WIGGLE DANCE 舞蹈教室"
+   }
+  ],
+  "district": "闵行",
+  "danceScore": 1.0,
+  "danceCourses": 24,
+  "address": "剑川路1000号龙湖天街3F-34"
+ },
+ {
+  "orgId": "11047368",
+  "label": "Arkuma Dance Studio(惠南店）",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "Arkuma Dance Studio(惠南店）（浦东）"
+   },
+   {
+    "id": "843",
+    "name": "Akm小恶魔 (宝山精品店）"
+   },
+   {
+    "id": "1021",
+    "name": "Akm小恶魔陆家嘴旗舰店"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 1.0,
+  "danceCourses": 18,
+  "address": "上海市浦东新区惠南镇观海路725号二楼"
+ },
+ {
+  "orgId": "11049289",
+  "label": "麦田舞蹈星舞会（周浦360广场店）",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "麦田舞蹈星舞会（周浦360广场店）"
+   },
+   {
+    "id": "1269",
+    "name": "麦田舞蹈星舞会（金谊广场店）"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 1.0,
+  "danceCourses": 48,
+  "address": "康桥360广场"
+ },
+ {
+  "orgId": "11050030",
+  "label": "聚集地街舞",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "聚集地街舞"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 1.0,
+  "danceCourses": 6,
+  "address": "南汇新城镇临港新城竹柏路宜浩晶萃商场三楼L3-01"
+ },
+ {
+  "orgId": "11052487",
+  "label": "15 dance studio",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "15 dance studio"
+   }
+  ],
+  "district": "嘉定",
+  "danceScore": 1.0,
+  "danceCourses": 20,
+  "address": "城北路358弄"
+ },
+ {
+  "orgId": "11053526",
+  "label": "INSIDE舞蹈艺术中心",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "INSIDE舞蹈艺术中心"
+   }
+  ],
+  "district": "静安",
+  "danceScore": 1.0,
+  "danceCourses": 21,
+  "address": "柳营路777号盛源生活广场4楼402室（海底捞对面）"
+ },
+ {
+  "orgId": "11055539",
+  "label": "HC DANCE STUDIO",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "HC DANCE STUDIO"
+   }
+  ],
+  "district": "嘉定",
+  "danceScore": 1.0,
+  "danceCourses": 5,
+  "address": "中信泰富万达广场3F3065室HC街舞"
+ },
+ {
+  "orgId": "11056206",
+  "label": "YH街舞品牌",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "YH街舞品牌"
+   }
+  ],
+  "district": "嘉定",
+  "danceScore": 1.0,
+  "danceCourses": 8,
+  "address": "宝龙广场3楼316"
+ },
+ {
+  "orgId": "11057538",
+  "label": "Starsea&bro舞蹈工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "Starsea&bro舞蹈工作室"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 1.0,
+  "danceCourses": 32,
+  "address": "银霄路393号百安居二楼"
+ },
+ {
+  "orgId": "11058137",
+  "label": "DKL Dance Studio 川沙店",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "DKL Dance Studio 川沙店（浦东）"
+   },
+   {
+    "id": "1750",
+    "name": "DKL Dance Studio爱琴海店（闵行）"
+   },
+   {
+    "id": "1751",
+    "name": "DKL Dance Studio 天和店（浦东）"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 1.0,
+  "danceCourses": 48,
+  "address": "上海市浦东新区川沙路川沙5796号 3层3-12"
+ },
+ {
+  "orgId": "11058497",
+  "label": "JAD舞蹈工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "JAD舞蹈工作室"
+   }
+  ],
+  "district": "徐汇",
+  "danceScore": 1.0,
+  "danceCourses": 8,
+  "address": "嘉善路526号中福商务楼405A室"
+ },
+ {
+  "orgId": "11053848",
+  "label": "DOUBLE DANCE唐镇店",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "DOUBLE DANCE唐镇店"
+   },
+   {
+    "id": "1512",
+    "name": "DOUBLE DANCE宝山万达店"
+   },
+   {
+    "id": "1518",
+    "name": "DOUBLE DANCE 张江店"
+   },
+   {
+    "id": "1656",
+    "name": "Double&Newlook川沙绿地店"
+   },
+   {
+    "id": "1843",
+    "name": "DOUBLE DANCE 金桥国际店"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.974,
+  "danceCourses": 185,
+  "address": "高科东路777弄阳光天地外街二楼10-228（2号线唐镇1号口）"
+ },
+ {
+  "orgId": "11050507",
+  "label": "BALTER DANCE-巴特舞室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "BALTER DANCE-巴特舞室"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.938,
+  "danceCourses": 15,
+  "address": "上海市临港新世界休闲广场负一楼"
+ },
+ {
+  "orgId": "11051895",
+  "label": "信业店-FLY街舞",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "信业店-FLY街舞"
+   },
+   {
+    "id": "1674",
+    "name": "西云楼-FLY街舞"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.9,
+  "danceCourses": 18,
+  "address": "信业购物中心3楼304-305"
+ },
+ {
+  "orgId": "11047204",
+  "label": "上海PINK舞蹈工作室金桥店",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "上海PINK舞蹈工作室金桥店（浦东）"
+   },
+   {
+    "id": "1767",
+    "name": "PINK舞蹈工作室普陀店"
+   },
+   {
+    "id": "1768",
+    "name": "PINKDANCE宝山店"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.891,
+  "danceCourses": 123,
+  "address": "上海市浦东新区新金桥路738号啦啦宝都三楼324—325店铺"
+ },
+ {
+  "orgId": "11044433",
+  "label": "D7dance少儿舞蹈工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "D7dance少儿舞蹈工作室（虹口）"
+   }
+  ],
+  "district": "虹口",
+  "danceScore": 0.889,
+  "danceCourses": 8,
+  "address": "上海市虹口区广纪路838号（蓝桥产业园）B幢7楼"
+ },
+ {
+  "orgId": "11047373",
+  "label": "DELIGHT街舞工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "DELIGHT街舞工作室（奉贤）"
+   }
+  ],
+  "district": "奉贤",
+  "danceScore": 0.889,
+  "danceCourses": 8,
+  "address": "上海市奉贤区南桥镇环城东路999号3楼3058-3059"
+ },
+ {
+  "orgId": "11053394",
+  "label": "STUDIO ONEWAY普陀店",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "STUDIO ONEWAY普陀店"
+   },
+   {
+    "id": "1473",
+    "name": "STUDIO ONEWAY人广店（黄浦）"
+   }
+  ],
+  "district": "黄浦",
+  "danceScore": 0.882,
+  "danceCourses": 30,
+  "address": "金沙江路1340弄15号新曹杨工业园区4号楼2楼"
+ },
+ {
+  "orgId": "11055112",
+  "label": "FReeee Bop Dance",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "FReeee Bop Dance"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.857,
+  "danceCourses": 18,
+  "address": "川沙新镇界龙大道266新天地5栋102号"
+ },
+ {
+  "orgId": "11057864",
+  "label": "NLD奈洛达舞蹈（海上世界店）",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "NLD奈洛达舞蹈（海上世界店）"
+   }
+  ],
+  "district": "宝山",
+  "danceScore": 0.857,
+  "danceCourses": 12,
+  "address": "吴淞口路60号海上世界商场2楼F211"
+ },
+ {
+  "orgId": "11051132",
+  "label": "GUEST舞蹈工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "GUEST舞蹈工作室"
+   }
+  ],
+  "district": "宝山",
+  "danceScore": 0.826,
+  "danceCourses": 19,
+  "address": "陆翔路111弄正大乐城5号楼"
+ },
+ {
+  "orgId": "11051058",
+  "label": "至燥街舞（宝龙广场店）",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "至燥街舞（宝龙广场店）"
+   },
+   {
+    "id": "1818",
+    "name": "至燥街舞（龙光蓝鲸店）"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.8,
+  "danceCourses": 16,
+  "address": "鸿音路3155弄宝龙城市广场2F"
+ },
+ {
+  "orgId": "11058509",
+  "label": "H2O街舞工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "H2O街舞工作室（嘉定）"
+   }
+  ],
+  "district": "嘉定",
+  "danceScore": 0.8,
+  "danceCourses": 12,
+  "address": "上海市嘉定区白银路233号A区2层"
+ },
+ {
+  "orgId": "11059060",
+  "label": "TRIANGLE DANCESTUDIO",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "TRIANGLE DANCESTUDIO（徐汇）"
+   }
+  ],
+  "district": "徐汇",
+  "danceScore": 0.759,
+  "danceCourses": 41,
+  "address": "徐汇区漕宝路400号明申商务广场地下负一楼"
+ },
+ {
+  "orgId": "11055157",
+  "label": "A·C·E Keep moving 舞蹈",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "A·C·E Keep moving 舞蹈（青浦）"
+   }
+  ],
+  "district": "青浦",
+  "danceScore": 0.75,
+  "danceCourses": 18,
+  "address": "青浦区万达茂B区3楼3018-3019 A.C.E keeping moving"
+ },
+ {
+  "orgId": "11059188",
+  "label": "MR.LZ灵子舞蹈（上海嘉定校区）",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "MR.LZ灵子舞蹈（上海嘉定校区）"
+   }
+  ],
+  "district": "嘉定",
+  "danceScore": 0.708,
+  "danceCourses": 34,
+  "address": "城中路138号罗宾森广场3楼15号"
+ },
+ {
+  "orgId": "11058356",
+  "label": "Arkuma Dance天山店",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "Arkuma Dance天山店（长宁）"
+   }
+  ],
+  "district": "长宁",
+  "danceScore": 0.7,
+  "danceCourses": 14,
+  "address": "上海长宁区天山路762号2F-06"
+ },
+ {
+  "orgId": "11058498",
+  "label": "舞琇婵舞蹈形体美学空间",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "舞琇婵舞蹈形体美学空间"
+   }
+  ],
+  "district": "静安",
+  "danceScore": 0.682,
+  "danceCourses": 15,
+  "address": "财富时代大厦1303室"
+ },
+ {
+  "orgId": "11051246",
+  "label": "郦悦瑜伽.舞蹈.普拉提",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "郦悦瑜伽.舞蹈.普拉提"
+   }
+  ],
+  "district": "杨浦",
+  "danceScore": 0.667,
+  "danceCourses": 6,
+  "address": "眉州路381号905室"
+ },
+ {
+  "orgId": "11058268",
+  "label": "上海雅婷钢管舞蹈",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "上海雅婷钢管舞蹈"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.619,
+  "danceCourses": 13,
+  "address": "东方路1381号兰村大厦27楼"
+ },
+ {
+  "orgId": "11047025",
+  "label": "Supershag Dance Art",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "Supershag Dance Art"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.571,
+  "danceCourses": 12,
+  "address": "浦建路东区双季花艺东区3楼308"
+ },
+ {
+  "orgId": "11052517",
+  "label": "上海雅琴钢管舞蹈（徐汇区宜山路）",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "上海雅琴钢管舞蹈（徐汇区宜山路）"
+   },
+   {
+    "id": "1359",
+    "name": "上海雅琴钢管舞蹈（静安店汉中路）"
+   }
+  ],
+  "district": "徐汇",
+  "danceScore": 0.571,
+  "danceCourses": 24,
+  "address": "徐汇区环线广场1号楼10楼AH"
+ },
+ {
+  "orgId": "11057153",
+  "label": "燃舞社舞蹈工作室",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "燃舞社舞蹈工作室（长宁）"
+   }
+  ],
+  "district": "长宁",
+  "danceScore": 0.556,
+  "danceCourses": 10,
+  "address": "上海市长宁区天山路1111号\n   现所•创邑MIX.5楼516"
+ },
+ {
+  "orgId": "11047566",
+  "label": "Mstar 舞蹈社",
+  "tag": "自动发现",
+  "note": "",
+  "manual": false,
+  "branches": [
+   {
+    "id": "0",
+    "name": "Mstar 舞蹈社（浦东）"
+   }
+  ],
+  "district": "浦东",
+  "danceScore": 0.533,
+  "danceCourses": 8,
+  "address": "上海市浦东大道3230弄10号（绿波苑内篮球场旁）"
+ }
+]
