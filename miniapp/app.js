@@ -1,4 +1,5 @@
 const { apiLogin, apiCities, apiSubscribeConfig } = require("./services/api");
+const { USE_CLOUD, CLOUD_RUNNER_ID } = require("./utils/config");
 
 App({
   globalData: {
@@ -12,6 +13,15 @@ App({
   },
 
   onLaunch() {
+    // 云托管模式：先 init 云开发客户端，后续 wx.cloud.callContainer 才会成功
+    // CLOUD_RUNNER_ID 是云托管环境 ID（不是云开发环境 ID），二者是两套独立体系
+    if (USE_CLOUD && typeof wx.cloud !== "undefined" && CLOUD_RUNNER_ID && !CLOUD_RUNNER_ID.startsWith("REPLACE_ME")) {
+      try {
+        wx.cloud.init({ env: CLOUD_RUNNER_ID, traceUser: false });
+      } catch (e) {
+        console.error("[dancehub] wx.cloud.init failed:", e);
+      }
+    }
     this.ready = this.init();
   },
 

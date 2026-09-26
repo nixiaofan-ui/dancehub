@@ -1,5 +1,5 @@
 {
-  "appid": "wx16a08e754d0f646b",
+  "appid": "wx9ba1b1932b7a411b",
   "projectname": "dancehub-miniapp",
   "compileType": "miniprogram",
   "setting": {
@@ -35,5 +35,6 @@
     "ignore": [],
     "include": []
   },
-  "editorSetting": {}
+  "editorSetting": {},
+  "isGameTourist": false
 }

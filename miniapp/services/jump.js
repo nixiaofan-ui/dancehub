@@ -1,7 +1,7 @@
 const { PLATFORM_LABEL } = require("../utils/constants");
 
 const WECHAT_APP_ID_MAP = {
-  // TODO: 配置目标门店小程序的 appId，例如 123456: "wx1234567890abcdef"
+  // 兜底：服务端 bookingMiniAppId 缺失时的补充配置（studioId → appId）
 };
 
 function setPendingJump() {
@@ -9,20 +9,34 @@ function setPendingJump() {
 }
 
 function jumpWechat(studio, schedule) {
-  const appId = WECHAT_APP_ID_MAP[studio.id];
+  // 优先用服务端返回的官方约课小程序 appId（iWOD 系店铺已配置）
+  const appId = studio.bookingMiniAppId || WECHAT_APP_ID_MAP[studio.id];
   if (appId) {
-    wx.navigateToMiniProgram({ appId });
+    wx.navigateToMiniProgram({
+      appId,
+      fail: () => {
+        wx.showToast({ title: "跳转失败，请重试", icon: "none" });
+      },
+    });
     setPendingJump();
     return;
   }
-  // 未配置 appId：降级为 WebView 打开 H5 或复制链接
-  if (schedule.bookingUrl) {
-    wx.navigateTo({
-      url: "/pages/webview/webview?url=" + encodeURIComponent(schedule.bookingUrl),
-    });
-  } else {
-    wx.showToast({ title: "暂无可用的预约链接", icon: "none" });
-  }
+  // 无 appId（菲体云系）：复制店名引导用户在微信里搜索官方小程序
+  const keyword = (studio.name || "").split("（")[0];
+  wx.setClipboardData({
+    data: keyword,
+    success: () => {
+      setPendingJump();
+      wx.showModal({
+        title: "已复制舞室名",
+        content:
+          "该舞室暂无法直接跳转。请打开微信首页下拉搜索「" +
+          keyword +
+          "」，进入它的官方小程序完成预约。",
+        showCancel: false,
+      });
+    },
+  });
 }
 
 function jumpClipboard(studio, schedule) {
