@@ -1,6 +1,7 @@
 const app = getApp();
 const api = require("../../services/api");
 const { toast } = require("../../utils/toast");
+const { API_HOST } = require("../../utils/config");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
@@ -149,7 +150,7 @@ Page({
       const cities = app.globalData.cities || [];
       wx.showToast({
         title: !cities.length
-          ? "城市列表加载失败，请检查服务端"
+          ? "连不上 " + API_HOST
           : region === "OVERSEAS"
             ? "海外场馆暂未开放"
             : "暂无可选城市",

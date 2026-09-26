@@ -3,6 +3,29 @@
  * USE_CLOUD = false  → 走 wx.request 命中 API_BASE（本地/局域网直连）
  * USE_CLOUD = true   → 走 wx.cloud.callContainer（云托管容器，无需域名无需备案）
  */
+/**
+ * 解析后端地址。
+ *
+ * 默认 localhost —— 但只在开发者工具模拟器里成立。真机预览/体验版上
+ * localhost 是手机自己，必然连不上。真机调试时不想改代码，可以在开发者
+ * 工具控制台执行（换成你自己电脑的局域网 IP）：
+ *   wx.setStorageSync("dh_api_base", "http://192.168.x.x:3000/api")
+ * 改回默认：wx.removeStorageSync("dh_api_base")
+ */
+function resolveApiBase() {
+  const fallback = "http://localhost:3000/api";
+  if (typeof wx === "undefined" || !wx.getStorageSync) return fallback;
+  try {
+    return wx.getStorageSync("dh_api_base") || fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+const API_BASE = resolveApiBase();
+// 错误提示里显示主机名：真机上看到 localhost 一眼就知道连错了地方
+const API_HOST = (/^https?:\/\/([^/:]+)/.exec(API_BASE) || [, API_BASE])[1];
+
 const config = {
   // ──── 调试开关 ────
   USE_CLOUD: false,
@@ -10,7 +33,8 @@ const config = {
   CLOUD_RUNNER_ID: "prod-d8g7j87ar768b52e7",
   CLOUD_SERVICE_NAME: "dancehub-server",
   // ──── 局域网相关（USE_CLOUD=false 时生效）────
-  API_BASE: "http://localhost:3000/api",
+  API_BASE,
+  API_HOST,
 
   // ──── 备案与主体信息 ────
   // ICP 备案号：备案通过后填入，展示在「我的 → 关于」页并支持复制核验。

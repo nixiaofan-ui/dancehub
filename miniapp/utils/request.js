@@ -53,8 +53,25 @@ function callRequest(method, path, data) {
         if (body && body.code === 0) return resolve(body.data);
         reject(new Error((body && body.message) || "请求失败"));
       },
-      fail() {
-        reject(new Error("网络错误，请检查后端服务"));
+      fail(err) {
+        const msg = (err && err.errMsg) || "";
+        // 微信把失败原因全塞在 errMsg 里。以前直接吞掉只回一句「网络错误」，
+        // 于是「域名没配」「真机上连 localhost」「服务端没起」三种完全不同的
+        // 故障在界面上长得一模一样，只能靠猜。这里把原始原因打出来。
+        console.error("[DanceHub] 请求失败", method, API_BASE + path, "→", msg);
+        // 最常见的两种：合法域名未配置 / 真机连了 localhost
+        if (msg.indexOf("合法域名") >= 0) {
+          console.error(
+            "[DanceHub] 需在开发者工具「详情 → 本地设置」勾选「不校验合法域名」。" +
+              "注意：该开关只对开发者工具和真机调试生效，体验版/正式版无效。"
+          );
+        } else if (msg.indexOf("localhost") >= 0 || msg.indexOf("127.0.0.1") >= 0) {
+          console.error(
+            "[DanceHub] 真机上 localhost 指的是手机自身，不是你的电脑。" +
+              "真机调试请把 API_BASE 换成电脑的局域网 IP，或改用云托管（USE_CLOUD=true）。"
+          );
+        }
+        reject(new Error(msg ? "网络错误：" + msg : "网络错误，请检查后端服务"));
       },
     });
   });

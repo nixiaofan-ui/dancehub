@@ -3,6 +3,7 @@ const api = require("../../services/api");
 const jump = require("../../services/jump");
 const { dateKey, addDays, todayKey, formatChip } = require("../../utils/date");
 const { DIFF_LABEL } = require("../../utils/constants");
+const { API_HOST } = require("../../utils/config");
 const { requestSubscribe } = require("../../utils/subscribe");
 const { toast } = require("../../utils/toast");
 
@@ -121,7 +122,7 @@ Page({
     if (!filteredCities.length) {
       wx.showToast({
         title: !cities.length
-          ? "城市列表加载失败，请检查服务端"
+          ? "连不上 " + API_HOST
           : region === "OVERSEAS"
             ? "海外场馆暂未开放"
             : "暂无可选城市",
