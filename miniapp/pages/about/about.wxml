@@ -60,6 +60,15 @@
     <view class="card">
       <view class="card-title">意见反馈</view>
       <view class="para">遇到问题、想接自家舞室、发现课表有误，都欢迎反馈。</view>
+      <!--
+        邮箱地址必须直接写出来，别只留一个「复制」按钮：
+        微信审核会看「用户如何联系到运营者」，藏在按钮后面审核员点开前是看不到的；
+        而且想下架内容的工作室方也需要一眼看到往哪发。
+      -->
+      <view wx:if="{{contactEmail}}" class="row">
+        <text class="row-k">邮箱</text>
+        <text class="row-v accent">{{contactEmail}}</text>
+      </view>
       <button class="link-btn" hover-class="press" bindtap="onContact">
         {{contactEmail ? '复制反馈邮箱' : '反馈邮箱未配置'}}
       </button>
@@ -82,6 +91,16 @@
         本页内容需与微信公众平台「设置 → 服务内容声明 → 用户隐私保护指引」中的配置保持一致。
         后台配置缺失或与实际调用不一致时，涉及个人信息的接口会被微信直接拒绝。
       </view>
+    </view>
+
+    <!-- 第四节写了「可通过邮箱联系我们」，这里就得给出地址，否则用户无处可去 -->
+    <view class="card">
+      <view class="card-title">联系我们</view>
+      <view wx:if="{{contactEmail}}" class="row">
+        <text class="row-k">邮箱</text>
+        <text class="row-v accent">{{contactEmail}}</text>
+      </view>
+      <view wx:else class="para">反馈邮箱尚未配置，请在 utils/config.js 中填写 CONTACT_EMAIL。</view>
     </view>
   </view>
 </view>
