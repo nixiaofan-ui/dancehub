@@ -19,7 +19,17 @@ export async function code2session(code, devId) {
     `?appid=${appId}&secret=${appSecret}&js_code=${encodeURIComponent(code)}` +
     `&grant_type=authorization_code`;
 
-  const resp = await fetch(url);
+  // 以前 fetch 裸奔：容器没有公网出口时抛的是 fetch failed，微信返回的
+  // errcode 又和「进程内其它异常」一起被 errorHandler 压成一句
+  // 「服务器内部错误」。40029（code 无效）和「容器连不上微信」在客户端
+  // 长得一模一样，只能靠猜。这里两者分开说。
+  let resp;
+  try {
+    resp = await fetch(url, { signal: AbortSignal.timeout(8000) });
+  } catch (e) {
+    throw new Error(`微信接口不可达（容器可能无公网出口或超时）: ${e?.message || e}`);
+  }
+
   const data = await resp.json();
   if (data.errcode) {
     throw new Error(`微信登录失败: ${data.errcode} ${data.errmsg}`);
