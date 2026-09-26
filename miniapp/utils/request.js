@@ -5,6 +5,7 @@ const {
   CLOUD_RUNNER_ID,
   CLOUD_SERVICE_NAME,
 } = require("./config");
+const { devDeviceId } = require("./device");
 
 // 网络故障会让每个请求都失败，指引只弹一次，否则整屏 toast 乱闪
 let networkHinted = false;
@@ -22,6 +23,22 @@ function withToken(method, data) {
   };
 }
 
+/**
+ * 401 单独成类：调用方要区分「token 过期，重新登录再来一次就行」
+ * 和「网关直接把人拦在门外，重登多少次都没用」这两种完全不同的故障。
+ * body 带上原始响应 —— 网关 401 和业务 401 长得不一样，看一眼就能分辨。
+ */
+function Unauthorized(body, meta) {
+  this.name = "Unauthorized";
+  this.message = "unauthorized";
+  this.body = body;
+  this.meta = meta || {};
+}
+Unauthorized.prototype = Object.create(Error.prototype);
+Unauthorized.prototype.constructor = Unauthorized;
+
+const isLoginPath = (p) => String(p).replace(/^\/api/, "").split("?")[0] === "/auth/login";
+
 function callContainer(method, path, data) {
   return new Promise((resolve, reject) => {
     wx.cloud.callContainer({
@@ -31,11 +48,11 @@ function callContainer(method, path, data) {
       header: withToken(method, data),
       data,
       success(res) {
-        const body = res.data;
         if (res.statusCode === 401) {
-          wx.showToast({ title: "登录失效，请重启小程序", icon: "none" });
-          return reject(new Error("unauthorized"));
+          console.error("[DanceHub] 401 ←", method, path, "原始响应:", res.data);
+          return reject(new Unauthorized(res.data, { via: "cloud", path }));
         }
+        const body = res.data;
         if (body && body.code === 0) return resolve(body.data);
         reject(new Error((body && body.message) || `云托管返回 ${res.statusCode}`));
       },
@@ -54,11 +71,11 @@ function callRequest(method, path, data) {
       data,
       header: withToken(method, data),
       success(res) {
-        const body = res.data;
         if (res.statusCode === 401) {
-          wx.showToast({ title: "登录失效，请重启小程序", icon: "none" });
-          return reject(new Error("unauthorized"));
+          console.error("[DanceHub] 401 ←", method, API_BASE + path, "原始响应:", res.data);
+          return reject(new Unauthorized(res.data, { via: "http", path }));
         }
+        const body = res.data;
         if (body && body.code === 0) return resolve(body.data);
         reject(new Error((body && body.message) || "请求失败"));
       },
@@ -100,8 +117,76 @@ function callRequest(method, path, data) {
   });
 }
 
-function request(method, path, data) {
+// 不带任何重试的裸调用，避免自动重登逻辑里再套自动重登（死循环）
+function raw(method, path, data) {
   return cloudReady() ? callContainer(method, path, data) : callRequest(method, path, data);
+}
+
+// 401 时并发请求会一起失败，只重登一次拿新 token，别把 wx.login 打爆
+let reloginTask = null;
+
+function relogin() {
+  if (reloginTask) return reloginTask;
+  reloginTask = new Promise((resolve, reject) => {
+    wx.login({
+      success: async (r) => {
+        try {
+          const data = await raw("POST", "/auth/login", { code: r.code, devId: devDeviceId() });
+          const app = getApp();
+          if (app) app.globalData.token = data.token;
+          resolve(data.token);
+        } catch (e) {
+          reject(e);
+        }
+      },
+      fail: reject,
+    });
+  }).then(
+    (t) => {
+      reloginTask = null;
+      return t;
+    },
+    (e) => {
+      reloginTask = null;
+      throw e;
+    }
+  );
+  return reloginTask;
+}
+
+/**
+ * 统一出口：token 过期自动重登并重试一次。
+ * 以前 401 一律弹「登录失效，请重启小程序」—— 于是两件完全不同的事被混成一件事：
+ *   1) token 真过期：本来静默换一个就好，却把用户赶去手动重启；
+ *   2) 网关层 401（实例为 0 / 环境欠费停服 / 服务名或环境 ID 不对）：
+ *      重启一百次也没用，用户只会觉得「重启了也没数据」。
+ * 现在：业务接口 401 → 静默重登重试；登录接口自己 401 → 直接说是服务端没放行。
+ */
+async function request(method, path, data) {
+  try {
+    return await raw(method, path, data);
+  } catch (e) {
+    if (!(e instanceof Unauthorized)) throw e;
+
+    if (isLoginPath(path)) {
+      console.error(
+        "[DanceHub] /auth/login 被 401 拦下 —— 这不是 token 过期，是请求根本没进到容器。\n" +
+          "按顺序查：① 云托管服务是否有 normal 版本且流量 100%；② 最小实例数是否被设成 0（缩容后冷启动会拒请求）；" +
+          "③ 环境是否欠费/停服；④ config.js 的 CLOUD_RUNNER_ID / CLOUD_SERVICE_NAME 是否与控制台一致。"
+      );
+      wx.showToast({ title: "云服务未放行（401）", icon: "none", duration: 4000 });
+      throw e;
+    }
+
+    try {
+      await relogin();
+      return await raw(method, path, data);
+    } catch (e2) {
+      console.error("[DanceHub] 自动重登后仍失败:", e2 && e2.message);
+      wx.showToast({ title: "登录失效，重试后仍失败", icon: "none", duration: 3000 });
+      throw e2;
+    }
+  }
 }
 
 module.exports = {
@@ -109,4 +194,6 @@ module.exports = {
   post: (p, d) => request("POST", p, d),
   put: (p, d) => request("PUT", p, d),
   delete: (p) => request("DELETE", p),
+  // 供页面/诊断脚本直接看服务端真实返回，绕开自动重登
+  raw,
 };

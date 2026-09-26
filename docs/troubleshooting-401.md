@@ -1,0 +1,133 @@
+# 「登录失效，请重启小程序」排查手册（401）
+
+> 现象：小程序弹「登录失效，请重启小程序」，关闭重进后依旧没有数据。
+> 结论先行：**这不是登录态的问题，重启没用。** 弹这句 toast 的唯一条件是某个请求返回了 HTTP 401。
+
+## 零、2026-09-26 实测定位
+
+诊断输出 `HEALTH: 200` / `LOGIN: 500`，把范围一下缩到最小：
+
+- **网关和容器都是好的**（200 说明请求进到了容器、数据库也连上了），不是云托管没放行。
+- 真正的故障链：`/auth/login` 500 → 拿不到 token → 后续业务接口带**空 token** 打过去 → `requireAuth` 返回 401 → 弹「登录失效，请重启小程序」。
+  **所以 toast 说的"登录失效"是结果，不是原因；重启当然治不好。**
+- 微信凭据本身**有效**（用云上的 appid/secret 换 access_token 成功），排除了 secret 错误。
+
+500 是被 `errorHandler` 压过的「服务器内部错误」，真实原因有两种可能，已在 011 版本里分开回传：
+
+| 回传文案 | 含义 | 怎么办 |
+|---|---|---|
+| `微信登录失败: 40029 ...` | 微信认为这个 code 无效 | 开发者工具**右上角头像重新扫码登录**（IDE 登录态失效时模拟器给的 code 换不到 openid） |
+| `微信接口不可达（容器可能无公网出口...）` | 容器连不上 api.weixin.qq.com | ✅ 已确认就是这条，见第六节；012 起改用网关注入的 `x-wx-openid` |
+
+## 一、这句话是谁弹的
+
+`miniapp/utils/request.js` 里只要 `statusCode === 401` 就弹 toast。而服务端只有两处会返回 401：
+
+| 来源 | 位置 | 触发条件 |
+|---|---|---|
+| 业务接口 token 校验失败 | `server/src/middleware/auth.js` | `Authorization: Bearer <token>` 缺失或签名校验不过 |
+| 登录接口本身失败 | `server/src/routes/auth.routes.js` | `code2session` 没拿到 openid |
+
+**关键点：`/auth/login` 这个请求是不带 token 的。** 如果它都返回 401，说明请求压根没进到容器，
+是网关把它拦在了外面 —— 这时重启小程序一百次也不会有变化。
+
+## 二、改过之后（2026-09-26）
+
+- 401 单独成类，控制台打印**原始响应体**：网关 401（通常是空 body 或微信网关自己的错误串）
+  和业务 401（`{code:401,message:"登录已过期，请重新登录"}`）一眼可分。
+- **业务接口 401 → 静默重新 `wx.login` 并重试一次**，不再要求用户手动重启。并发请求共用一个重登任务，不会把 `wx.login` 打爆。
+- **登录接口自己 401 → 弹「云服务未放行（401）」**，并在控制台打印排查顺序。
+- `app.js` 记录 `globalData.initError`（不 throw —— `app.ready` 变成 rejected 会让所有页面首屏空白）。
+
+## 三、一键诊断（开发者工具 Console 粘贴执行）
+
+```js
+(function () {
+  const ENV = "prod-d8g7j87ar768b52e7", SVC = "dancehub-server";
+  try { wx.cloud.init({ env: ENV, traceUser: false }); } catch (e) { console.log("cloud.init 失败:", e); }
+  const call = (m, p, d) => new Promise((r) => {
+    wx.cloud.callContainer({
+      config: { env: ENV }, path: p, method: m, data: d,
+      header: { "content-type": "application/json", "X-WX-SERVICE": SVC },
+      success: (res) => r({ status: res.statusCode, data: res.data }),
+      fail: (e) => r({ fail: e.errMsg || e }),
+    });
+  });
+  (async () => {
+    console.log("1) 容器出口:", await call("GET", "/api/diag/net"));
+    console.log("2) HEALTH:", await call("GET", "/api/health"));
+    const lr = await new Promise((r) => wx.login({ success: r, fail: (e) => r({ code: null, err: e }) }));
+    console.log("3) wx.login:", lr.code ? "已拿到 code" : "失败 " + JSON.stringify(lr.err));
+    console.log("4) LOGIN:", await call("POST", "/api/auth/login", { code: lr.code, devId: "diag" }));
+  })();
+})();
+```
+
+结果读法：
+
+- `容器出口` = `reachable(...)` → 容器能连微信，问题在 code 本身（看回传的 errcode）；= `unreachable` → 容器没有公网出口，改用 `x-wx-openid` 方案。
+- `HEALTH` 401 → 网关层没放行（服务/环境/欠费），见第四节。
+- `HEALTH` 200 + `LOGIN` 500 → 本次的情况，看 LOGIN 回传的 message 文案（011 起会带具体原因）。
+- 全通 → token 链路正常，问题在页面层。
+
+## 四、云端排查顺序（按命中率排序）
+
+1. **最小实例数是 0** → 服务缩容到 0 后，新请求要等冷启动，网关会直接拒。
+   控制台 → 云托管 → 服务 `dancehub-server` → 服务设置 → 实例数量 / 定时扩缩容 → **最小实例数改成 1**。
+   （部署手册第六节要求常驻 ≥1，否则定时抓取也没进程在跑。）
+2. **版本与流量**：`wxcloud version:list --envId prod-d8g7j87ar768b52e7 --serviceName dancehub-server --json`
+   必须有 `Status: normal` 且 `flow=100` 的版本。
+3. **欠费/停服**：环境页若提示欠费，网关会对所有请求返回 401。
+4. **环境 ID 与小程序不匹配**：`CLOUD_RUNNER_ID` 必须是云托管环境 ID（不是云开发环境 ID），且环境与小程序同主体。
+
+## 五、本地兜底（云托管排不掉时先恢复开发）
+
+```bash
+# 1) 起本地服务端（MySQL/Redis 走 docker-compose）
+cd /Users/nnnnnnxf/Desktop/dancehub/server && npm run dev
+
+# 2) 小程序切回直连
+#    miniapp/utils/config.js  →  USE_CLOUD: false
+#    开发者工具「详情 → 本地设置」勾选「不校验合法域名」，然后清缓存 + 编译（⌘B）
+```
+
+⚠ 该模式只在开发者工具和真机调试下可用，**体验版/正式版必须回到云托管**。
+
+## 六、定案：云托管容器没有公网出口（2026-09-26）
+
+实测：`/api/diag/net` → `{"wechatApi":"unreachable: fetch failed","ms":5}`；登录回传
+`微信接口不可达（容器可能无公网出口或超时）: fetch failed`。
+5ms 就失败，说明不是超时，是**出网被掐断**（或 DNS 直接失败）。
+
+### 修法：登录改用网关注入的 openid（012 已上线）
+
+云托管网关在每个 `callContainer` 请求里注入 `x-wx-openid`，走微信私有协议，
+服务 `IsPublic=false`（只允许小程序经网关进来），客户端伪造不了。
+
+`auth.routes.js` 现在这样取值：
+
+```
+x-wx-openid（云上，首选） → 拿不到则回退 code2session（本地/局域网开发）
+```
+
+登录响应里多了 `via` 字段：`gateway` = 走的网关 openid，`code2session` = 走微信接口。
+
+### 连带影响（都要出公网，云上同样跑不了）
+
+- **订阅消息推送**（开课提醒）：`subscribeMessage.send` 也要访问 api.weixin.qq.com → 云上会失败。
+- **YouTube 课程视频预览**：同样依赖外网。
+- 爬虫已用 `SKIP_CRAWLER=1` 在云上关闭，本来就不跑。
+
+这几项要么在控制台给容器开出网，要么改走微信「云调用」通道。
+
+### 验证
+
+开发者工具 ⌘B 重新编译后跑第三节脚本，期望输出：
+
+```
+出口: 200 {"wxHeaders":{"x-wx-openid":"oXXXX***XXXX(28)"}, ...}
+登录: 200 {"code":0,"data":{"token":"...","via":"gateway"},...}
+```
+
+若 `wxHeaders` 里没有 `x-wx-openid`，说明该服务没开启注入 —— 去控制台
+服务 → 安全配置 打开「微信鉴权/调用鉴权」，或者给容器开出网。

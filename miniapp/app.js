@@ -10,6 +10,7 @@ App({
     pendingJump: false,
     pendingBookings: 0,
     classReminderTplId: "",
+    initError: "",
   },
 
   onLaunch() {
@@ -77,6 +78,10 @@ App({
       }
     } catch (e) {
       console.error("[dancehub] init failed:", e);
+      // 页面可以据此显示「连不上服务」而不是干等着空白。
+      // 注意：不要在这里 throw —— app.ready 变成 rejected 会让所有页面的
+      // ensureReady 直接抛异常，反而把首屏打空。
+      this.globalData.initError = (e && e.message) || "初始化失败";
     }
   },
 });
