@@ -33,6 +33,14 @@ const STATE_FILE = path.resolve(__dirname, "../../.crawl-state.json"); // 仅一
 const HEARTBEAT_MS = 5 * 60 * 1000; // 心跳：5 分钟
 const DEFAULT_REFRESH_HOURS = 6; // 未配置时的默认刷新间隔
 
+/**
+ * 这些模式一次请求就带回全量课表，忽略传入的 date。
+ * 对它们按日期循环调用只会重复打同一个页面（1MILLION 配了 days:30 = 30 次），
+ * 而 importer 又是按「studio+date+课名+开始时间」upsert，多出来的全是无用功。
+ * 因此只对第一个日期抓一次。
+ */
+const DATELESS_MODES = new Set(["oneMillion", "avex", "justjerk", "rawgraphy"]);
+
 const statusMap = new Map(); // configId -> { state, lastRunAt, report, error }
 const running = new Set(); // 正在抓取的 configId，防重入
 let state = {}; // 内存态：configId -> { lastAttemptAt, lastSuccessAt, lastError }
@@ -143,8 +151,10 @@ export async function runCrawl(configId, { dryRun = false } = {}) {
 
   try {
     const dates = resolveDates(config);
+    const once = DATELESS_MODES.has(config.mode);
+    const loopDates = once ? dates.slice(0, 1) : dates;
     const rows = [];
-    for (const date of dates) {
+    for (const date of loopDates) {
       const raw = await crawl(config, date);
       rows.push(...raw.map((r) => ({ ...r, _date: date })));
     }

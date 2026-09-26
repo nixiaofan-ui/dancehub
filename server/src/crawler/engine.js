@@ -520,6 +520,174 @@ async function crawlWithJustjerk(config, _date) {
   return rows;
 }
 
+/* ───────────────────────── rawgraphy（韩国本土预约平台）抓取 ───────────────────────── */
+
+const RAWGRAPHY_BASE = "https://rawgraphy.com";
+// 平台 lessons 数组里给出的真实时长（分钟）。timeTable 只有栅格，没有 duration，
+// 用它做缺省值，再用「同日下一节课的间隔」修正（见 inferDuration）。
+const RAWGRAPHY_DEFAULT_DURATION_MIN = 75;
+
+/** 从 RSC 载荷里取出某个 key 之后的第一个完整 JSON 数组 */
+function extractJsonArrayAfter(text, key) {
+  const start = text.indexOf(key);
+  if (start === -1) return null;
+  const arrStart = text.indexOf("[", start);
+  if (arrStart === -1) return null;
+  let depth = 0;
+  for (let i = arrStart; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      // 跳过整个字符串（含转义）
+      i++;
+      while (i < text.length && text[i] !== '"') {
+        if (text[i] === "\\") i++;
+        i++;
+      }
+      continue;
+    }
+    if (ch === "[") depth++;
+    else if (ch === "]") {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(arrStart, i + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * 平台在 lessons 数组里把时间写成 "2026-09-26T18:00:00.000Z"，
+ * 但这个 Z 是错的 —— 它其实是首尔（UTC+9）的墙上时间：
+ * 同一条数据的 description 写的是 "2026.09.26(토) 오후 6:00"。
+ * 所以这里只能按字符串取字段，不能用 new Date() 解析（会被本地时区再偏移一次）。
+ */
+function parseRawgraphyDateTime(value) {
+  const iso = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (iso) {
+    return { date: `${iso[1]}-${iso[2]}-${iso[3]}`, minutes: Number(iso[4]) * 60 + Number(iso[5]) };
+  }
+  const dotted = String(value || "").match(/^(\d{4})\.(\d{2})\.(\d{2})\s+(\d{1,2}):(\d{2})/);
+  if (dotted) {
+    return {
+      date: `${dotted[1]}-${dotted[2]}-${dotted[3]}`,
+      minutes: Number(dotted[4]) * 60 + Number(dotted[5]),
+    };
+  }
+  return null;
+}
+
+const padHM = (m) =>
+  `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+
+/**
+ * 推断单节课时长：优先用同日下一节课的间隔（限 45–120 分钟），
+ * 否则回落到平台默认 75 分钟。
+ */
+function inferDuration(sortedMinutes, index) {
+  const next = sortedMinutes[index + 1];
+  if (next == null) return RAWGRAPHY_DEFAULT_DURATION_MIN;
+  const gap = next - sortedMinutes[index];
+  if (gap >= 45 && gap <= 120) return gap;
+  return RAWGRAPHY_DEFAULT_DURATION_MIN;
+}
+
+/**
+ * 韩国 rawgraphy.com（로우그래피）平台抓取。
+ *
+ * 技术路线：
+ * - 站点是 Next.js App Router，课表不在 HTML 里，而在 RSC 飞行载荷中。
+ *   请求头带 `RSC: 1` 即可拿到精简版载荷（约 39KB，比 230KB 的 HTML 小得多）。
+ * - 载荷里有两个数据源，用途不同：
+ *     timeTable.cells  → **整周课表**（周一~周日），只有教练名，是主数据源；
+ *     lessons[]        → 仅"当前可报名"的 1~2 天，但带 genre / duration，
+ *                        用作按 lesson.id 匹配的补充信息。
+ * - cell 结构：{ column, row, length, lesson: { id, title, thumbnailUrl, startDate } }
+ *     column 0 是时间轴（只有 time 字段，没有 lesson）；column >= 1 是星期列。
+ *
+ * ⚠ 已知的坑：
+ *   1. startDate 的 Z 是假 UTC，实际是首尔时间（详见 parseRawgraphyDateTime）；
+ *   2. timeTable 没有课程名也没有时长，课程名按平台自己的命名习惯拼成 "<教练> Class"；
+ *   3. 时长靠同日相邻课次间隔推断，拿不到时回落 75 分钟。
+ *
+ * @param {object} config 抓取配置（含 config.rawgraphy.studioId）
+ * @returns {Promise<Array>} 原始条目
+ */
+async function crawlWithRawgraphy(config, _date) {
+  const { studioId } = config.rawgraphy || {};
+  if (!studioId) throw new Error("rawgraphy 模式缺少 studioId");
+
+  const resp = await fetch(`${RAWGRAPHY_BASE}/studios/${studioId}`, {
+    headers: { "User-Agent": UA, RSC: "1", Accept: "text/x-component" },
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!resp.ok) throw new Error(`rawgraphy studio ${studioId} HTTP ${resp.status}`);
+  const body = await resp.text();
+
+  // 整周课表（主数据源）
+  const cells = extractJsonArrayAfter(body, '"cells"');
+  if (!Array.isArray(cells)) throw new Error(`rawgraphy studio ${studioId} 未找到 timeTable.cells`);
+
+  // 可报名课次（补充 genre / duration / 真实课名），按 id 建索引
+  const lessons = extractJsonArrayAfter(body, '"lessons"') || [];
+  const lessonById = new Map();
+  for (const l of lessons) {
+    if (l && l.id != null) lessonById.set(l.id, l);
+  }
+
+  const studioName = config.studio?.name || `rawgraphy #${studioId}`;
+  const byDate = new Map(); // date -> [{ minutes, cell }]
+
+  for (const cell of cells) {
+    const lesson = cell?.lesson;
+    if (!lesson?.startDate) continue; // column 0 是时间轴，没有 lesson
+    const dt = parseRawgraphyDateTime(lesson.startDate);
+    if (!dt) continue;
+    if (!byDate.has(dt.date)) byDate.set(dt.date, []);
+    byDate.get(dt.date).push({ minutes: dt.minutes, cell });
+  }
+
+  const rows = [];
+  for (const [date, list] of byDate) {
+    list.sort((a, b) => a.minutes - b.minutes);
+    list.forEach((item, index) => {
+      const { cell } = item;
+      const lesson = cell.lesson;
+      const extra = lessonById.get(lesson.id);
+      const coach = (lesson.title || "").trim();
+      // 平台自己的课程命名就是 "<教练> Class"，命中 lessons 时用它的真实课名
+      const courseName = extra?.title || (coach ? `${coach} Class` : "");
+      if (!courseName) return;
+
+      const duration = extra?.duration || inferDuration(list.map((x) => x.minutes), index);
+      const startMin = item.minutes;
+      const endMin = startMin + duration;
+
+      const remarkParts = [];
+      if (extra?.label?.genre) remarkParts.push(`风格：${extra.label.genre}`);
+      if (extra?.label?.type) remarkParts.push(`类型：${extra.label.type}`);
+
+      rows.push({
+        courseName,
+        coach,
+        time: `${padHM(startMin)}-${padHM(endMin)}`,
+        capacity: "",
+        status: extra?.label?.isEnded ? "已结束" : "可预约",
+        _studioName: studioName,
+        _scheduleDate: date,
+        _photoUrl: lesson.thumbnailUrl || extra?.thumbnailUrl || "",
+        _remark: remarkParts.join(" / ") || null,
+      });
+    });
+  }
+
+  return rows;
+}
+
 /** 演示数据：对齐 MAX POWER 课程卡片（课程名/时间/教练/状态/容量） */
 function mockRaw() {
   return [
@@ -617,6 +785,7 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);
   if (config.mode === "justjerk") return crawlWithJustjerk(config, date);
+  if (config.mode === "rawgraphy") return crawlWithRawgraphy(config, date);
   if (config.mode === "mock") return mockRaw();
   if (config.mode === "automator") return crawlWithAutomator(config);
   throw new Error(`未知抓取模式: ${config.mode}`);

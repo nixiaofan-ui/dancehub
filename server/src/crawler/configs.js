@@ -8,6 +8,7 @@ const AUTO_CONFIG_FILES = [
   "studios.auto.json",
   "studios.fityun.json",
   "studios.topcities.json",
+  "studios.rawgraphy.json",
 ];
 
 /**
@@ -15,6 +16,7 @@ const AUTO_CONFIG_FILES = [
  * - studios.auto.json       由 capture/generate_auto_configs.py 生成（iWOD 上海）
  * - studios.fityun.json     由 capture/generate_fityun_configs.py 生成（菲体云上海）
  * - studios.topcities.json  由 capture/generate_topcities_configs.py 生成（全国 TOP10 城市）
+ * - studios.rawgraphy.json  由 capture/generate_rawgraphy_configs.py 生成（韩国 rawgraphy 平台）
  * 文件不存在或格式错误时静默跳过，不影响手写配置。
  */
 function loadAutoConfigs() {
@@ -49,6 +51,11 @@ function loadAutoConfigs() {
  *   同一集团的多家分店共用一个 appId，isAllBoxClasses=1 会一次带出全部门店课表。
  * - mode: "automator" 走微信开发者工具自动化（miniprogram-automator），
  *   需要本机安装微信开发者工具并开启服务端口，且 target 小程序项目在本地可打开。
+ * - mode: "rawgraphy" 走韩国本土预约平台 rawgraphy.com（로우그래피）。
+ *   站点是 Next.js App Router，课表只在 RSC 飞行载荷里（请求头带 RSC: 1 可取）。
+ *   整周课表在 timeTable.cells（只有教练名），最近可报名课次在 lessons[]（带 genre/duration）。
+ *   ⚠ 平台把首尔时间误标成 Z，解析时按字符串取字段，不能用 new Date()。
+ *   接入新场馆：capture/generate_rawgraphy_configs.py --range 1 200 扫描 studioId。
  * - mode: "mock" 走演示数据，不依赖任何外部工具，便于无环境时联调整条链路。
  *
  * dateMode:
@@ -353,6 +360,34 @@ const manualConfigs = [
     // 课表按「月」发布，每天核对一次足够
     dateMode: "nextDays",
     days: 45,
+    dates: [],
+    refreshHours: 24,
+    cron: null,
+    timeFormat: "HH:mm-HH:mm",
+  },
+
+  // ────────────── 海外：韩国 PREPIX（江南）· 暂不可接 ──────────────
+  // 官网 prepixstudio.com 已停服（现在返回裸 IIS 默认页），
+  // prepix.co.kr / prepixstudio.co.kr / www.prepix.kr 等备用域名均无法解析（DNS 失败）。
+  // 平台上也没有它的条目（generate_rawgraphy_configs.py 扫描 1~120 未命中）。
+  // 目前只剩 Instagram，而 IG 官方 API 读不到任意公开账号（Basic Display 已于 2024-12-04 关闭）。
+  // → 保持停用，等官网恢复或谈成官方合作后再接。启用前必须先补 rawgraphy.studioId 或换 mode。
+  {
+    id: "prepix-seoul",
+    enabled: false,
+    label: "PREPIX Movement (Seoul)",
+
+    studio: {
+      name: "PREPIX Movement",
+      city: "首尔",
+      region: "OVERSEAS",
+    },
+
+    mode: "rawgraphy",
+    rawgraphy: { studioId: null },
+
+    dateMode: "nextDays",
+    days: 14,
     dates: [],
     refreshHours: 24,
     cron: null,

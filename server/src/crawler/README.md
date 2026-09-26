@@ -34,7 +34,7 @@
   appId: "wx_xxxxxxxx",                     // 目标小程序 AppID
   projectPath: "/path/to/maxpower-miniapp", // 目标小程序本地项目目录
   cliPath: "/Applications/wechatwebdevtools.app/Contents/MacOS/cli",
-  mode: "automator",                        // automator | mock
+  mode: "automator",                        // http | fityun | oneMillion | avex | justjerk | rawgraphy | automator | mock
   entryPath: "pages/index/index",
   schedulePagePath: "pages/class/list",
   selectors: {
@@ -86,6 +86,46 @@ curl http://localhost:3000/api/crawler/status  -H "x-admin-token: admin123"
 
 把某套配置的 `mode` 改为 `"mock"` 即可在无开发者工具环境下联调全链路：
 抓取返回演示卡片数据（结构同真实卡片），导入逻辑完全一致。
+
+## 海外数据源
+
+| mode | 平台 | 覆盖 | 备注 |
+|------|------|------|------|
+| `oneMillion` | 1milliondance.com | 首尔 | 官网 SSR 内嵌 JSON，一次带回 90 天 |
+| `avex` | apfec.avex.jp | 东京 / 大阪 | 平台内嵌 `list_schedule_student` 数组 |
+| `justjerk` | justjerk.co.kr | 首尔（합정/이화） | 官网只有课表**图片**，需 macOS Vision OCR，容器里跑不了 |
+| `rawgraphy` | rawgraphy.com | 首尔 / 釜山 / 京畿道 | Next.js RSC 载荷，见下 |
+
+### rawgraphy（로우그래피）
+
+韩国本土舞室预约平台，是首尔场馆最集中的一处数据源。站点是 Next.js App Router，
+课表**不在 HTML 里**，只在 RSC 飞行载荷中 —— 请求头带 `RSC: 1` 可取到约 39KB 的精简载荷
+（完整 HTML 有 230KB）。
+
+载荷里有两个数据源，用途不同：
+
+- `timeTable.cells` —— **整周课表**（周一~周日），是主数据源，但只有教练名没有课名和时长
+- `lessons[]` —— 仅「当前可报名」的 1~2 天，带 `genre` / `duration` / 真实课名，
+  按 `lesson.id` 与 timeTable 匹配后用于补充
+
+⚠️ **两个坑：**
+
+1. `startDate` 的 `Z` 是假 UTC —— 它其实是首尔（UTC+9）墙上时间。
+   同一条数据的 `description` 写的是 `2026.09.26(토) 오후 6:00`，
+   而 `startDate` 是 `2026-09-26T18:00:00.000Z`。用 `new Date()` 解析会被本地时区再偏一次，
+   所以只能按字符串取字段（见 `engine.js parseRawgraphyDateTime`）。
+2. `timeTable` 没有时长。缺省用平台 `lessons[].duration`（75 分钟），
+   再用「同日下一节课的间隔」修正（限 45~120 分钟，见 `inferDuration`）。
+
+接入新场馆：
+
+```bash
+python3 capture/generate_rawgraphy_configs.py --range 1 200   # 扫描 studioId
+python3 capture/generate_rawgraphy_configs.py --all-cities     # 非首尔场馆也启用
+```
+
+输出 `server/src/crawler/studios.rawgraphy.json`（已在 `AUTO_CONFIG_FILES` 登记）。
+平台没有公开的场馆目录页，`/studios` 列表页是 404，只能枚举 id。
 
 ## 导入语义
 
