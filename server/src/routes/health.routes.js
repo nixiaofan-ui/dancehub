@@ -2,6 +2,7 @@ import { Router } from "express";
 import dns from "node:dns/promises";
 import { prisma } from "../lib/prisma.js";
 import { pingRedis } from "../lib/redis.js";
+import { config } from "../config.js";
 
 const router = Router();
 
@@ -70,6 +71,56 @@ router.get("/diag/net", async (req, res) => {
   } catch (e) {
     out.baidu = "unreachable: " + (e?.message || e);
   }
+
+  res.json(out);
+});
+
+// 这几个 errcode 表示「云调用通道没生效」，而不是业务参数错
+const CHANNEL_ERRCODES = new Set([40001, 40013, 40125, 40164, 41002, 48001, 48002]);
+
+/**
+ * 云调用自检：验证控制台「开放接口服务 + 配置接口」是否真的生效。
+ *
+ * 用**故意写错的参数**去打 subscribe/send —— 这里关心的不是业务结果，
+ * 而是返回的是哪一类 errcode：
+ *   40001/48001/40164…（鉴权类） → 通道没生效：接口路径没配，或配完没重建版本
+ *   40003/40037/47003（参数类）  → ✅ 鉴权已通过，云调用通了
+ * 这样不用等到真的有人开课提醒就能判断配置对不对。
+ */
+router.get("/diag/cloudcall", async (_req, res) => {
+  const out = {
+    target: "http://api.weixin.qq.com/cgi-bin/message/subscribe/send",
+    errcode: null,
+    errmsg: "",
+    ms: 0,
+    templateConfigured: Boolean(config.wechat.classReminderTplId),
+    verdict: "unknown",
+  };
+
+  const t0 = Date.now();
+  try {
+    const r = await fetch(out.target, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        touser: "diag-invalid-openid",
+        template_id: config.wechat.classReminderTplId || "diag-invalid-template",
+        page: "pages/index/index",
+        data: {},
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const j = await r.json();
+    out.errcode = j.errcode ?? 0;
+    out.errmsg = j.errmsg || "ok";
+    out.verdict = CHANNEL_ERRCODES.has(j.errcode)
+      ? "通道未生效：控制台「云调用 → 配置接口」需加入 /cgi-bin/message/subscribe/send，且改完要重建版本"
+      : "云调用已生效（鉴权通过，返回的是参数类错误，属预期）";
+  } catch (e) {
+    out.errmsg = String(e?.message || e);
+    out.verdict = "云调用不可达：容器内 http://api.weixin.qq.com 请求失败";
+  }
+  out.ms = Date.now() - t0;
 
   res.json(out);
 });

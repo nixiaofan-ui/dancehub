@@ -131,3 +131,69 @@ x-wx-openid（云上，首选） → 拿不到则回退 code2session（本地/�
 
 若 `wxHeaders` 里没有 `x-wx-openid`，说明该服务没开启注入 —— 去控制台
 服务 → 安全配置 打开「微信鉴权/调用鉴权」，或者给容器开出网。
+
+## 七、订阅消息改走云调用（2026-09-26）
+
+容器没有公网出口，所以 `subscribeMessage.send` 不能再用
+`https://api.weixin.qq.com/...?access_token=...`。改走云调用：
+**容器内直接请求 `http://api.weixin.qq.com`（是 http），网关自动注入鉴权，不用 access_token。**
+
+代码见 `server/src/services/wechat.service.js`：云调用优先，鉴权类 errcode 时回退 access_token（供本地开发）。
+
+### 控制台要做的两件事（缺一个都拿不到权限）
+
+入口是**浏览器**上的独立站点，不是开发者工具：
+
+```
+https://cloud.weixin.qq.com/cloudrun/service/dancehub-server
+```
+
+1. 左侧栏 → **云调用** → 打开 **「开放接口服务」** 开关
+2. 同一页 → **「微信令牌权限」→ 配置接口** → 加入一行：
+
+```
+/cgi-bin/message/subscribe/send
+```
+
+（只填 `api.weixin.qq.com` 之后、`?` 之前的部分）
+
+⚠️ 该列表默认是空的（显示「暂无 API 接口」），**不配置的接口无法使用云调用**。
+改完权限后**需要重建版本才会生效** —— 重新部署一次即可。
+
+### 自检（不用等真实推送）
+
+```js
+wx.cloud.callContainer({
+  config: { env: "prod-d8g7j87ar768b52e7" },
+  path: "/api/diag/cloudcall", method: "GET",
+  header: { "X-WX-SERVICE": "dancehub-server" },
+  success: (r) => console.log(JSON.stringify(r.data)),
+});
+```
+
+读法：
+
+| 返回 | 含义 |
+|---|---|
+| `errcode 40003 / 40037 / 47003` | ✅ 鉴权已通过，云调用生效（报的是参数错，正是预期） |
+| `errcode 40001 / 48001 / 40164` | ❌ 通道未生效：接口路径没配，或配完没重建版本 |
+| `verdict: 云调用不可达` | ❌ 容器内 http 到 api.weixin.qq.com 都失败 |
+
+### 还差的最后一块：模板 ID
+
+推送真正跑起来还需要**订阅消息模板**，它跟云调用是两件事：
+
+1. 小程序后台 mp.weixin.qq.com → 功能 → 订阅消息 → 选用模板 → 抄下模板 ID
+2. 云托管 → 服务 `dancehub-server` → 服务设置 → 环境变量，加一条：
+
+```
+WX_CLASS_REMINDER_TMPL=<模板ID>
+```
+
+没配这个变量时 `subscribeTplId` 为 null，提醒会退化成 LOCAL 类型，压根不会发。
+小程序端（`utils/subscribe.js`）已经会拿 `/config/subscribe` 里的 `classReminderTplId`
+去调 `wx.requestSubscribeMessage`，无需改动。
+
+### YouTube 视频预览
+
+云调用只代理微信自己的接口，代理不了 `googleapis.com` —— 这个只能给容器开公网出口，或砍掉。
