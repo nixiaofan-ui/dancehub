@@ -15,11 +15,10 @@ const LV_LABEL = {
 };
 const VIDEO_PLATFORMS = ["INSTAGRAM", "YOUTUBE", "NAVER"];
 
-function format12h(t) {
-  const [h, m] = t.split(":").map(Number);
-  const ampm = h < 12 ? "AM" : "PM";
-  const hh = h % 12 === 0 ? 12 : h % 12;
-  return hh + ":" + String(m).padStart(2, "0") + ampm;
+function formatTime(t) {
+  if (!t) return "";
+  const [h, m] = t.split(":");
+  return h + ":" + m;
 }
 
 Page({
@@ -33,6 +32,7 @@ Page({
     diffLabel: "",
     timeLabel: "",
     dateLabel: "",
+    roomName: "",
     platformLabel: "",
     bookingStatus: null,
     reminded: false,
@@ -65,6 +65,13 @@ Page({
       const coachName = d.coach ? d.coach.name : "待定";
       const coachInitial = d.coach && d.coach.name ? d.coach.name.charAt(0) : "?";
       const showVideo = VIDEO_PLATFORMS.indexOf(d.studio.platform) >= 0;
+      // 海外舞室楼层/教室信息存于 remark（格式「抓取状态：xx | 场地：1F」），
+      // 解析出「场地：」之后的值单独展示，不暴露内部抓取状态
+      let roomName = "";
+      if (d.remark) {
+        const m = d.remark.match(/场地：([^|]+)/);
+        if (m) roomName = m[1].trim();
+      }
       this.setData({
         detail: d,
         coachName,
@@ -72,8 +79,9 @@ Page({
         diffClass: (d.difficulty || "ALL_LEVELS").toLowerCase(),
         levelLabel: LV_LABEL[d.difficulty] || "LV?",
         diffLabel: DIFF_LABEL[d.difficulty] || d.difficulty,
-        timeLabel: format12h(d.startTime) + " - " + format12h(d.endTime),
+        timeLabel: formatTime(d.startTime) + " - " + formatTime(d.endTime),
         dateLabel: this.dayLabel(d.scheduleDate),
+        roomName,
         platformLabel: PLATFORM_LABEL[d.studio.platform] || d.studio.platform,
         bookingStatus: d.bookingStatus,
         reminded: d.reminded,
@@ -155,5 +163,11 @@ Page({
     wx.navigateTo({
       url: "/pages/webview/webview?url=" + encodeURIComponent(url),
     });
+  },
+
+  previewCover(e) {
+    const url = e.currentTarget.dataset.url;
+    if (!url) return;
+    wx.previewImage({ urls: [url] });
   },
 });

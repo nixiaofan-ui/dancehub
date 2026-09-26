@@ -77,38 +77,117 @@ button::after {
   font-size: 28rpx;
 }
 
-/* ===== 空状态几何图形（街头色块撞色） ===== */
-.jam-graphic {
+/* ===== 舞者剪影（纯 CSS 绘制，跳动的街舞小人） ===== */
+/* 结构：d-head 头 + d-torso 躯干 + 四条 d-limb 肢体（以关节为轴旋转） */
+.dancer-lg {
   position: relative;
-  width: 180rpx;
-  height: 150rpx;
+  width: 120rpx;
+  height: 120rpx;
   margin: 0 auto 28rpx;
+  color: #00f5d4;
+  animation: dancer-bob 0.9s ease-in-out infinite alternate;
 }
-.jam-a,
-.jam-b,
-.jam-c {
+
+.dancer-lg .d-head {
   position: absolute;
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 16rpx;
-}
-.jam-a {
-  background: #ff6b35;
-  left: 0;
-  top: 28rpx;
-  transform: rotate(45deg);
-}
-.jam-b {
-  background: #7b2fbe;
-  right: 0;
+  left: 50%;
   top: 0;
-  transform: rotate(45deg);
+  width: 30rpx;
+  height: 30rpx;
+  margin-left: -15rpx;
+  border-radius: 50%;
+  background: currentColor;
 }
-.jam-c {
-  background: #00f5d4;
-  bottom: 0;
-  right: 26rpx;
-  transform: rotate(45deg);
+
+.dancer-lg .d-torso {
+  position: absolute;
+  left: 50%;
+  top: 30rpx;
+  width: 7rpx;
+  height: 36rpx;
+  margin-left: -3.5rpx;
+  border-radius: 4rpx;
+  background: currentColor;
+}
+
+.dancer-lg .d-limb {
+  position: absolute;
+  left: 50%;
+  width: 7rpx;
+  height: 34rpx;
+  margin-left: -3.5rpx;
+  border-radius: 4rpx;
+  background: currentColor;
+  transform-origin: 50% 0;
+}
+
+.dancer-lg .d-arm-l,
+.dancer-lg .d-arm-r {
+  top: 36rpx;
+}
+
+.dancer-lg .d-leg-l,
+.dancer-lg .d-leg-r {
+  top: 66rpx;
+}
+
+.dancer-lg .d-arm-l {
+  animation: dancer-arm-l 1.1s ease-in-out infinite alternate;
+}
+.dancer-lg .d-arm-r {
+  animation: dancer-arm-r 1.1s ease-in-out infinite alternate;
+}
+.dancer-lg .d-leg-l {
+  animation: dancer-leg-l 1.1s ease-in-out infinite alternate;
+}
+.dancer-lg .d-leg-r {
+  animation: dancer-leg-r 1.1s ease-in-out infinite alternate;
+}
+
+/* 空状态用品牌紫，与加载中的霓虹青区分开 */
+.empty-dancer {
+  color: #9b5cff;
+}
+
+@keyframes dancer-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8rpx);
+  }
+}
+@keyframes dancer-arm-l {
+  from {
+    transform: rotate(130deg);
+  }
+  to {
+    transform: rotate(166deg);
+  }
+}
+@keyframes dancer-arm-r {
+  from {
+    transform: rotate(-166deg);
+  }
+  to {
+    transform: rotate(-130deg);
+  }
+}
+@keyframes dancer-leg-l {
+  from {
+    transform: rotate(10deg);
+  }
+  to {
+    transform: rotate(32deg);
+  }
+}
+@keyframes dancer-leg-r {
+  from {
+    transform: rotate(-32deg);
+  }
+  to {
+    transform: rotate(-10deg);
+  }
 }
 
 /* 霓虹文本 */

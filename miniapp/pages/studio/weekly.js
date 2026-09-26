@@ -13,11 +13,10 @@ const LV_LABEL = {
   ALL_LEVELS: "LV?",
 };
 
-function format12h(t) {
-  const [h, m] = t.split(":").map(Number);
-  const ampm = h < 12 ? "AM" : "PM";
-  const hh = h % 12 === 0 ? 12 : h % 12;
-  return hh + ":" + String(m).padStart(2, "0") + ampm;
+function formatTime(t) {
+  if (!t) return "";
+  const [h, m] = t.split(":");
+  return h + ":" + m;
 }
 
 Page({
@@ -89,7 +88,7 @@ Page({
             coachName: s.coach ? s.coach.name : "待定",
             startTime: s.startTime,
             endTime: s.endTime,
-            timeLabel: format12h(s.startTime) + " - " + format12h(s.endTime),
+            timeLabel: formatTime(s.startTime) + " - " + formatTime(s.endTime),
             difficulty: s.difficulty,
             level: LV_LABEL[s.difficulty] || "LV?",
             diffLabel: DIFF_LABEL[s.difficulty] || s.difficulty,

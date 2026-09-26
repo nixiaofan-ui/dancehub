@@ -6,10 +6,24 @@ Component({
     animating: -1,
     badge: false,
     list: [
-      { pagePath: "/pages/index/index", text: "课表", icon: "📅" },
-      { pagePath: "/pages/discover/discover", text: "发现", icon: "🧭" },
-      { pagePath: "/pages/import/import", text: "发布", icon: "", isCenter: true },
-      { pagePath: "/pages/profile/profile", text: "我的", icon: "👤", dot: true },
+      // pose = 该 tab 的舞者剪影姿势（角度制，0deg 表示四肢自然下垂）
+      // armL 为正 = 向左上摆动，armR 为负 = 向右上摆动
+      {
+        pagePath: "/pages/index/index",
+        text: "课表",
+        pose: { armL: 135, armR: -135, legL: 18, legR: -18 },
+      },
+      {
+        pagePath: "/pages/discover/discover",
+        text: "发现",
+        pose: { armL: 145, armR: -15, legL: 34, legR: -30 },
+      },
+      {
+        pagePath: "/pages/profile/profile",
+        text: "我的",
+        dot: true,
+        pose: { armL: 55, armR: -145, legL: 14, legR: -20 },
+      },
     ],
   },
 

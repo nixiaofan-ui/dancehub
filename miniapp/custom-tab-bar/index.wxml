@@ -13,7 +13,14 @@
           <view class="plus-v"></view>
         </view>
       </block>
-      <text wx:else class="tab-emoji {{selected === index ? 'on' : ''}} {{animating === index ? 'bounce' : ''}}">{{item.icon}}</text>
+      <view wx:else class="dancer {{animating === index ? 'bounce' : ''}}">
+        <view class="d-head"></view>
+        <view class="d-torso"></view>
+        <view class="d-limb d-arm-l" style="transform: rotate({{item.pose.armL}}deg)"></view>
+        <view class="d-limb d-arm-r" style="transform: rotate({{item.pose.armR}}deg)"></view>
+        <view class="d-limb d-leg-l" style="transform: rotate({{item.pose.legL}}deg)"></view>
+        <view class="d-limb d-leg-r" style="transform: rotate({{item.pose.legR}}deg)"></view>
+      </view>
       <view wx:if="{{item.dot && badge}}" class="dot"></view>
     </view>
     <view class="tab-text {{selected === index ? 'on' : ''}}">{{item.text}}</view>

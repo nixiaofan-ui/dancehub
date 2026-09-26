@@ -21,11 +21,8 @@ Page({
   onShow() {
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
       const tb = this.getTabBar();
-      tb.setData({ selected: 3 });
+      tb.setData({ selected: 2 });
       tb.refreshBadge();
-    }
-    if (this.data.region !== app.globalData.region) {
-      this.setData({ region: app.globalData.region });
     }
     this.loadAll();
   },
@@ -49,10 +46,12 @@ Page({
           ...b,
           statusLabel: BOOKING_STATUS_LABEL[b.status] || b.status,
           dateLabel: (b.schedule.scheduleDate + "").slice(0, 10),
+          cityName: b.schedule.city || "",
         })),
         reminders: reminders.map((r) => ({
           ...r,
           dateLabel: (r.schedule.scheduleDate + "").slice(0, 10),
+          cityName: r.schedule.city || "",
         })),
         loading: false,
       });
@@ -64,15 +63,6 @@ Page({
 
   switchTab(e) {
     this.setData({ tab: e.currentTarget.dataset.tab });
-  },
-
-  switchRegion(e) {
-    const region = e.currentTarget.dataset.r;
-    if (region === this.data.region) return;
-    const city = app.globalData.cities.find((c) => c.region === region);
-    app.globalData.region = region;
-    app.globalData.cityId = city ? city.id : null;
-    this.setData({ region });
   },
 
   async unfollow(e) {

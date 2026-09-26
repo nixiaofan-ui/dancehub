@@ -10,7 +10,7 @@
 
   <scroll-view scroll-x class="city-bar" enhanced show-scrollbar="{{false}}">
     <view
-      wx:for="{{cities}}"
+      wx:for="{{filteredCities}}"
       wx:key="id"
       class="chip {{cityId === item.id ? 'on' : ''}}"
       hover-class="press"
@@ -37,40 +37,98 @@
     <view class="search-btn" hover-class="press" bindtap="onSearchConfirm">搜索</view>
   </view>
 
-  <view wx:if="{{!loading && studios.length === 0}}" class="empty">
-    <view class="jam-graphic">
-      <view class="jam-a"></view>
-      <view class="jam-b"></view>
-      <view class="jam-c"></view>
+  <view wx:if="{{loading && sections.length === 0}}" class="loading">
+    <view class="dancer-lg">
+      <view class="d-head"></view>
+      <view class="d-torso"></view>
+      <view class="d-limb d-arm-l"></view>
+      <view class="d-limb d-arm-r"></view>
+      <view class="d-limb d-leg-l"></view>
+      <view class="d-limb d-leg-r"></view>
+    </view>
+    <view class="loading-text">正在热身…</view>
+  </view>
+
+  <view wx:if="{{!loading && sections.length === 0}}" class="empty">
+    <view class="dancer-lg empty-dancer">
+      <view class="d-head"></view>
+      <view class="d-torso"></view>
+      <view class="d-limb d-arm-l"></view>
+      <view class="d-limb d-arm-r"></view>
+      <view class="d-limb d-leg-l"></view>
+      <view class="d-limb d-leg-r"></view>
     </view>
     <view class="empty-title">搜了个寂寞</view>
     <view class="empty-sub">换个关键词，试试手气</view>
   </view>
 
   <view class="studio-list">
-    <view
-      wx:for="{{studios}}"
-      wx:key="id"
-      class="studio-card"
-      hover-class="press"
-      data-id="{{item.id}}"
-      bindtap="goWeekly"
-    >
-      <view class="avatar">{{item.initial}}</view>
-      <view class="info">
-        <view class="name">{{item.name}}</view>
-        <view class="meta">{{item.city ? item.city.name : ''}} · {{item.platformLabel}}</view>
-        <view wx:if="{{item.address}}" class="meta addr">{{item.address}}</view>
+    <block wx:for="{{sections}}" wx:key="letter" wx:for-item="sec">
+      <!--
+        锚点必须放在这层「不吸顶」的包裹元素上，不能放 sec-head：
+        sec-head 是 sticky，吸住后它的位置恒等于状态栏下沿，
+        用它算滚动距离会导致「往回跳不动」。
+      -->
+      <view class="sec-block" id="sec-{{sec.letter === '#' ? 'SHARP' : sec.letter}}">
+        <view
+          class="sec-head"
+          style="top: {{statusBarHeight}}px"
+        >
+          <text class="sec-letter">{{sec.letter}}</text>
+          <text class="sec-count">{{sec.studios.length}}</text>
+        </view>
+
+        <view
+          wx:for="{{sec.studios}}"
+          wx:key="id"
+          wx:for-item="item"
+          class="studio-card"
+          hover-class="press"
+          data-id="{{item.id}}"
+          bindtap="goWeekly"
+        >
+          <view class="avatar">{{item.avatarText}}</view>
+          <view class="info">
+            <view class="name">{{item.name}}</view>
+            <view wx:if="{{item.address}}" class="addr-line">{{item.address}}</view>
+            <view wx:if="{{item.styles.length}}" class="tag-row">
+              <view
+                wx:for="{{item.styles}}"
+                wx:for-item="st"
+                wx:key="*this"
+                class="style-tag"
+              >{{st}}</view>
+            </view>
+          </view>
+          <view class="card-arrow">›</view>
+          <button
+            class="follow {{item.followed ? 'followed' : ''}}"
+            hover-class="press"
+            data-id="{{item.id}}"
+            catchtap="toggleFollow"
+          >{{item.followed ? '已关注' : '关注'}}</button>
+        </view>
       </view>
-      <view class="card-arrow">›</view>
-      <button
-        class="follow {{item.followed ? 'followed' : ''}}"
-        hover-class="press"
-        data-id="{{item.id}}"
-        catchtap="toggleFollow"
-      >{{item.followed ? '已关注' : '关注'}}</button>
-    </view>
+    </block>
   </view>
 </view>
+
+<!-- 右侧字母索引条：按住滑动可快速定位到对应首字母分组 -->
+<view
+  wx:if="{{letters.length >= 2}}"
+  class="index-bar"
+  catchtouchstart="onIndexStart"
+  catchtouchmove="onIndexMove"
+  catchtouchend="onIndexEnd"
+  catchtouchcancel="onIndexEnd"
+>
+  <view
+    wx:for="{{letters}}"
+    wx:key="*this"
+    class="index-item {{activeLetter === item ? 'on' : ''}}"
+  >{{item}}</view>
+</view>
+
+<view wx:if="{{indexTip}}" class="index-tip">{{activeLetter}}</view>
 
 <toast id="toast" />

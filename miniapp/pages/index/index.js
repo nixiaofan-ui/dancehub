@@ -10,6 +10,7 @@ Page({
   data: {
     region: "CN",
     cities: [],
+    filteredCities: [],
     cityId: null,
 
     dates: [],
@@ -26,10 +27,13 @@ Page({
   async onLoad() {
     this.currentDate = new Date();
     const g = app.globalData;
+    const cities = g.cities || [];
+    const filteredCities = cities.filter((c) => c.region === g.region);
     this.setData({
       region: g.region,
       cityId: g.cityId,
-      cities: g.cities,
+      cities: cities,
+      filteredCities: filteredCities,
     });
     this.rebuildDates(this.currentDate);
     this.load();
@@ -43,7 +47,9 @@ Page({
     }
     const g = app.globalData;
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
-      this.setData({ region: g.region, cityId: g.cityId, cities: g.cities });
+      const cities = g.cities || [];
+      const filteredCities = cities.filter((c) => c.region === g.region);
+      this.setData({ region: g.region, cityId: g.cityId, cities: cities, filteredCities: filteredCities });
       this.load();
     }
   },
@@ -109,7 +115,9 @@ Page({
     const city = app.globalData.cities.find((c) => c.region === region);
     app.globalData.region = region;
     app.globalData.cityId = city ? city.id : null;
-    this.setData({ region, cityId: city ? city.id : null });
+    const cities = app.globalData.cities || [];
+    const filteredCities = cities.filter((c) => c.region === region);
+    this.setData({ region, cityId: city ? city.id : null, cities, filteredCities });
     this.load();
   },
 

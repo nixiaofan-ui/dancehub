@@ -40,6 +40,14 @@
       </view>
     </view>
 
+    <view wx:if="{{roomName}}" class="info-row">
+      <view class="info-ico">🚪</view>
+      <view class="info-main">
+        <view class="info-label">场地</view>
+        <view class="info-val">{{roomName}}</view>
+      </view>
+    </view>
+
     <view class="info-row">
       <view class="info-ico">👥</view>
       <view class="info-main">
@@ -59,7 +67,7 @@
       hover-class="press"
       bindtap="goBook"
       disabled="{{busy || bookingStatus === 'CONFIRMED'}}"
-    >{{bookingStatus === 'CONFIRMED' ? '✅ 已预约' : '去原平台预约'}}</button>
+    >{{bookingStatus === 'CONFIRMED' ? '✅ 已预约' : (detail.studio.bookingMiniAppId ? '跳转官方小程序预约' : '去原平台预约')}}</button>
     <button
       class="action secondary"
       hover-class="press"
@@ -71,11 +79,10 @@
     </button>
   </view>
 
-  <!-- 视频预告 -->
-  <view wx:if="{{showVideo}}" class="video-sec">
+  <!-- 课程预告视频（海外平台店铺：YouTube 搜索结果） -->
+  <view wx:if="{{showVideo && videos.length > 0}}" class="video-sec">
     <view class="video-title">🎬 课程预告</view>
     <scroll-view scroll-x class="video-scroll" enhanced show-scrollbar="{{false}}">
-      <view wx:if="{{videos.length === 0}}" class="video-empty">暂无预告视频</view>
       <view
         wx:for="{{videos}}"
         wx:key="videoId"
@@ -95,6 +102,18 @@
         <view class="video-meta">{{item.platform}} · {{item.channelTitle}}</view>
       </view>
     </scroll-view>
+  </view>
+
+  <!-- 课程封面图（iWOD 系店铺抓取自带） -->
+  <view wx:if="{{detail.coursePicUrl}}" class="video-sec">
+    <view class="video-title">📷 课程预告图</view>
+    <image
+      class="course-cover"
+      src="{{detail.coursePicUrl}}"
+      mode="aspectFill"
+      data-url="{{detail.coursePicUrl}}"
+      bindtap="previewCover"
+    />
   </view>
 </view>
 

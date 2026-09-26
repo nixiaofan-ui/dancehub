@@ -7,10 +7,6 @@
       <view class="user-name">DanceHub 舞者</view>
       <view class="user-sub">关注 · 预约 · 提醒 一站管理</view>
     </view>
-    <view class="seg">
-      <view class="seg-item {{region === 'CN' ? 'on' : ''}}" data-r="CN" bindtap="switchRegion">中国</view>
-      <view class="seg-item {{region === 'OVERSEAS' ? 'on' : ''}}" data-r="OVERSEAS" bindtap="switchRegion">海外</view>
-    </view>
   </view>
 
   <view class="tabs">
@@ -22,15 +18,18 @@
   <!-- 关注 -->
   <view wx:if="{{tab === 'follows'}}">
     <view wx:if="{{follows.length === 0}}" class="empty">
-      <view class="jam-graphic">
-        <view class="jam-a"></view>
-        <view class="jam-b"></view>
-        <view class="jam-c"></view>
+      <view class="dancer-lg empty-dancer">
+        <view class="d-head"></view>
+        <view class="d-torso"></view>
+        <view class="d-limb d-arm-l"></view>
+        <view class="d-limb d-arm-r"></view>
+        <view class="d-limb d-leg-l"></view>
+        <view class="d-limb d-leg-r"></view>
       </view>
       <view class="empty-title">还没关注任何舞室</view>
       <view class="empty-sub">去「发现」Pick 你的本命舞室</view>
     </view>
-    <view wx:for="{{follows}}" wx:key="id" class="follow-card" wx:if="{{item.studio.region === region}}">
+    <view wx:for="{{follows}}" wx:key="id" class="follow-card">
       <view class="follow-avatar">{{item.initial}}</view>
       <view class="follow-info">
         <view class="follow-name">{{item.studio.name}}</view>
@@ -43,10 +42,13 @@
   <!-- 预约记录 -->
   <view wx:if="{{tab === 'bookings'}}">
     <view wx:if="{{bookings.length === 0}}" class="empty">
-      <view class="jam-graphic">
-        <view class="jam-a"></view>
-        <view class="jam-b"></view>
-        <view class="jam-c"></view>
+      <view class="dancer-lg empty-dancer">
+        <view class="d-head"></view>
+        <view class="d-torso"></view>
+        <view class="d-limb d-arm-l"></view>
+        <view class="d-limb d-arm-r"></view>
+        <view class="d-limb d-leg-l"></view>
+        <view class="d-limb d-leg-r"></view>
       </view>
       <view class="empty-title">一张票都还没约</view>
       <view class="empty-sub">首页点「预约」，抢位不等人</view>
@@ -56,7 +58,7 @@
         <text class="record-course">{{item.schedule.courseName}}</text>
         <text class="status {{item.status === 'CONFIRMED' ? 'ok' : 'pending'}}">{{item.statusLabel}}</text>
       </view>
-      <view class="record-meta">{{item.schedule.studio}} · {{item.schedule.city}}</view>
+      <view class="record-meta">{{item.cityName}} · {{item.schedule.studio}}</view>
       <view class="record-meta">{{item.dateLabel}} {{item.schedule.startTime}} - {{item.schedule.endTime}} · {{item.schedule.coach || '教练待定'}}</view>
     </view>
   </view>
@@ -64,10 +66,13 @@
   <!-- 提醒设置 -->
   <view wx:if="{{tab === 'reminders'}}">
     <view wx:if="{{reminders.length === 0}}" class="empty">
-      <view class="jam-graphic">
-        <view class="jam-a"></view>
-        <view class="jam-b"></view>
-        <view class="jam-c"></view>
+      <view class="dancer-lg empty-dancer">
+        <view class="d-head"></view>
+        <view class="d-torso"></view>
+        <view class="d-limb d-arm-l"></view>
+        <view class="d-limb d-arm-r"></view>
+        <view class="d-limb d-leg-l"></view>
+        <view class="d-limb d-leg-r"></view>
       </view>
       <view class="empty-title">一个提醒都没设</view>
       <view class="empty-sub">看好课就开提醒，别迟到</view>
@@ -76,7 +81,8 @@
       <view class="record-head">
         <text class="record-course">🔔 {{item.schedule.courseName}}</text>
       </view>
-      <view class="record-meta">{{item.schedule.studio}} · {{item.dateLabel}} {{item.schedule.startTime}}</view>
+      <view class="record-meta">{{item.cityName}} · {{item.schedule.studio}}</view>
+      <view class="record-meta">{{item.dateLabel}} {{item.schedule.startTime}}</view>
       <view class="remind-time">开课前 2 小时提醒（{{item.status}}）</view>
       <button class="close-remind" data-id="{{item.schedule.id}}" bindtap="closeReminder">关闭提醒</button>
     </view>
