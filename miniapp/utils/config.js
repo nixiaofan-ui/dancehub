@@ -28,7 +28,12 @@ const API_HOST = (/^https?:\/\/([^/:]+)/.exec(API_BASE) || [, API_BASE])[1];
 
 const config = {
   // ──── 调试开关 ────
-  USE_CLOUD: false,
+  // true  = 云托管：callContainer 走微信私有协议，不经域名、不需备案。
+  //         体验版/正式版唯一能拿到数据的路径（体验版强制校验合法域名，
+  //         localhost 和局域网 IP 都过不去）。
+  // false = 直连 API_BASE：只在开发者工具（勾「不校验合法域名」）或真机
+  //         调试下可用。要连本机服务端做本地开发时改回 false。
+  USE_CLOUD: true,
   // ──── 云托管相关（USE_CLOUD=true 时生效）────
   CLOUD_RUNNER_ID: "prod-d8g7j87ar768b52e7",
   CLOUD_SERVICE_NAME: "dancehub-server",
