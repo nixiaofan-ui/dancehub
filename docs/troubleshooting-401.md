@@ -179,6 +179,19 @@ wx.cloud.callContainer({
 | `errcode 40001 / 48001 / 40164` | ❌ 通道未生效：接口路径没配，或配完没重建版本 |
 | `verdict: 云调用不可达` | ❌ 容器内 http 到 api.weixin.qq.com 都失败 |
 
+**2026-09-26 实测（版本 016，19:23）**：配置接口路径 + 重建版本后返回
+
+```json
+{"target":"http://api.weixin.qq.com/cgi-bin/message/subscribe/send",
+ "errcode":40003,"errmsg":"invalid openid ...","ms":398,
+ "templateConfigured":false,
+ "verdict":"云调用已生效（鉴权通过，返回的是参数类错误，属预期）"}
+```
+
+`40003 invalid openid` 是自检**故意**传 `"oINVALID"` 造成的 —— 能拿到这个错误码就说明
+请求已经穿过网关鉴权抵达微信，通道彻底通了。`templateConfigured: false` 是环境变量
+`WX_CLASS_REMINDER_TMPL` 还没配，见下节。
+
 ### 还差的最后一块：模板 ID
 
 推送真正跑起来还需要**订阅消息模板**，它跟云调用是两件事：
@@ -189,6 +202,16 @@ wx.cloud.callContainer({
 ```
 WX_CLASS_REMINDER_TMPL=<模板ID>
 ```
+
+⚠️ 控制台那个输入框同样可能置灰改不动（和最小实例数一样）。用 CLI 直接注入即可，
+它会先读旧配置合并，不会丢字段，**且不需要重新构建镜像**：
+
+```bash
+wxcloud service:config update -e prod-d8g7j87ar768b52e7 -s dancehub-server \
+  -p "DATABASE_URL=...&NODE_ENV=...&PORT=3000&WECHAT_APPID=...&WECHAT_SECRET=...&JWT_SECRET=...&SKIP_CRAWLER=1&WX_CLASS_REMINDER_TMPL=<模板ID>"
+```
+
+（`-p` 是**整体覆盖**，所以必须带上现有的全部 7 项再追加新的）
 
 没配这个变量时 `subscribeTplId` 为 null，提醒会退化成 LOCAL 类型，压根不会发。
 小程序端（`utils/subscribe.js`）已经会拿 `/config/subscribe` 里的 `classReminderTplId`
