@@ -65,6 +65,10 @@ Page({
     this.setData({ tab: e.currentTarget.dataset.tab });
   },
 
+  goAbout() {
+    wx.navigateTo({ url: "/pages/about/about" });
+  },
+
   async unfollow(e) {
     const id = e.currentTarget.dataset.id;
     try {

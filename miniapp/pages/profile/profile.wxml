@@ -9,6 +9,12 @@
     </view>
   </view>
 
+  <view class="about-entry" hover-class="press" bindtap="goAbout">
+    <text class="about-ico">ⓘ</text>
+    <text class="about-txt">关于与隐私 · 备案信息</text>
+    <text class="about-arrow">›</text>
+  </view>
+
   <view class="tabs">
     <view class="tab {{tab === 'follows' ? 'on' : ''}}" data-tab="follows" bindtap="switchTab">关注</view>
     <view class="tab {{tab === 'bookings' ? 'on' : ''}}" data-tab="bookings" bindtap="switchTab">预约记录</view>

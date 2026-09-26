@@ -2,6 +2,32 @@
   padding: 20rpx 24rpx 220rpx;
 }
 
+/* 「关于与隐私」入口：备案号必须有小程序内可达路径 */
+.about-entry {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+  padding: 22rpx 28rpx;
+  background: #16213e;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-radius: 16rpx;
+}
+.about-ico {
+  font-size: 28rpx;
+  color: #00f5d4;
+  margin-right: 16rpx;
+}
+.about-txt {
+  flex: 1;
+  font-size: 25rpx;
+  font-weight: 700;
+  color: #c8ccdd;
+}
+.about-arrow {
+  font-size: 32rpx;
+  color: #6b7089;
+}
+
 .user-card {
   display: flex;
   align-items: center;

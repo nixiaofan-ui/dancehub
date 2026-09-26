@@ -67,7 +67,7 @@
       hover-class="press"
       bindtap="goBook"
       disabled="{{busy || bookingStatus === 'CONFIRMED'}}"
-    >{{bookingStatus === 'CONFIRMED' ? '✅ 已预约' : (detail.studio.bookingMiniAppId ? '跳转官方小程序预约' : '去原平台预约')}}</button>
+    >{{bookingStatus === 'CONFIRMED' ? '✅ 已预约' : bookLabel}}</button>
     <button
       class="action secondary"
       hover-class="press"

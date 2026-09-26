@@ -6,7 +6,8 @@
     "pages/import/import",
     "pages/webview/webview",
     "pages/studio/weekly",
-    "pages/course/detail"
+    "pages/course/detail",
+    "pages/about/about"
   ],
   "window": {
     "navigationStyle": "custom",

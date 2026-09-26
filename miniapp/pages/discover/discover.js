@@ -114,18 +114,25 @@ Page({
   switchRegion(e) {
     const region = e.currentTarget.dataset.r;
     if (region === this.data.region) return;
-    const city = app.globalData.cities.find((c) => c.region === region);
-    app.globalData.region = region;
-    app.globalData.cityId = city ? city.id : null;
     const filteredCities = (app.globalData.cities || []).filter(c => c.region === region);
-    this.setData({ region, cityId: city ? city.id : null, filteredCities });
+    // 该地区暂无城市（海外源全挂时）给明确提示，避免切过去一片空白像 bug
+    if (!filteredCities.length) {
+      wx.showToast({
+        title: region === "OVERSEAS" ? "海外场馆暂未开放" : "暂无可选城市",
+        icon: "none",
+      });
+      return;
+    }
+    const city = filteredCities[0];
+    app.setCity(region, city.id);
+    this.setData({ region, cityId: city.id, filteredCities });
     this.load();
   },
 
   selectCity(e) {
     const cityId = e.currentTarget.dataset.id;
     if (cityId === this.data.cityId) return;
-    app.globalData.cityId = cityId;
+    app.setCity(this.data.region, cityId);
     this.setData({ cityId });
     this.load();
   },

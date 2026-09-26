@@ -1,0 +1,87 @@
+<nav-bar title="关于 DanceHub" show-back="{{true}}" />
+
+<view class="body">
+  <!-- 品牌块 -->
+  <view class="brand">
+    <view class="brand-logo">DH</view>
+    <view class="brand-name">DanceHub</view>
+    <view class="brand-sub">舞蹈课日历 · 查课表、管日程</view>
+    <view class="brand-ver">版本 {{version}}</view>
+  </view>
+
+  <view class="tabs">
+    <view class="tab {{tab === 'about' ? 'on' : ''}}" data-tab="about" bindtap="switchTab">关于</view>
+    <view class="tab {{tab === 'privacy' ? 'on' : ''}}" data-tab="privacy" bindtap="switchTab">隐私指引</view>
+  </view>
+
+  <!-- 关于 -->
+  <view wx:if="{{tab === 'about'}}">
+    <view class="card">
+      <view class="card-title">备案信息</view>
+      <block wx:if="{{icpReady}}">
+        <view class="row">
+          <text class="row-k">ICP 备案号</text>
+          <text class="row-v accent">{{icpNo}}</text>
+        </view>
+        <button class="link-btn" hover-class="press" bindtap="copyIcp">复制备案号（去工信部核验）</button>
+      </block>
+      <block wx:else>
+        <view class="row">
+          <text class="row-k">ICP 备案号</text>
+          <text class="row-v pending">备案审核中</text>
+        </view>
+        <view class="hint">备案号下发后填入 utils/config.js 的 ICP_NO，本页即自动展示。</view>
+      </block>
+      <view wx:if="{{entityName}}" class="row">
+        <text class="row-k">主体名称</text>
+        <text class="row-v">{{entityName}}</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">服务类目</view>
+      <view class="row">
+        <text class="row-k">类目</text>
+        <text class="row-v">工具 · 实用工具 · 日历</text>
+      </view>
+      <view class="hint">DanceHub 是课表查询与日程管理工具，不代售课程、不承接交易。</view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">数据来源</view>
+      <view class="para">
+        课表来自各舞蹈工作室的公开渠道（官方小程序、官网公开页面、公开预约平台），我们仅做整理与展示，不修改课程内容。
+      </view>
+      <view class="para">
+        课程的最终解释、价格与预约以各工作室官方渠道为准。若你是工作室方，希望调整或下架展示内容，请通过下方邮箱联系我们。
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">意见反馈</view>
+      <view class="para">遇到问题、想接自家舞室、发现课表有误，都欢迎反馈。</view>
+      <button class="link-btn" hover-class="press" bindtap="onContact">
+        {{contactEmail ? '复制反馈邮箱' : '反馈邮箱未配置'}}
+      </button>
+    </view>
+  </view>
+
+  <!-- 隐私指引 -->
+  <view wx:if="{{tab === 'privacy'}}">
+    <view class="card">
+      <view class="card-title">用户隐私保护指引</view>
+      <view class="hint">更新日期：{{updatedAt}}</view>
+    </view>
+    <view wx:for="{{privacySections}}" wx:key="title" class="card">
+      <view class="card-title">{{item.title}}</view>
+      <view wx:for="{{item.lines}}" wx:for-item="line" wx:key="*this" class="para">{{line}}</view>
+    </view>
+    <view class="card">
+      <view class="card-title">与后台配置保持一致</view>
+      <view class="para">
+        本页内容需与微信公众平台「设置 → 服务内容声明 → 用户隐私保护指引」中的配置保持一致。
+        后台配置缺失或与实际调用不一致时，涉及个人信息的接口会被微信直接拒绝。
+      </view>
+    </view>
+  </view>
+</view>

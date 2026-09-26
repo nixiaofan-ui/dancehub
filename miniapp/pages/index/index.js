@@ -112,19 +112,27 @@ Page({
   switchRegion(e) {
     const region = e.currentTarget.dataset.r;
     if (region === this.data.region) return;
-    const city = app.globalData.cities.find((c) => c.region === region);
-    app.globalData.region = region;
-    app.globalData.cityId = city ? city.id : null;
     const cities = app.globalData.cities || [];
     const filteredCities = cities.filter((c) => c.region === region);
-    this.setData({ region, cityId: city ? city.id : null, cities, filteredCities });
+    // 该地区一个城市都没有（例如海外数据源全部抓取失败）时给个明确提示，
+    // 否则只是静默切过去显示空白，用户会以为是 bug
+    if (!filteredCities.length) {
+      wx.showToast({
+        title: region === "OVERSEAS" ? "海外场馆暂未开放" : "暂无可选城市",
+        icon: "none",
+      });
+      return;
+    }
+    const city = filteredCities[0];
+    app.setCity(region, city.id);
+    this.setData({ region, cityId: city.id, cities, filteredCities });
     this.load();
   },
 
   selectCity(e) {
     const cityId = e.currentTarget.dataset.id;
     if (cityId === this.data.cityId) return;
-    app.globalData.cityId = cityId;
+    app.setCity(this.data.region, cityId);
     this.setData({ cityId });
     this.load();
   },

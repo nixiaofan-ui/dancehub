@@ -36,16 +36,38 @@ App({
     }
   },
 
+  /**
+   * 设置当前城市并持久化。
+   * 页面里切换地区/城市统一走这里，避免各处各自 setData 却忘了落盘，
+   * 导致重启后回落到国内。
+   */
+  setCity(region, cityId) {
+    this.globalData.region = region;
+    this.globalData.cityId = cityId;
+    try {
+      wx.setStorageSync("dh_region", region);
+      wx.setStorageSync("dh_cityId", cityId);
+    } catch (e) {
+      // 存储失败不影响本次使用（下次启动回落默认城市）
+    }
+  },
+
   async init() {
     try {
       const res = await apiLogin();
       this.globalData.token = res.token;
 
       const cities = await apiCities();
-      const cn = cities.find((c) => c.region === "CN");
       this.globalData.cities = cities;
-      this.globalData.region = "CN";
-      this.globalData.cityId = cn ? cn.id : cities[0]?.id || null;
+      // 记住上次选的城市：切到海外后重启不该被拉回国内。
+      // 已失效（城市下架/改名）时回落到国内第一个城市。
+      const savedRegion = wx.getStorageSync("dh_region");
+      const savedCityId = wx.getStorageSync("dh_cityId");
+      const saved = cities.find((c) => c.id === savedCityId && c.region === savedRegion);
+      const fallback = cities.find((c) => c.region === "CN") || cities[0];
+      const picked = saved || fallback;
+      this.globalData.region = picked ? picked.region : "CN";
+      this.globalData.cityId = picked ? picked.id : null;
 
       try {
         const cfg = await apiSubscribeConfig();
