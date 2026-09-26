@@ -87,6 +87,10 @@ model Studio {
   // 该店官方约课小程序的 appId（iWOD 系有，菲体云系暂缺）
   // 用户点「跳转官方小程序预约」时 navigateToMiniProgram 用
   bookingMiniAppId String?
+  // 官网/官方预约页地址。海外场馆（首尔等）没有微信小程序，
+  // 「去预约」走 web-view 打开这个地址，而不是 navigateToMiniProgram。
+  // 国内场馆一般为空（走小程序跳转）。
+  officialUrl String?
   status           Boolean        @default(true)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

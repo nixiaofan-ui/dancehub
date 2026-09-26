@@ -452,7 +452,7 @@ function runJustjerkOcr(python, imagePath, branchKey, weekdays = null) {
 }
 
 /** OCR 结果 → 抓取引擎统一的原始条目结构 */
-function justjerkEntriesToRaw(parsed, studioLabel, branchLabel) {
+function justjerkEntriesToRaw(parsed, studioLabel, branchLabel, branchUrl) {
   return (parsed.entries || []).map((e) => {
     const coaches = e.coaches || [];
     const levels = coaches.map((c) => c.level).filter((v) => v != null);
@@ -465,6 +465,8 @@ function justjerkEntriesToRaw(parsed, studioLabel, branchLabel) {
       status: "",
       _studioName: studioLabel,
       _roomName: branchLabel || parsed.branch,
+      // 各校区有自己的课表页，作为该店的官网入口（海外店没有小程序可跳）
+      _officialUrl: branchUrl || null,
       _scheduleDate: e.date,
       _difficulty: level ? LEVEL_TO_DIFFICULTY[level] : null,
       _remark: levels.length
@@ -514,7 +516,7 @@ async function crawlWithJustjerk(config, _date) {
 
     const parsed = await runJustjerkOcr(python, imgPath, br.key, br.weekdays);
     const studioLabel = br.studioName || config.studio?.name || "JustJerk";
-    rows.push(...justjerkEntriesToRaw(parsed, studioLabel, br.label));
+    rows.push(...justjerkEntriesToRaw(parsed, studioLabel, br.label, br.url));
   }
 
   return rows;

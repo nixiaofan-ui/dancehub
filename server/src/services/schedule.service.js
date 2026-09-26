@@ -61,6 +61,8 @@ function serializeTimeline(schedules) {
       logoUrl: s.studio.logoUrl,
       // 官方约课小程序 appId（有则预约面板直接跳转）
       bookingMiniAppId: s.studio.bookingMiniAppId,
+      // 官网/官方预约页：海外店没有小程序，改走 web-view 打开
+      officialUrl: s.studio.officialUrl,
       cityId: s.studio.cityId,
       city: s.studio.city?.name,
       region: s.studio.city?.region,

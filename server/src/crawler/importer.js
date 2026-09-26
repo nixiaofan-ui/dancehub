@@ -18,28 +18,58 @@ export async function findOrCreateCity(region, name) {
   });
 }
 
+/**
+ * 平台类型兜底：配置没写 platform 时按地区推断。
+ * 海外场馆一律不是微信小程序 —— 若标成 WECHAT，前端会把用户引导去
+ * 「微信搜索该舞室官方小程序」，韩国舞室根本没有，是错误引导。
+ */
+function resolvePlatform(studioRef) {
+  if (studioRef.platform) return studioRef.platform;
+  return studioRef.region === "OVERSEAS" ? "OTHER" : "WECHAT";
+}
+
 export async function findOrCreateStudio(studioRef, extra = {}) {
   const existing = await prisma.studio.findFirst({ where: { name: studioRef.name } });
-  // 跳转小程序 appId 等新字段：已有店也补写（只在新值非空且不同才更新，减少无谓写入）
+  // 跳转小程序 appId / 官网地址等新字段：已有店也补写
+  // （只在新值非空且不同才更新，减少无谓写入）
   const patch = {};
-  if (extra.bookingMiniAppId && existing && existing.bookingMiniAppId !== extra.bookingMiniAppId) {
+  if (!existing) {
+    const city = await findOrCreateCity(studioRef.region, studioRef.city);
+    return prisma.studio.create({
+      data: {
+        name: studioRef.name,
+        cityId: city.id,
+        address: studioRef.address || null,
+        platform: resolvePlatform(studioRef),
+        status: true,
+        bookingMiniAppId: extra.bookingMiniAppId || null,
+        officialUrl: studioRef.officialUrl || null,
+      },
+    });
+  }
+
+  if (extra.bookingMiniAppId && existing.bookingMiniAppId !== extra.bookingMiniAppId) {
     patch.bookingMiniAppId = extra.bookingMiniAppId;
   }
+  if (studioRef.officialUrl && existing.officialUrl !== studioRef.officialUrl) {
+    patch.officialUrl = studioRef.officialUrl;
+  }
+  // 已入库的海外店可能是在 platform 兜底逻辑加上之前建的，被标成了 WECHAT，
+  // 这里一并纠正（只纠正海外店，国内店的 platform 以库里为准）
+  const wantPlatform = resolvePlatform(studioRef);
+  if (
+    studioRef.region === "OVERSEAS" &&
+    existing.platform === "WECHAT" &&
+    wantPlatform !== "WECHAT"
+  ) {
+    patch.platform = wantPlatform;
+  }
+  if (studioRef.address && !existing.address) patch.address = studioRef.address;
+
   if (Object.keys(patch).length) {
     return prisma.studio.update({ where: { id: existing.id }, data: patch });
   }
-  if (existing) return existing;
-
-  const city = await findOrCreateCity(studioRef.region, studioRef.city);
-  return prisma.studio.create({
-    data: {
-      name: studioRef.name,
-      cityId: city.id,
-      platform: "WECHAT",
-      status: true,
-      bookingMiniAppId: extra.bookingMiniAppId || null,
-    },
-  });
+  return existing;
 }
 
 export async function findOrCreateCoach(studioId, name) {
@@ -95,7 +125,21 @@ export async function importSchedules(config, rows) {
     // iWOD 系店铺的约课小程序 appId → Studio.bookingMiniAppId（预约跳转用）
     const extra = {};
     if (config.http && config.http.appId) extra.bookingMiniAppId = config.http.appId;
-    const studio = await findOrCreateStudio({ ...config.studio, name: studioName }, extra);
+    // 多门店配置（如 JustJerk 两个校区各自一个官网页）可在条目级覆盖
+    // 城市/官网/平台，优先级高于 config.studio
+    const rowOverride = {};
+    for (const key of ["_officialUrl", "_platform", "_address"]) {
+      const v = groupRows.find((r) => r[key])?.[key];
+      if (v) rowOverride[key] = v;
+    }
+    const studioRef = {
+      ...config.studio,
+      name: studioName,
+      ...(rowOverride._officialUrl ? { officialUrl: rowOverride._officialUrl } : {}),
+      ...(rowOverride._platform ? { platform: rowOverride._platform } : {}),
+      ...(rowOverride._address ? { address: rowOverride._address } : {}),
+    };
+    const studio = await findOrCreateStudio(studioRef, extra);
     for (const row of groupRows) {
       const coach = await findOrCreateCoach(studio.id, row.coach);
       const entry = mapRawToSchedule(row, {

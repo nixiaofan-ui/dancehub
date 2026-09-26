@@ -257,6 +257,10 @@ const manualConfigs = [
       name: "1MILLION Dance Studio",
       city: "首尔",
       region: "OVERSEAS",
+      // 海外场馆没有微信小程序：platform 标 OTHER，
+      // 前端「去预约」改为 web-view 打开官网，不走 navigateToMiniProgram
+      platform: "OTHER",
+      officialUrl: "https://www.1milliondance.com",
     },
 
     mode: "oneMillion",
@@ -279,6 +283,9 @@ const manualConfigs = [
       name: "MAJOR Dance Studio EAST",
       city: "东京",
       region: "OVERSEAS",
+      platform: "OTHER",
+      // 官方预约页：带门店码，用户打开即到本店的试听/预约入口
+      officialUrl: "https://apfec.avex.jp/front/trialsearch/?STORE_CODE=1100030712",
     },
 
     mode: "avex",
@@ -305,6 +312,8 @@ const manualConfigs = [
       name: "MAJOR Dance Studio WEST",
       city: "大阪",
       region: "OVERSEAS",
+      platform: "OTHER",
+      officialUrl: "https://apfec.avex.jp/front/trialsearch/?STORE_CODE=9999990009",
     },
 
     mode: "avex",
@@ -331,6 +340,10 @@ const manualConfigs = [
       name: "JustJerk Dance Academy",
       city: "首尔",
       region: "OVERSEAS",
+      platform: "OTHER",
+      // 两个校区各自建店（_studioName 覆盖），官网入口用各自课表页，
+      // 见 engine.js justjerkEntriesToRaw 的 _officialUrl
+      officialUrl: "https://justjerk.co.kr",
     },
 
     // 官网只有一张课表图片 → 下载 + macOS Vision OCR + 栅格还原（见 engine.js crawlWithJustjerk）
@@ -381,6 +394,8 @@ const manualConfigs = [
       name: "PREPIX Movement",
       city: "首尔",
       region: "OVERSEAS",
+      platform: "OTHER",
+      officialUrl: null, // 官网已停服，暂无可用入口
     },
 
     mode: "rawgraphy",

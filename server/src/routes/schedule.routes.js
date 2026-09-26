@@ -94,6 +94,8 @@ router.get(
         logoUrl: schedule.studio.logoUrl,
         // 该店官方约课小程序 appId（有则详情页显示「跳转官方小程序预约」）
         bookingMiniAppId: schedule.studio.bookingMiniAppId,
+        // 官网/官方预约页：海外店没有小程序，「去预约」改走 web-view 打开这个地址
+        officialUrl: schedule.studio.officialUrl,
         contact: schedule.studio.contact,
         city: schedule.studio.city?.name,
       },

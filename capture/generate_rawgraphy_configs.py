@@ -107,6 +107,11 @@ def build(sid: int, name: str, address: str, has_tt: bool, all_cities: bool):
             "name": name,
             "city": city,
             "region": "OVERSEAS",
+            # 韩国舞室没有微信小程序：platform 标 OTHER，
+            # 前端「去预约」走 web-view 打开 rawgraphy 场馆页，而不是 navigateToMiniProgram
+            "platform": "OTHER",
+            "officialUrl": f"{BASE}/studios/{sid}",
+            "address": address,
         },
         "mode": "rawgraphy",
         "rawgraphy": {
@@ -120,7 +125,6 @@ def build(sid: int, name: str, address: str, has_tt: bool, all_cities: bool):
         "refreshHours": 24,
         "cron": None,
         "timeFormat": "HH:mm-HH:mm",
-        "address": address,
     }
 
 

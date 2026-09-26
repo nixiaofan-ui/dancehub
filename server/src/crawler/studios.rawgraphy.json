@@ -7,7 +7,10 @@
   "studio": {
    "name": "Project LEE Dance Academy",
    "city": "首尔",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/17",
+   "address": "서울 마포구 월드컵북로 46, 3층 302호(연남동)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -19,8 +22,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "서울 마포구 월드컵북로 46, 3층 302호(연남동)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-19",
@@ -30,7 +32,10 @@
   "studio": {
    "name": "딥무브 댄스학원",
    "city": "首尔",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/19",
+   "address": "서울 강서구 강서로18길 34  / 경양빌딩 3층 딥무브댄스학원"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -42,8 +47,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "서울 강서구 강서로18길 34  / 경양빌딩 3층 딥무브댄스학원"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-24",
@@ -53,7 +57,10 @@
   "studio": {
    "name": "알티댄스 시흥사거리점",
    "city": "首尔",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/24",
+   "address": "서울특별시 금천구 시흥동 992-12, 2층 205호(시흥동, 영광아파트)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -65,8 +72,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "서울특별시 금천구 시흥동 992-12, 2층 205호(시흥동, 영광아파트)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-25",
@@ -76,7 +82,10 @@
   "studio": {
    "name": "H.O DANCE SEOUL",
    "city": "首尔",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/25",
+   "address": "서울 광진구 동일로 60길 40 영범빌딩"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -88,8 +97,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "서울 광진구 동일로 60길 40 영범빌딩"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-29",
@@ -99,7 +107,10 @@
   "studio": {
    "name": "리바이브스튜디오",
    "city": "首尔",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/29",
+   "address": "서울 성동구 연무장 17길 5 2.5층"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -111,8 +122,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "서울 성동구 연무장 17길 5 2.5층"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-36",
@@ -122,7 +132,10 @@
   "studio": {
    "name": "던 댄스 스튜디오",
    "city": "首尔",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/36",
+   "address": "서울특별시 영등포구 영등포로22길 3-6, 2층(당산동2가, 화림빌딩)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -134,8 +147,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "서울특별시 영등포구 영등포로22길 3-6, 2층(당산동2가, 화림빌딩)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-39",
@@ -145,7 +157,10 @@
   "studio": {
    "name": "TUNE DANCE",
    "city": "首尔",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/39",
+   "address": "서울특별시 강남구 봉은사로57길 32, 지하1층(삼성동)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -157,8 +172,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "서울특별시 강남구 봉은사로57길 32, 지하1층(삼성동)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-14",
@@ -168,7 +182,10 @@
   "studio": {
    "name": "그라운드 댄스학원",
    "city": "京畿道",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/14",
+   "address": "경기도 부천시 소사구 경인로 477, 2층 201호"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -180,8 +197,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "경기도 부천시 소사구 경인로 477, 2층 201호"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-18",
@@ -191,7 +207,10 @@
   "studio": {
    "name": "로드댄스 스튜디오",
    "city": "京畿道",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/18",
+   "address": "경기도 부천시 원미구 지봉로 105, 3층(역곡동)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -203,8 +222,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "경기도 부천시 원미구 지봉로 105, 3층(역곡동)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-20",
@@ -214,7 +232,10 @@
   "studio": {
    "name": "티엔케이댄스학원",
    "city": "釜山",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/20",
+   "address": "부산 북구 화명신도시로 127 (범서미라클) / 7층 703호"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -226,8 +247,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "부산 북구 화명신도시로 127 (범서미라클) / 7층 703호"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-21",
@@ -237,7 +257,10 @@
   "studio": {
    "name": "더코드댄스스튜디오",
    "city": "釜山",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/21",
+   "address": "부산 동래구 온천동 1433-12"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -249,8 +272,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "부산 동래구 온천동 1433-12"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-22",
@@ -260,7 +282,10 @@
   "studio": {
    "name": "누띵 댄스 스튜디오",
    "city": "釜山",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/22",
+   "address": "부산 부산진구 양정동 394-16 / 9층 누띵댄스스튜디오"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -272,8 +297,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "부산 부산진구 양정동 394-16 / 9층 누띵댄스스튜디오"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-23",
@@ -283,7 +307,10 @@
   "studio": {
    "name": "댄스업 아카데미",
    "city": "釜山",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/23",
+   "address": "부산광역시 금정구 장전동 312-17, 3층,4층(장전동)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -295,8 +322,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "부산광역시 금정구 장전동 312-17, 3층,4층(장전동)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-26",
@@ -306,7 +332,10 @@
   "studio": {
    "name": "H.O DANCE BUSAN",
    "city": "釜山",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/26",
+   "address": "부산광역시 수영구 수영로464번길 18, 4층(남천동)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -318,8 +347,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "부산광역시 수영구 수영로464번길 18, 4층(남천동)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-30",
@@ -329,7 +357,10 @@
   "studio": {
    "name": "아이엠피댄스스튜디오",
    "city": "京畿道",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/30",
+   "address": "경기도 안산시 단원구 고잔동 717-2, 2층\\n"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -341,8 +372,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "경기도 안산시 단원구 고잔동 717-2, 2층\\n"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-32",
@@ -352,7 +382,10 @@
   "studio": {
    "name": "샷다댄스아카데미",
    "city": "京畿道",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/32",
+   "address": "경기도 안산시 단원구 민속공원로 88, 4층"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -364,8 +397,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "경기도 안산시 단원구 민속공원로 88, 4층"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-33",
@@ -375,7 +407,10 @@
   "studio": {
    "name": "RUF DANCE ACADEMY",
    "city": "京畿道",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/33",
+   "address": "경기도 용인시 처인구 금령로 116, 2층 전체(김량장동, 용인타워)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -387,8 +422,7 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "경기도 용인시 처인구 금령로 116, 2층 전체(김량장동, 용인타워)"
+  "timeFormat": "HH:mm-HH:mm"
  },
  {
   "id": "rawgraphy-38",
@@ -398,7 +432,10 @@
   "studio": {
    "name": "리드댄스학원",
    "city": "京畿道",
-   "region": "OVERSEAS"
+   "region": "OVERSEAS",
+   "platform": "OTHER",
+   "officialUrl": "https://rawgraphy.com/studios/38",
+   "address": "경기도 시흥시 수인로3247번길 19, 4층 405, 406호(은행동, 에듀타운)"
   },
   "mode": "rawgraphy",
   "rawgraphy": {
@@ -410,7 +447,6 @@
   "dates": [],
   "refreshHours": 24,
   "cron": null,
-  "timeFormat": "HH:mm-HH:mm",
-  "address": "경기도 시흥시 수인로3247번길 19, 4층 405, 406호(은행동, 에듀타운)"
+  "timeFormat": "HH:mm-HH:mm"
  }
 ]
