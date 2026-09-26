@@ -66,6 +66,7 @@
       </view>
       <view class="record-meta">{{item.cityName}} · {{item.schedule.studio}}</view>
       <view class="record-meta">{{item.dateLabel}} {{item.schedule.startTime}} - {{item.schedule.endTime}} · {{item.schedule.coach || '教练待定'}}</view>
+      <button class="cancel-book" hover-class="press" data-id="{{item.schedule.id}}" data-name="{{item.schedule.courseName}}" bindtap="cancelBooking">取消预约</button>
     </view>
   </view>
 

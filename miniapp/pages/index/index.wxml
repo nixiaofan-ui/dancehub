@@ -117,6 +117,9 @@
     <button class="action remind" hover-class="press" bindtap="toggleRemind">
       {{panel.item.reminded ? '已开启提醒（点击关闭）' : '开启开课提醒'}}
     </button>
+    <button wx:if="{{panel.item.bookingStatus}}" class="action danger" hover-class="press" bindtap="cancelBooking">
+      取消预约
+    </button>
   </view>
 </view>
 

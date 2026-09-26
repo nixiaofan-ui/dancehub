@@ -213,3 +213,16 @@
   line-height: 1.6;
   font-weight: 700;
 }
+/* 取消预约：同上，但用红色强调是破坏性操作 */
+.cancel-book {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #ff6b6b;
+  background: #1a1a2e;
+  border: 2rpx solid rgba(255, 107, 107, 0.45);
+  border-radius: 24rpx;
+  padding: 8rpx 24rpx;
+  display: inline-block;
+  line-height: 1.6;
+  font-weight: 700;
+}

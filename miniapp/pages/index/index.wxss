@@ -352,3 +352,9 @@
   color: #00f5d4;
   border: 2rpx solid rgba(0, 245, 212, 0.4);
 }
+/* 取消预约是破坏性操作：红色描边，和主按钮的橙、提醒的青区分开 */
+.action.danger {
+  background: transparent;
+  color: #ff6b6b;
+  border: 2rpx solid rgba(255, 107, 107, 0.45);
+}

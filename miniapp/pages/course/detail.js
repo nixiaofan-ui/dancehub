@@ -4,6 +4,7 @@ const { toast } = require("../../utils/toast");
 const jump = require("../../services/jump");
 const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
 const { requestSubscribe } = require("../../utils/subscribe");
+const { confirm } = require("../../utils/confirm");
 const { parseKey } = require("../../utils/date");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -135,6 +136,33 @@ Page({
       await api.apiCreateBooking(d.id, "MANUAL");
       this.setData({ busy: false });
       toast(this, "已标记预约", "success");
+      this.load();
+    } catch (e) {
+      this.setData({ busy: false });
+      toast(this, e.message);
+    }
+  },
+
+  async cancelBooking() {
+    const d = this.data.detail;
+    if (!d || this.data.busy) return;
+    const yes = await confirm({
+      title: "取消预约",
+      content: `确定取消「${d.courseName || "这节课"}」的预约吗？`,
+      confirmText: "取消预约",
+    });
+    if (!yes) return;
+    this.setData({ busy: true });
+    try {
+      const res = await api.apiCancelBooking(d.id);
+      this.setData({ busy: false });
+      toast(
+        this,
+        res && res.hasReminder
+          ? "已取消预约（开课提醒还开着，可在下方关掉）"
+          : "已取消预约",
+        "success",
+      );
       this.load();
     } catch (e) {
       this.setData({ busy: false });

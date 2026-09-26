@@ -2,6 +2,7 @@ const app = getApp();
 const api = require("../../services/api");
 const { BOOKING_STATUS_LABEL, PLATFORM_LABEL } = require("../../utils/constants");
 const { toast } = require("../../utils/toast");
+const { confirm } = require("../../utils/confirm");
 
 Page({
   data: {
@@ -75,6 +76,34 @@ Page({
       await api.apiUnfollow(id);
       toast(this, "已取消关注", "success");
       this.loadAll();
+    } catch (err) {
+      toast(this, err.message);
+    }
+  },
+
+  async cancelBooking(e) {
+    const scheduleId = e.currentTarget.dataset.id;
+    const name = e.currentTarget.dataset.name || "这节课";
+    const yes = await confirm({
+      title: "取消预约",
+      content: `确定取消「${name}」的预约吗？`,
+      confirmText: "取消预约",
+    });
+    if (!yes) return;
+    try {
+      const res = await api.apiCancelBooking(scheduleId);
+      toast(
+        this,
+        res && res.hasReminder
+          ? "已取消预约（开课提醒还开着，可在「提醒设置」关掉）"
+          : "已取消预约",
+        "success",
+      );
+      this.loadAll();
+      // 待确认徽标是按未确认预约数算的，取消后要立刻重算
+      if (typeof this.getTabBar === "function" && this.getTabBar()) {
+        this.getTabBar().refreshBadge();
+      }
     } catch (err) {
       toast(this, err.message);
     }

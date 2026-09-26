@@ -6,6 +6,7 @@ const { DIFF_LABEL } = require("../../utils/constants");
 const { API_HOST } = require("../../utils/config");
 const { requestSubscribe } = require("../../utils/subscribe");
 const { toast } = require("../../utils/toast");
+const { confirm } = require("../../utils/confirm");
 
 Page({
   data: {
@@ -204,6 +205,32 @@ Page({
       this.setData({ panel: { visible: false, item: null } });
       this.refreshBadge();
       toast(this, "已标记预约", "success");
+      this.load();
+    } catch (e) {
+      toast(this, e.message);
+    }
+  },
+
+  async cancelBooking() {
+    const item = this.data.panel.item;
+    if (!item) return;
+    const yes = await confirm({
+      title: "取消预约",
+      content: `确定取消「${item.courseName || "这节课"}」的预约吗？`,
+      confirmText: "取消预约",
+    });
+    if (!yes) return;
+    try {
+      const res = await api.apiCancelBooking(item.id);
+      this.setData({ panel: { visible: false, item: null } });
+      this.refreshBadge();
+      toast(
+        this,
+        res && res.hasReminder
+          ? "已取消预约（开课提醒还开着，可在「我的」关掉）"
+          : "已取消预约",
+        "success",
+      );
       this.load();
     } catch (e) {
       toast(this, e.message);

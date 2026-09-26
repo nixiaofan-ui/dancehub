@@ -82,6 +82,33 @@ router.post(
   }),
 );
 
+// 取消预约：直接删除记录（Booking 的 status 只有 PENDING/CONFIRMED，
+// 加一个 CANCELLED 枚举要改表结构、还要在云库上跑迁移，收益却只是留一条历史
+// —— 对用户来说「取消」就该从列表里消失，所以走物理删除）。
+// 唯一键是 (userId, scheduleId)，所以取消后再预约会重新建一条，不会冲突。
+router.delete(
+  "/:scheduleId",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const scheduleId = Number(req.params.scheduleId);
+    if (!Number.isFinite(scheduleId)) return fail(res, 400, "scheduleId 非法");
+
+    const existing = await prisma.booking.findUnique({
+      where: { userId_scheduleId: { userId: req.userId, scheduleId } },
+    });
+    if (!existing) return fail(res, 404, "没有这条预约记录");
+
+    // 开课提醒是独立设置，不跟着一起删（用户可能只是不想占位、但仍想被提醒）。
+    // 但把「这节课还开着提醒」回传，前端提示一声，免得留下一条没人要的噪音提醒。
+    const reminder = await prisma.reminder.findUnique({
+      where: { userId_scheduleId: { userId: req.userId, scheduleId } },
+    });
+
+    await prisma.booking.delete({ where: { id: existing.id } });
+    ok(res, { scheduleId, hasReminder: Boolean(reminder) }, "已取消预约");
+  }),
+);
+
 router.get(
   "/pending-count",
   requireAuth,
