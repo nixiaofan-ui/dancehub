@@ -250,6 +250,26 @@ wxcloud service:config update -e prod-d8g7j87ar768b52e7 -s dancehub-server \
 `appId && appSecret && classReminderTplId` 三者齐备 —— 缺模板时小程序端不该弹授权框，
 否则用户点了「允许」也收不到任何消息（一次性授权还被白白消耗掉）。
 
+### ⚠️ 一次性订阅的额度是共享的，自检会吃掉真实提醒那一条
+
+**每授权一次 = 一条推送额度**，且额度挂在「用户 + 模板」上，不区分是谁发的。
+所以 `/api/diag/cloudcall?real=1` 和真正的开课提醒**抢的是同一份额度**：
+
+- 授权后先跑自检 → 自检消耗掉这一条 → 到点的真提醒会报 `43101` 发不出去
+- 想两全：自检确认 `errcode: 0` 收到测试消息后，**把提醒关掉再点开一次**（重新授权，
+  补回一条额度，同时把记录从 LOCAL 刷新成 SUBSCRIBE）
+
+判断是否还有额度不要靠猜，直接查云库里那条提醒记录：
+
+```
+type=SUBSCRIBE + subscribeTplId 非空  → 到点会真发
+type=LOCAL     + subscribeTplId=null → 根本不会发（多半是授权没发生）
+```
+
+授权是否真的发生，看小程序 Console：
+`[dancehub] 订阅授权返回: {"<模板ID>":"accept", "errMsg":"requestSubscribeMessage:ok"}`。
+只有出现 `accept` 时，`reminder.routes.js` 才会把 `subscribeTplId` 写进去。
+
 ### YouTube 视频预览
 
 云调用只代理微信自己的接口，代理不了 `googleapis.com` —— 这个只能给容器开公网出口，或砍掉。
