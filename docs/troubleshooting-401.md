@@ -217,6 +217,39 @@ wxcloud service:config update -e prod-d8g7j87ar768b52e7 -s dancehub-server \
 小程序端（`utils/subscribe.js`）已经会拿 `/config/subscribe` 里的 `classReminderTplId`
 去调 `wx.requestSubscribeMessage`，无需改动。
 
+### 🟡 换模板必须同步改三个地方（错一个就是 47003）
+
+`buildClassReminderData`（`server/src/services/reminder.service.js`）的**键名必须和后台
+「我的模板 → 模板详情」里的字段编号一字不差**：
+
+| 后台字段 | 含义 | 当前代码 |
+|---|---|---|
+| `name1` | 课程名称 | `r.schedule.courseName` |
+| `time2` | 课程时间 | 日期 + `startTime` |
+| `thing3` | 上课地点 | `r.schedule.studio.name` |
+| `thing8` | 授课老师 | `r.schedule.coach.name`（缺失回退「待定」） |
+
+另外两个容易踩的：
+
+1. **长度按「字符数」不是按「字数」**：一个汉字算 2，上限 20。`slice(0, 20)`
+   会把 20 个汉字算成 40 → 微信拒（47003）。`fitText()` 用码点 `>= 0x1100` 计 2
+   （覆盖中日韩与全角；只按汉字区间写正则会漏韩文，舞室名很常见）。
+2. **`time` 类型要中文格式**：`"2026-09-27 19:00"` 有被拒风险，用 `"2026年9月27日 19:00"`。
+
+`/api/diag/cloudcall` 现在会**复用真实的 `buildClassReminderData`** 发一次自检，
+所以通道、模板 ID、字段编号三项一次全验：
+
+- `40003 invalid openid` → ✅ 三项都对（openid 是故意传错的）
+- `40037` → 模板 ID 不被微信认可
+- `47003` → 字段编号或值格式不匹配
+- `40001/48001/40164` → 云调用通道没生效
+
+### 本地没配模板时别让用户空授权
+
+`/config/subscribe` 的 `subscribeConfigured` 现在要求
+`appId && appSecret && classReminderTplId` 三者齐备 —— 缺模板时小程序端不该弹授权框，
+否则用户点了「允许」也收不到任何消息（一次性授权还被白白消耗掉）。
+
 ### YouTube 视频预览
 
 云调用只代理微信自己的接口，代理不了 `googleapis.com` —— 这个只能给容器开公网出口，或砍掉。

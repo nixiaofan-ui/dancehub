@@ -3,6 +3,7 @@ import dns from "node:dns/promises";
 import { prisma } from "../lib/prisma.js";
 import { pingRedis } from "../lib/redis.js";
 import { config } from "../config.js";
+import { buildClassReminderData } from "../services/reminder.service.js";
 
 const router = Router();
 
@@ -106,7 +107,16 @@ router.get("/diag/cloudcall", async (_req, res) => {
         touser: "diag-invalid-openid",
         template_id: config.wechat.classReminderTplId || "diag-invalid-template",
         page: "pages/index/index",
-        data: {},
+        // 直接复用真实构造逻辑：字段名与实现永远同步，字段错会返回 47003
+        data: buildClassReminderData({
+          schedule: {
+            courseName: "诊断课程",
+            scheduleDate: new Date(),
+            startTime: new Date(),
+            studio: { name: "诊断舞室" },
+            coach: { name: "诊断老师" },
+          },
+        }),
       }),
       signal: AbortSignal.timeout(8000),
     });
@@ -115,7 +125,13 @@ router.get("/diag/cloudcall", async (_req, res) => {
     out.errmsg = j.errmsg || "ok";
     out.verdict = CHANNEL_ERRCODES.has(j.errcode)
       ? "通道未生效：控制台「云调用 → 配置接口」需加入 /cgi-bin/message/subscribe/send，且改完要重建版本"
-      : "云调用已生效（鉴权通过，返回的是参数类错误，属预期）";
+      : j.errcode === 40037
+        ? "模板 ID 不被微信认可：检查环境变量 WX_CLASS_REMINDER_TMPL"
+        : j.errcode === 47003
+          ? "模板字段不匹配：buildClassReminderData 的键名与后台模板详情不一致"
+          : j.errcode === 40003
+            ? "✅ 云调用生效 + 模板 ID 有效（invalid openid 是自检故意传错的）"
+            : "云调用已生效（返回参数类错误，属预期）";
   } catch (e) {
     out.errmsg = String(e?.message || e);
     out.verdict = "云调用不可达：容器内 http://api.weixin.qq.com 请求失败";

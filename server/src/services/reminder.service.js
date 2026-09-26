@@ -4,19 +4,46 @@ import { sendSubscribeMessage } from "./wechat.service.js";
 import { toDateKey } from "./schedule.service.js";
 
 export function subscribeConfigured() {
-  return Boolean(config.wechat.appId && config.wechat.appSecret);
+  return Boolean(
+    config.wechat.appId && config.wechat.appSecret && config.wechat.classReminderTplId,
+  );
 }
 
+/**
+ * 微信订阅消息的字段长度按「字符数」算：一个汉字算 2，ASCII 算 1，上限 20。
+ * 直接 slice(0, 20) 会把 20 个汉字算成 40 字符而超长被拒（errcode 47003）。
+ */
+export function fitText(input, fallback) {
+  const src = String(input || "").trim();
+  if (!src) return fallback;
+  let weight = 0;
+  let out = "";
+  for (const ch of src) {
+    // 码点 >= 0x1100 基本就是中日韩文字与全角符号，微信按 2 个字符算。
+    // 只按汉字区间写正则会漏掉韩文（舞室名很常见）和日文假名。
+    const w = ch.codePointAt(0) >= 0x1100 ? 2 : 1;
+    if (weight + w > 20) break;
+    weight += w;
+    out += ch;
+  }
+  return out || fallback;
+}
+
+/**
+ * 字段编号必须跟小程序后台那个模板的「模板详情」一一对应，错一个都会 47003。
+ * 当前模板：name1 课程名称 / time2 课程时间 / thing3 上课地点 / thing8 授课老师
+ * 换模板时只要改这里的键名，不要改别处。
+ */
 export function buildClassReminderData(r) {
-  const time =
-    toDateKey(r.schedule.scheduleDate) +
-    " " +
-    r.schedule.startTime.toTimeString().slice(0, 5);
+  const d = new Date(r.schedule.scheduleDate);
+  const hhmm = r.schedule.startTime.toTimeString().slice(0, 5);
+  // time 类型要用「YYYY年M月D日 HH:MM」格式，"2026-09-27 19:00" 有被拒的风险
+  const time = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${hhmm}`;
   return {
-    thing1: { value: (r.schedule.courseName || "课程").slice(0, 20) },
-    thing2: { value: (r.schedule.studio.name || "舞室").slice(0, 20) },
-    time3: { value: time },
-    thing4: { value: "记得提前安排时间哦~" },
+    name1: { value: fitText(r.schedule.courseName, "课程") },
+    time2: { value: time },
+    thing3: { value: fitText(r.schedule.studio?.name, "舞室") },
+    thing8: { value: fitText(r.schedule.coach?.name, "待定") },
   };
 }
 
@@ -31,7 +58,7 @@ export async function sendDueReminders() {
     },
     include: {
       user: true,
-      schedule: { include: { studio: true } },
+      schedule: { include: { studio: true, coach: true } },
     },
     orderBy: { remindAt: "asc" },
     take: 50,
