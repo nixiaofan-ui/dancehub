@@ -51,6 +51,7 @@ function serializeTimeline(schedules) {
     startTime: s.startTime.toTimeString().slice(0, 5),
     endTime: s.endTime.toTimeString().slice(0, 5),
     bookingUrl: s.bookingUrl,
+    coursePicUrl: s.coursePicUrl,
     remark: s.remark,
     coach: s.coach ? { id: s.coach.id, name: s.coach.name } : null,
     studio: {
@@ -58,6 +59,8 @@ function serializeTimeline(schedules) {
       name: s.studio.name,
       platform: s.studio.platform,
       logoUrl: s.studio.logoUrl,
+      // 官方约课小程序 appId（有则预约面板直接跳转）
+      bookingMiniAppId: s.studio.bookingMiniAppId,
       cityId: s.studio.cityId,
       city: s.studio.city?.name,
       region: s.studio.city?.region,

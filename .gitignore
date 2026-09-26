@@ -7,3 +7,15 @@ build/
 coverage/
 miniapp/project.private.config.json
 wechat_mcp_server/
+
+# 抓取调度状态（运行时生成，记录上次成功抓取时间）
+server/.crawl-state.json
+server/.crawl-state.json.tmp
+
+# 抓取中间产物与备份（体积大且可再生）
+capture/
+backups/
+db-backup/
+
+# 部署构建产物
+*.zip

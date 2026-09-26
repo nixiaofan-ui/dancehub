@@ -51,6 +51,10 @@ export function parseCapacity(text) {
 
 /** 原始条目 → schedule 写入字段 */
 export function mapRawToSchedule(raw, { studioId, coachId, date }) {
+  // 海外平台可能传 _scheduleDate 覆盖入参 date
+  const scheduleDate = raw._scheduleDate
+    ? new Date(raw._scheduleDate + "T00:00:00Z")
+    : date;
   const time = parseTimeRange(raw.time);
   const status = (raw.status || "").trim();
   return {
@@ -58,11 +62,13 @@ export function mapRawToSchedule(raw, { studioId, coachId, date }) {
     coachId: coachId ?? null,
     courseName: (raw.courseName || "").trim(),
     difficulty: mapDifficulty(raw.courseName),
-    scheduleDate: date,
+    scheduleDate,
     startTime: time.startTime,
     endTime: time.endTime,
     capacity: parseCapacity(raw.capacity) ?? 30,
     bookingUrl: null,
-    remark: status ? `抓取状态：${status}` : null,
+    // 课程封面图（支持海外平台的 _photoUrl 和 iWOD 的 picUrl）
+    coursePicUrl: raw._photoUrl || raw.picUrl || null,
+    remark: [status ? `抓取状态：${status}` : null, raw._roomName ? `场地：${raw._roomName}` : null].filter(Boolean).join(" | ") || null,
   };
 }

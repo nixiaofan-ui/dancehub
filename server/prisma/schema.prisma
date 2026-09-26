@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -75,20 +76,23 @@ model User {
 }
 
 model Studio {
-  id        Int            @id @default(autoincrement())
-  cityId    Int
-  city      City           @relation(fields: [cityId], references: [id])
-  name      String
-  address   String?
-  contact   String?
-  logoUrl   String?
-  platform  StudioPlatform @default(WECHAT)
-  status    Boolean        @default(true)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  coaches   Coach[]
-  schedules Schedule[]
-  follows   Follow[]
+  id               Int            @id @default(autoincrement())
+  cityId           Int
+  city             City           @relation(fields: [cityId], references: [id])
+  name             String
+  address          String?
+  contact          String?
+  logoUrl          String?
+  platform         StudioPlatform @default(WECHAT)
+  // 该店官方约课小程序的 appId（iWOD 系有，菲体云系暂缺）
+  // 用户点「跳转官方小程序预约」时 navigateToMiniProgram 用
+  bookingMiniAppId String?
+  status           Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  coaches          Coach[]
+  schedules        Schedule[]
+  follows          Follow[]
 
   @@index([cityId])
 }
@@ -120,6 +124,8 @@ model Schedule {
   bookingUrl   String?
   capacity     Int        @default(30)
   remark       String?
+  // 课程封面图（iWOD 的 pic 字段；菲体云暂无）
+  coursePicUrl String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   bookings     Booking[]
@@ -158,6 +164,17 @@ model Reminder {
 
   @@unique([userId, scheduleId])
   @@index([scheduleId])
+}
+
+// 抓取状态（原 .crawl-state.json，容器文件系统易失，改为落库；
+// 云托管定时触发器模式下跨重启保留 lastSuccessAt，避免每次触发全量重抓）
+model CrawlState {
+  id            String    @id // 抓取配置 id，如 box:123 / org:11000001
+  lastAttemptAt DateTime?
+  lastSuccessAt DateTime?
+  lastError     String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Follow {

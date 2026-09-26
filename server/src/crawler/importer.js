@@ -7,19 +7,37 @@ import { prisma } from "../lib/prisma.js";
 import { invalidateTimelineCache } from "../services/schedule.service.js";
 import { mapRawToSchedule } from "./mapper.js";
 
-export async function findOrCreateStudio(studioRef) {
+/** 按地区+名称幂等创建城市（全国扩展：新城市自动建） */
+export async function findOrCreateCity(region, name) {
+  const existing = await prisma.city.findFirst({
+    where: { region: region || "CN", name: name || "上海" },
+  });
+  if (existing) return existing;
+  return prisma.city.create({
+    data: { region: region || "CN", name: name || "上海" },
+  });
+}
+
+export async function findOrCreateStudio(studioRef, extra = {}) {
   const existing = await prisma.studio.findFirst({ where: { name: studioRef.name } });
+  // 跳转小程序 appId 等新字段：已有店也补写（只在新值非空且不同才更新，减少无谓写入）
+  const patch = {};
+  if (extra.bookingMiniAppId && existing && existing.bookingMiniAppId !== extra.bookingMiniAppId) {
+    patch.bookingMiniAppId = extra.bookingMiniAppId;
+  }
+  if (Object.keys(patch).length) {
+    return prisma.studio.update({ where: { id: existing.id }, data: patch });
+  }
   if (existing) return existing;
 
-  const city = await prisma.city.findFirst({
-    where: { region: studioRef.region, name: studioRef.city },
-  });
+  const city = await findOrCreateCity(studioRef.region, studioRef.city);
   return prisma.studio.create({
     data: {
       name: studioRef.name,
-      cityId: city ? city.id : 1,
+      cityId: city.id,
       platform: "WECHAT",
       status: true,
+      bookingMiniAppId: extra.bookingMiniAppId || null,
     },
   });
 }
@@ -57,28 +75,50 @@ export async function upsertSchedule(entry) {
 /**
  * 批量导入
  * @param config 抓取配置（含 studio 引用）
- * @param rows 原始条目，每条需带 _date（Date 类型）
- * @returns {{ studioId, studioName, created, updated, skipped, total }}
+ * @param rows 原始条目，每条需带 _date（Date 类型）；可带 _studioName 覆盖默认 studio
+ * @returns {{ studios, created, updated, skipped, total }} 汇总（多门店时按门店细分）
  */
 export async function importSchedules(config, rows) {
-  const studio = await findOrCreateStudio(config.studio);
-  const stats = { studioId: studio.id, studioName: studio.name, created: 0, updated: 0, skipped: 0, total: rows.length };
-
+  // 按门店分组（http 模式的分店用 _studioName，缺省回落到 config.studio.name）
+  const groups = new Map();
   for (const row of rows) {
-    const coach = await findOrCreateCoach(studio.id, row.coach);
-    const entry = mapRawToSchedule(row, {
-      studioId: studio.id,
-      coachId: coach ? coach.id : null,
-      date: row._date,
-    });
-    if (!entry.courseName || !entry.scheduleDate || !entry.startTime || !entry.endTime) {
-      stats.skipped += 1;
-      continue;
+    const studioName = (row._studioName || "").trim() || config.studio.name;
+    if (!groups.has(studioName)) groups.set(studioName, []);
+    groups.get(studioName).push(row);
+  }
+
+  const created = {};
+  const updated = {};
+  let skipped = 0;
+
+  for (const [studioName, groupRows] of groups) {
+    // iWOD 系店铺的约课小程序 appId → Studio.bookingMiniAppId（预约跳转用）
+    const extra = {};
+    if (config.http && config.http.appId) extra.bookingMiniAppId = config.http.appId;
+    const studio = await findOrCreateStudio({ ...config.studio, name: studioName }, extra);
+    for (const row of groupRows) {
+      const coach = await findOrCreateCoach(studio.id, row.coach);
+      const entry = mapRawToSchedule(row, {
+        studioId: studio.id,
+        coachId: coach ? coach.id : null,
+        date: row._date,
+      });
+      if (!entry.courseName || !entry.scheduleDate || !entry.startTime || !entry.endTime) {
+        skipped += 1;
+        continue;
+      }
+      const res = await upsertSchedule(entry);
+      if (res.action === "created") created[studioName] = (created[studioName] || 0) + 1;
+      else updated[studioName] = (updated[studioName] || 0) + 1;
     }
-    const res = await upsertSchedule(entry);
-    stats[res.action] += 1;
   }
 
   await invalidateTimelineCache();
-  return stats;
+  return {
+    studios: [...groups.keys()],
+    created,
+    updated,
+    skipped,
+    total: rows.length,
+  };
 }

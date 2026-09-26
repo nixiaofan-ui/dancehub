@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import { toDateKey } from "../services/schedule.service.js";
+import { sendDueReminders } from "../services/reminder.service.js";
 
 const REMIND_LEAD_MS = 2 * 60 * 60 * 1000;
 
@@ -18,7 +19,7 @@ router.get(
       where: { userId: req.userId },
       include: {
         schedule: {
-          include: { studio: true, coach: true },
+          include: { studio: { include: { city: true } }, coach: true },
         },
       },
       orderBy: { remindAt: "asc" },
@@ -37,6 +38,7 @@ router.get(
           startTime: r.schedule.startTime.toTimeString().slice(0, 5),
           coach: r.schedule.coach?.name || null,
           studio: r.schedule.studio.name,
+          city: r.schedule.studio.city?.name || null,
         },
       })),
     );
@@ -92,6 +94,23 @@ router.delete(
       where: { userId: req.userId, scheduleId: Number(req.params.scheduleId) },
     });
     ok(res, null, "已关闭提醒");
+  }),
+);
+
+// 定时触发器入口（云托管控制台配 cron 调用；服务未开外网，仅平台侧可达）。
+// 扫描到期提醒并推送订阅消息；跑得快（≤50 条/轮），同步返回结果。
+let reminderTicking = false;
+router.post(
+  "/tick",
+  asyncHandler(async (req, res) => {
+    if (reminderTicking) return ok(res, { started: false, reason: "already-running" });
+    reminderTicking = true;
+    try {
+      const r = await sendDueReminders();
+      ok(res, { started: true, ...r });
+    } finally {
+      reminderTicking = false;
+    }
   }),
 );
 

@@ -79,6 +79,8 @@ router.get(
       startTime: schedule.startTime.toTimeString().slice(0, 5),
       endTime: schedule.endTime.toTimeString().slice(0, 5),
       bookingUrl: schedule.bookingUrl,
+      // 课程封面图（iWOD 独有）
+      coursePicUrl: schedule.coursePicUrl,
       capacity: schedule.capacity,
       remark: schedule.remark,
       coach: schedule.coach
@@ -90,6 +92,9 @@ router.get(
         address: schedule.studio.address,
         platform: schedule.studio.platform,
         logoUrl: schedule.studio.logoUrl,
+        // 该店官方约课小程序 appId（有则详情页显示「跳转官方小程序预约」）
+        bookingMiniAppId: schedule.studio.bookingMiniAppId,
+        contact: schedule.studio.contact,
         city: schedule.studio.city?.name,
       },
       bookingStatus: booking ? booking.status : null,

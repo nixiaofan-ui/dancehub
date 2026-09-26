@@ -5,14 +5,50 @@ import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import { toDateKey, parseDateKey } from "../services/schedule.service.js";
+import { pickStyles } from "../services/dance-style.service.js";
+import { sortStudiosByName } from "../services/studio-sort.service.js";
 
 const router = Router();
+
+/** 当天 UTC 零点，用于匹配 @db.Date 的 scheduleDate */
+function todayUtc() {
+  const d = new Date();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+/**
+ * 聚合每家门店未来课表的课名，解析出代表舞种标签
+ * @param {number[]} studioIds
+ * @returns {Promise<Map<number, string[]>>}
+ */
+async function buildStyleMap(studioIds) {
+  const map = new Map();
+  if (!studioIds.length) return map;
+
+  const rows = await prisma.schedule.groupBy({
+    by: ["studioId", "courseName"],
+    where: { studioId: { in: studioIds }, scheduleDate: { gte: todayUtc() } },
+    _count: { _all: true },
+  });
+
+  const byStudio = new Map();
+  for (const r of rows) {
+    if (!byStudio.has(r.studioId)) byStudio.set(r.studioId, []);
+    byStudio.get(r.studioId).push({ courseName: r.courseName, count: r._count._all });
+  }
+  for (const [id, list] of byStudio) {
+    map.set(id, pickStyles(list, 4));
+  }
+  return map;
+}
 
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const { cityId, keyword } = req.query;
+    const { cityId, keyword, includeInactive } = req.query;
     const where = {};
+    // 停用的舞室默认不出现在发现页；管理端可传 includeInactive=1 查看全部
+    if (includeInactive !== "1") where.status = true;
     if (cityId) where.cityId = Number(cityId);
     if (keyword) {
       where.OR = [
@@ -23,9 +59,17 @@ router.get(
     const studios = await prisma.studio.findMany({
       where,
       include: { city: true, _count: { select: { schedules: true, coaches: true } } },
-      orderBy: { id: "desc" },
     });
-    ok(res, studios);
+
+    const styleMap = await buildStyleMap(studios.map((s) => s.id));
+    // 按名称首字母排序（中文走拼音），并给每家带上分组字母，供发现页右侧索引条定位
+    ok(
+      res,
+      sortStudiosByName(studios).map((s) => ({
+        ...s,
+        styles: styleMap.get(s.id) || [],
+      })),
+    );
   }),
 );
 
@@ -84,6 +128,8 @@ router.get(
         startTime: s.startTime.toTimeString().slice(0, 5),
         endTime: s.endTime.toTimeString().slice(0, 5),
         bookingUrl: s.bookingUrl,
+        // 课程封面图（iWOD 独有，菲体云暂无）
+        coursePicUrl: s.coursePicUrl,
         remark: s.remark,
         coach: s.coach ? { id: s.coach.id, name: s.coach.name } : null,
         bookingStatus: bookingMap.get(s.id) || null,

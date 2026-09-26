@@ -8,6 +8,8 @@ import {
   runCrawl,
   runAllCrawls,
   getCrawlStatus,
+  tickOnce,
+  dueCount,
 } from "./index.js";
 
 const router = Router();
@@ -48,5 +50,17 @@ router.post("/run/:id", requireAdmin, asyncHandler(async (req, res) => {
   const { dryRun } = req.body || {};
   ok(res, await runCrawl(req.params.id, { dryRun }), "抓取完成");
 }));
+
+// 定时触发器入口（云托管控制台配 cron 调用；服务未开外网，仅平台侧可达）。
+// 立即返回，抓取在后台跑；防重入——上一轮没跑完时本次直接跳过。
+router.post("/tick", (req, res) => {
+  const due = dueCount();
+  tickOnce("cloud-trigger")
+    .then((r) => {
+      if (!r.started) console.log(`[crawler] 触发器跳过：${r.reason}`);
+    })
+    .catch((e) => console.error("[crawler] 触发器执行异常:", e.message));
+  ok(res, { started: true, due, note: "后台抓取已受理，进度见 GET /api/crawler/status" });
+});
 
 export default router;

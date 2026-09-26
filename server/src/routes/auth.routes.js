@@ -18,10 +18,10 @@ function signToken(user) {
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
-    const { code } = req.body || {};
+    const { code, devId } = req.body || {};
     if (!code) return fail(res, 400, "缺少登录 code");
 
-    const session = await code2session(code);
+    const session = await code2session(code, devId);
     if (!session.openid) return fail(res, 401, "微信登录失败");
 
     let user = await prisma.user.findUnique({ where: { openid: session.openid } });

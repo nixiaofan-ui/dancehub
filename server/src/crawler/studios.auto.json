@@ -1,0 +1,1322 @@
+[
+  {
+    "id": "iwod-3912-壹栋贰楼",
+    "enabled": true,
+    "label": "壹栋贰楼",
+    "auto": true,
+    "studio": {
+      "name": "壹栋贰楼（杨浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx6dabdcc504f7acf7",
+      "boxId": 3912,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市杨浦区齐齐哈尔路920号印坊928一号楼二楼",
+    "district": "杨浦",
+    "phone": "18616523256",
+    "lat": 31.266828536987305,
+    "lng": 121.52467346191406,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx6dabdcc504f7acf7/b_3912_u_574270/1jf056f13_ln12i.jpg"
+  },
+  {
+    "id": "iwod-9639-S-V2-Dance-Studio",
+    "enabled": true,
+    "label": "S.V2 Dance Studio",
+    "auto": true,
+    "studio": {
+      "name": "S.V2 Dance Studio（嘉定）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx11034aa8652e1e96",
+      "boxId": 9639,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市嘉定区安驰路279号",
+    "district": "嘉定",
+    "phone": "18602141127",
+    "lat": 31.28400421142578,
+    "lng": 121.17841339111328,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx11034aa8652e1e96/b_null_u_2704435/1gqin6v1v_945u7.jpg"
+  },
+  {
+    "id": "iwod-11621-万象城校区",
+    "enabled": true,
+    "label": "万象城校区",
+    "auto": true,
+    "studio": {
+      "name": "DANCEPLUS·万象城校区（闵行）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx4c5039e1af611a2a",
+      "boxId": 11621,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市闵行区虹桥镇吴中路1799号万象城写字楼A座209室",
+    "district": "闵行",
+    "phone": "15618222691",
+    "lat": 31.169334411621094,
+    "lng": 121.3657455444336,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx4c5039e1af611a2a/b_11621_u_3602942/1hd38f868_kvkgq.jpg",
+    "brand": "DANCEPLUS"
+  },
+  {
+    "id": "iwod-17271-SOLAR-DANCE",
+    "enabled": true,
+    "label": "SOLAR DANCE",
+    "auto": true,
+    "studio": {
+      "name": "SOLAR DANCE（徐汇）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxbbf248c1aeb47d40",
+      "boxId": 17271,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市徐汇区华山路1901号",
+    "district": "徐汇",
+    "phone": "13818615036",
+    "lat": 31.19775390625,
+    "lng": 121.43809509277344,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxbbf248c1aeb47d40/b_17271_u_6949080/1ip9t80jd_kggme.jpg"
+  },
+  {
+    "id": "iwod-5015-MADE-IN-V舞蹈工作室",
+    "enabled": true,
+    "label": "MADE IN V舞蹈工作室",
+    "auto": true,
+    "studio": {
+      "name": "MADE IN V舞蹈工作室（徐汇）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx4acf56ccc539d165",
+      "boxId": 5015,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市徐汇区枫林路街道天钥桥路909号D1国际创意空间5号楼305室",
+    "district": "徐汇",
+    "phone": "17621618198",
+    "lat": 31.178693771362305,
+    "lng": 121.4456787109375,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx4acf56ccc539d165/b_5015_u_858594/1j6d6paf6_fkpj2.jpg"
+  },
+  {
+    "id": "iwod-23334-ArtJAM-Shanghai-静安",
+    "enabled": true,
+    "label": "ArtJAM Shanghai 静安",
+    "auto": true,
+    "studio": {
+      "name": "ArtJAM Shanghai 静安",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxa841a124b7bf3c10",
+      "boxId": 23334,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市静安区万航渡路889号悦达889广场L1-03A",
+    "district": "静安",
+    "phone": "15800863445",
+    "lat": 31.229269,
+    "lng": 121.428537,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxa841a124b7bf3c10/b_13949_u_4792387/1jssvkrna_kctbp.jpg"
+  },
+  {
+    "id": "iwod-1818-FS-Dance-Center",
+    "enabled": true,
+    "label": "FS Dance Center",
+    "auto": true,
+    "studio": {
+      "name": "FS Dance Center（静安）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 1818,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市静安区康定路211号6楼",
+    "district": "静安",
+    "phone": "15026734228",
+    "lat": 31.23529624938965,
+    "lng": 121.45233154296875,
+    "pic": "https://cdn.iwod.cn//wxe0a406d6ce0e8cfe/thumbnail/1eupb4iff_5afn7.jpg"
+  },
+  {
+    "id": "iwod-13949-ArtJAM-Shanghai-徐汇",
+    "enabled": true,
+    "label": "ArtJAM Shanghai 徐汇",
+    "auto": true,
+    "studio": {
+      "name": "ArtJAM Shanghai 徐汇",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxa841a124b7bf3c10",
+      "boxId": 13949,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市徐汇区茶陵北路20号3号楼3层301室",
+    "district": "徐汇",
+    "phone": "15800863445",
+    "lat": 31.198563,
+    "lng": 121.465019,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxa841a124b7bf3c10/b_13949_u_4792436/1i0ksh3am_96b3m.jpg"
+  },
+  {
+    "id": "iwod-13398-Flow-Theory",
+    "enabled": true,
+    "label": "Flow Theory",
+    "auto": true,
+    "studio": {
+      "name": "Flow Theory（普陀）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 13398,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市普陀区顺义路18号(近曹杨路)",
+    "district": "普陀",
+    "phone": "15618519531",
+    "lat": 31.23213768005373,
+    "lng": 121.42170715332028,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_13398_u_635044/1hskkpoub_rmo1o.jpg"
+  },
+  {
+    "id": "iwod-14558-Kikott-Ballet",
+    "enabled": true,
+    "label": "Kikott Ballet",
+    "auto": true,
+    "studio": {
+      "name": "Kikott Ballet（静安）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxea28f2f4db92954b",
+      "boxId": 14558,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市静安区寿阳路555号",
+    "district": "静安",
+    "phone": "17621464713",
+    "lat": 31.3006935119629,
+    "lng": 121.45689392089845,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxea28f2f4db92954b/b_14558_u_5330346/1jljf99ff_1j5e8.jpg"
+  },
+  {
+    "id": "iwod-7043-Souldancing-PuDong",
+    "enabled": true,
+    "label": "Souldancing PuDong",
+    "auto": true,
+    "studio": {
+      "name": "Souldancing PuDong（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx70bdd80e957bc732",
+      "boxId": 7043,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市浦东新区丁香路858号丁香国际商业中心F2",
+    "district": "浦东",
+    "phone": "18717958460",
+    "lat": 31.225039,
+    "lng": 121.5514,
+    "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wx87400984ca1b01eb/1513222/1fouhgnlq_78162.jpg"
+  },
+  {
+    "id": "iwod-11618-人广校区",
+    "enabled": true,
+    "label": "人广校区",
+    "auto": true,
+    "studio": {
+      "name": "DANCEPLUS·人广校区（黄浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx4c5039e1af611a2a",
+      "boxId": 11618,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市黄浦区延安东路588号远洋商业大厦一期十楼",
+    "district": "黄浦",
+    "phone": "15221425247",
+    "lat": 31.230571746826172,
+    "lng": 121.48090362548828,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx4c5039e1af611a2a/b_11618_u_3602942/1hd376kqu_2ak58.jpg",
+    "brand": "DANCEPLUS"
+  },
+  {
+    "id": "iwod-5457-The-Happyfeet-Dance-Project",
+    "enabled": true,
+    "label": "The Happyfeet Dance Project",
+    "auto": true,
+    "studio": {
+      "name": "The Happyfeet Dance Project（普陀）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 5457,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市普陀区长寿路401号3楼303室",
+    "district": "普陀",
+    "phone": "13052391624",
+    "lat": 31.23912811279297,
+    "lng": 121.43745422363281,
+    "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wxe0a406d6ce0e8cfe/165501/1fb2ccpck_4599v.jpg"
+  },
+  {
+    "id": "iwod-6285-Y5-Studio",
+    "enabled": true,
+    "label": "Y5 Studio",
+    "auto": true,
+    "studio": {
+      "name": "Y5 Studio（普陀）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 6285,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "普陀区白兰路137弄1-2号",
+    "district": "普陀",
+    "phone": "13601845903",
+    "lat": 31.23614516104982,
+    "lng": 121.41417030579062,
+    "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wxe0a406d6ce0e8cfe/164793/1fesglrd6_393mm.jpg"
+  },
+  {
+    "id": "iwod-17795-QueenKA昆卡舞蹈-新田360店",
+    "enabled": true,
+    "label": "QueenKA昆卡舞蹈(新田360店)",
+    "auto": true,
+    "studio": {
+      "name": "QueenKA昆卡舞蹈(新田360店)（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxc30e98025e2479ed",
+      "boxId": 17795,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市浦东新区秀浦路668号",
+    "district": "浦东",
+    "phone": "18534041041",
+    "lat": 31.12531,
+    "lng": 121.565155,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxc30e98025e2479ed/b_17795_u_7143970/1jab6bci3_c6rlj.jpg"
+  },
+  {
+    "id": "iwod-9035-Young-label",
+    "enabled": true,
+    "label": "Young label",
+    "auto": true,
+    "studio": {
+      "name": "Young label（静安）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx9d7c5d8b2907f258",
+      "boxId": 9035,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市静安区万航渡路889广场L2-16,17室",
+    "district": "静安",
+    "phone": "13601829014",
+    "lat": 31.22901725769043,
+    "lng": 121.42859649658203,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx9d7c5d8b2907f258/b_9035_u_4929581/1ik6hl53k_1lc08.jpg"
+  },
+  {
+    "id": "iwod-9515-SYNC-DANCE-STUDIO",
+    "enabled": true,
+    "label": "SYNC DANCE STUDIO",
+    "auto": true,
+    "studio": {
+      "name": "SYNC DANCE STUDIO（徐汇）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx6f3af84034b375fb",
+      "boxId": 9515,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市徐汇区凯旋南路900号漕溪路地铁站3号口2楼商铺",
+    "district": "徐汇",
+    "phone": "021-54526270",
+    "lat": 31.176954,
+    "lng": 121.437874,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx6f3af84034b375fb/b_9515_u_2659879/1gqk1sa9k_i0j0a.jpg"
+  },
+  {
+    "id": "iwod-11620-华漕艺术中心",
+    "enabled": true,
+    "label": "华漕艺术中心",
+    "auto": true,
+    "studio": {
+      "name": "DANCEPLUS·华漕艺术中心（闵行）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx4c5039e1af611a2a",
+      "boxId": 11620,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市闵行区金光路225号快乐家园综合楼北2层",
+    "district": "闵行",
+    "phone": "15618250065",
+    "lat": 31.197994,
+    "lng": 121.277245,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx4c5039e1af611a2a/b_11620_u_3602942/1hd3amt97_be89n.jpg",
+    "brand": "DANCEPLUS"
+  },
+  {
+    "id": "iwod-17193-QueenKA昆卡舞蹈-龙阳旗舰店",
+    "enabled": true,
+    "label": "QueenKA昆卡舞蹈(龙阳旗舰店)",
+    "auto": true,
+    "studio": {
+      "name": "QueenKA昆卡舞蹈(龙阳旗舰店)（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxc30e98025e2479ed",
+      "boxId": 17193,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市浦东新区龙阳路2000号",
+    "district": "浦东",
+    "phone": "13979896882",
+    "lat": 31.20315,
+    "lng": 121.55767,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxc30e98025e2479ed/b_17193_u_7143970/1jab6b150_rt334.jpg"
+  },
+  {
+    "id": "iwod-17261-Yami-Yummy-舞蹈私教空间-东明路店",
+    "enabled": true,
+    "label": "Yami Yummy 舞蹈私教空间（东明路店）",
+    "auto": true,
+    "studio": {
+      "name": "Yami Yummy 舞蹈私教空间（东明路店）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx2f0d1eaab3f4ee9d",
+      "boxId": 17261,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "phone": "15002161533",
+    "lat": 31.172563325494256,
+    "lng": 121.51096350248662,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx2f0d1eaab3f4ee9d/b_17261_u_6915171/1io2rim7f_qa1ap.jpg"
+  },
+  {
+    "id": "iwod-7042-Souldancing-GuBei",
+    "enabled": true,
+    "label": "Souldancing GuBei",
+    "auto": true,
+    "studio": {
+      "name": "Souldancing GuBei（闵行）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx70bdd80e957bc732",
+      "boxId": 7042,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市闵行区虹许路480号205室(近红松东路,哈一顿酒店旁)",
+    "district": "闵行",
+    "phone": "13045652302",
+    "lat": 31.191795,
+    "lng": 121.38939,
+    "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wx87400984ca1b01eb/1513222/1fouhfgmp_380es.jpg"
+  },
+  {
+    "id": "iwod-13498-QueenKA昆卡舞蹈-叁宸里总店",
+    "enabled": true,
+    "label": "QueenKA昆卡舞蹈(叁宸里总店)",
+    "auto": true,
+    "studio": {
+      "name": "QueenKA昆卡舞蹈(叁宸里总店)（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxc30e98025e2479ed",
+      "boxId": 13498,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市浦东新区",
+    "district": "浦东",
+    "phone": "15649930517",
+    "lat": 31.174398,
+    "lng": 121.56499,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxc30e98025e2479ed/b_13498_u_7143970/1jab6aa99_15em1.jpg"
+  },
+  {
+    "id": "iwod-21963-QueenKA昆卡舞蹈-复地活力城店",
+    "enabled": true,
+    "label": "QueenKA昆卡舞蹈(复地活力城店)",
+    "auto": true,
+    "studio": {
+      "name": "QueenKA昆卡舞蹈(复地活力城店)（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxc30e98025e2479ed",
+      "boxId": 21963,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市浦东新区沪南路2229号",
+    "district": "浦东",
+    "phone": "13162672356",
+    "lat": 31.159388,
+    "lng": 121.5646,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxc30e98025e2479ed/b_21963_u_7143970/1jlgji1dh_c5363.jpg"
+  },
+  {
+    "id": "iwod-6528-芭蕾之星",
+    "enabled": true,
+    "label": "芭蕾之星",
+    "auto": true,
+    "studio": {
+      "name": "芭蕾之星（长宁）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx098621e4afb6249a",
+      "boxId": 6528,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市长宁区天山路1717号T3-203",
+    "district": "长宁",
+    "phone": "13052518706",
+    "lat": 31.209732055664062,
+    "lng": 121.4081039428711,
+    "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wx098621e4afb6249a/1366241/1fiehbimn_1ttl3.jpg"
+  },
+  {
+    "id": "iwod-23657-DANCE舞蹈工作室",
+    "enabled": true,
+    "label": "DANCE+舞蹈工作室",
+    "auto": true,
+    "studio": {
+      "name": "DANCE+舞蹈工作室（杨浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 23657,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市杨浦区淞沪路308号9号楼B1层04室",
+    "district": "杨浦",
+    "phone": "13651715362",
+    "lat": 31.30691,
+    "lng": 121.51267,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_23657_u_13771497/1k13fh219_j7mas.jpg"
+  },
+  {
+    "id": "iwod-6133-R平方舞蹈工作室-东方路店",
+    "enabled": true,
+    "label": "R平方舞蹈工作室（东方路店）",
+    "auto": true,
+    "studio": {
+      "name": "R平方舞蹈工作室（东方路店）（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx8f0af7fa74307275",
+      "boxId": 6133,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市浦东新区东方路800号宝安大厦315",
+    "district": "浦东",
+    "phone": "18616919705",
+    "lat": 31.22648048400879,
+    "lng": 121.52400207519531,
+    "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wx8f0af7fa74307275/1229187/1fd92tuvr_8afc.jpg"
+  },
+  {
+    "id": "iwod-22748-HO-STAR-星禾舞蹈",
+    "enabled": true,
+    "label": "HO STAR 星禾舞蹈",
+    "auto": true,
+    "studio": {
+      "name": "HO STAR 星禾舞蹈（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx7614b7d047b6605f",
+      "boxId": 22748,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市浦东新区富都广场L4-4",
+    "district": "浦东",
+    "phone": "13003207090",
+    "lat": 31.21196,
+    "lng": 121.529015,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx7614b7d047b6605f/b_null_u_12391968/1jpeaoj51_45gcq.jpg"
+  },
+  {
+    "id": "iwod-3264-XDT-Education",
+    "enabled": true,
+    "label": "XDT Education",
+    "auto": true,
+    "studio": {
+      "name": "XDT Education",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxbb253db0ae9b942f",
+      "boxId": 3264,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市银都西路350号B区2楼201室（谢欣舞蹈剧场·白屋）",
+    "phone": "19121583669",
+    "lat": 31.080854415893555,
+    "lng": 121.36046600341797,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxbb253db0ae9b942f/b_3264_u_1554633/1goamitji_76bmo.jpg"
+  },
+  {
+    "id": "iwod-22786-KDS舞蹈工作室",
+    "enabled": true,
+    "label": "KDS舞蹈工作室",
+    "auto": true,
+    "studio": {
+      "name": "KDS舞蹈工作室（普陀）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 22786,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市普陀区西康路1000号(长寿路地铁站出入口步行430米)",
+    "district": "普陀",
+    "phone": "18824924919",
+    "lat": 31.240446090698242,
+    "lng": 121.44239807128906,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_22786_u_1938283/1jt6e8gat_fucd6.jpg"
+  },
+  {
+    "id": "iwod-4658-S-Pole朝文空中舞蹈",
+    "enabled": true,
+    "label": "S Pole朝文空中舞蹈",
+    "auto": true,
+    "studio": {
+      "name": "S Pole朝文空中舞蹈（徐汇）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxaecaa44f01aa6b7c",
+      "boxId": 4658,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市徐汇区长乐路801号702室",
+    "district": "徐汇",
+    "phone": "15221107217",
+    "lat": 31.215797424316406,
+    "lng": 121.44764709472656,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxaecaa44f01aa6b7c/b_4658_u_758290/1gm8iilv4_ts5aj.jpg"
+  },
+  {
+    "id": "iwod-9999-外滩潮方-尊享店",
+    "enabled": true,
+    "label": "外滩潮方 尊享店",
+    "auto": true,
+    "studio": {
+      "name": "外滩潮方 尊享店（黄浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx2ec123c60e5c1984",
+      "boxId": 9999,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市黄浦区小东门街道中山南路800弄1号二楼L202",
+    "district": "黄浦",
+    "phone": "17621800970",
+    "lat": 31.21466827392578,
+    "lng": 121.50621032714844,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx2ec123c60e5c1984/b_9999_u_1225461/1hj0po6e3_41ibl.jpg"
+  },
+  {
+    "id": "iwod-15632-芭蕾明元",
+    "enabled": true,
+    "label": "芭蕾明元",
+    "auto": true,
+    "studio": {
+      "name": "芭蕾明元（黄浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx265b47be74eccc77",
+      "boxId": 15632,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市黄浦区中山南一路788号博荟广场2楼L2-13",
+    "district": "黄浦",
+    "phone": "16601977600",
+    "lat": 31.1973876953125,
+    "lng": 121.48084259033203,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_11235_u_343292/1icfshc3i_12sfl.jpg"
+  },
+  {
+    "id": "iwod-14303-Baila-Asi",
+    "enabled": true,
+    "label": "Baila Asi",
+    "auto": true,
+    "studio": {
+      "name": "Baila Asi（静安）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx4dadd8c8ac14dfb8",
+      "boxId": 14303,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市上海市静安区石门二路333弄3号恒安大厦22E",
+    "district": "静安",
+    "phone": "186 2163 0855",
+    "lat": 31.236078,
+    "lng": 121.45944,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_14303_u_5020608/1i375hnhs_974m1.jpg"
+  },
+  {
+    "id": "iwod-15937-浦东前滩公园巷-伊始店",
+    "enabled": true,
+    "label": "浦东前滩公园巷 伊始店",
+    "auto": true,
+    "studio": {
+      "name": "浦东前滩公园巷 伊始店",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx2ec123c60e5c1984",
+      "boxId": 15937,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市浦东新区耀龙路1378号前滩公园巷E1-104",
+    "district": "浦东",
+    "phone": "17621800970",
+    "lat": 31.153818130493164,
+    "lng": 121.47496795654297,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx2ec123c60e5c1984/b_15937_u_1484454/1if9h79c8_u7h8j.jpg"
+  },
+  {
+    "id": "iwod-6107-大上海时代广场-旗舰店",
+    "enabled": true,
+    "label": "大上海时代广场 旗舰店",
+    "auto": true,
+    "studio": {
+      "name": "大上海时代广场 旗舰店（黄浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx2ec123c60e5c1984",
+      "boxId": 6107,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市黄浦区淮海中路93-111号大上海时代广场B1",
+    "district": "黄浦",
+    "phone": "17621800970",
+    "lat": 31.22429847717285,
+    "lng": 121.47850036621094,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx2ec123c60e5c1984/b_6107_u_1225461/1hj0pprpf_m1ojs.jpg"
+  },
+  {
+    "id": "iwod-15224-上海利园-甄世店",
+    "enabled": true,
+    "label": "上海利园 甄世店",
+    "auto": true,
+    "studio": {
+      "name": "上海利园 甄世店（静安）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx2ec123c60e5c1984",
+      "boxId": 15224,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市静安区石门二路街道新闸路668号上海利园B1-04/05",
+    "district": "静安",
+    "phone": "17621800970",
+    "lat": 31.237552642822266,
+    "lng": 121.46126556396484,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx2ec123c60e5c1984/b_15224_u_1484454/1if9ec4gs_9pv1d.jpg"
+  },
+  {
+    "id": "iwod-18399-Villa-Rella芭蕾",
+    "enabled": true,
+    "label": "Villa Rella芭蕾",
+    "auto": true,
+    "studio": {
+      "name": "Villa Rella芭蕾（普陀）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx60d836457f36158b",
+      "boxId": 18399,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市普陀区石泉路街道铜川路699弄1号中海环宇城MAX购物中心二层L2003号",
+    "district": "普陀",
+    "phone": "02152280383",
+    "lat": 31.250350952148438,
+    "lng": 121.40824890136719,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx60d836457f36158b/b_18399_u_8161066/1j12u6nbm_glj38.jpg"
+  },
+  {
+    "id": "iwod-14637-OKEY舞蹈工作室",
+    "enabled": true,
+    "label": "OKEY舞蹈工作室",
+    "auto": true,
+    "studio": {
+      "name": "OKEY舞蹈工作室（徐汇）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxb1a89069433053be",
+      "boxId": 14637,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市徐汇区凯旋路2588号11楼(瑞幸咖啡旁4号门)",
+    "district": "徐汇",
+    "phone": "15921577512",
+    "lat": 31.185230255126953,
+    "lng": 121.4300537109375,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxb1a89069433053be/b_null_u_5225583/1i57v4r0s_4tadh.jpg"
+  },
+  {
+    "id": "iwod-12235-Ballet-Weekly-芭蕾周刊",
+    "enabled": true,
+    "label": "Ballet Weekly 芭蕾周刊",
+    "auto": true,
+    "studio": {
+      "name": "Ballet Weekly 芭蕾周刊（徐汇）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxc8b6681a8d6d4709",
+      "boxId": 12235,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市徐汇区徐虹中路20号(近古宜路)",
+    "district": "徐汇",
+    "phone": "15021573129",
+    "lat": 31.18808937072754,
+    "lng": 121.42430114746094,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_8928_u_24491/1hiidnl45_mqhft.jpg"
+  },
+  {
+    "id": "iwod-6334-Elevé-Dance-Studio-上海",
+    "enabled": true,
+    "label": "Elevé Dance Studio | 上海",
+    "auto": true,
+    "studio": {
+      "name": "Elevé Dance Studio（黄浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 6334,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市黄浦区中山南一路488号滨江壹号院B座B-301A室",
+    "district": "黄浦",
+    "phone": "15021200207",
+    "lat": 31.198974609375,
+    "lng": 121.48390197753906,
+    "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wxe0a406d6ce0e8cfe/11225/1ff9tdnoi_v7ch.jpg"
+  },
+  {
+    "id": "iwod-12799-上海Win-Dance舞蹈",
+    "enabled": true,
+    "label": "上海Win Dance舞蹈",
+    "auto": true,
+    "studio": {
+      "name": "上海Win Dance舞蹈（普陀）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxf43fad794635a78a",
+      "boxId": 12799,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市普陀区陕西北路",
+    "district": "普陀",
+    "phone": "13918735645",
+    "lat": 31.243053436279297,
+    "lng": 121.44229888916016,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_12799_u_4250216/1j7gpst94_2kq2g.jpg"
+  },
+  {
+    "id": "iwod-20701-Circle-dance-studio-圆舞室",
+    "enabled": true,
+    "label": "Circle dance studio 圆舞室",
+    "auto": true,
+    "studio": {
+      "name": "Circle dance studio 圆舞室（杨浦）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx9d7f1176f43280d9",
+      "boxId": 20701,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市杨浦区国安路758弄1-63号",
+    "district": "杨浦",
+    "phone": "15239466063",
+    "lat": 31.320037841796875,
+    "lng": 121.50497436523438,
+    "pic": "https://cdn2.iwod.cn//mp_img/wx9d7f1176f43280d9/b_20701_u_9988861/1jdafjo8u_q57oa.jpg"
+  },
+  {
+    "id": "iwod-20749-Le-Pas-芭蕾足迹",
+    "enabled": true,
+    "label": "Le Pas 芭蕾足迹",
+    "auto": true,
+    "studio": {
+      "name": "Le Pas 芭蕾足迹（浦东）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx0e53a644aca31952",
+      "boxId": 20749,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市浦东新区泳耀路511弄6幢",
+    "district": "浦东",
+    "phone": "18623440628",
+    "lat": 31.16046142578125,
+    "lng": 121.4815673828125,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_20686_u_24491/1jdcitbva_0o709.jpg"
+  },
+  {
+    "id": "iwod-23684-Eleve-Dance-Studio-浦江店",
+    "enabled": true,
+    "label": "Eleve Dance Studio 浦江店",
+    "auto": true,
+    "studio": {
+      "name": "Eleve Dance Studio 浦江店（闵行）",
+      "city": "上海",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wxe0a406d6ce0e8cfe",
+      "boxId": 23684,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "上海市闵行区浦江镇银杏广场2层221室",
+    "district": "闵行",
+    "phone": "15821819013",
+    "lat": 31.096637725830078,
+    "lng": 121.50772094726562,
+    "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_81_u_11225/1jus8rusj_ecvre.jpg"
+  }
+]
