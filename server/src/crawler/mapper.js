@@ -57,11 +57,17 @@ export function mapRawToSchedule(raw, { studioId, coachId, date }) {
     : date;
   const time = parseTimeRange(raw.time);
   const status = (raw.status || "").trim();
+  const remark = [
+    status ? `抓取状态：${status}` : null,
+    raw._roomName ? `场地：${raw._roomName}` : null,
+    raw._remark || null, // 平台补充信息（如 JustJerk 的 LV 等级标注）
+  ].filter(Boolean).join(" | ");
   return {
     studioId,
     coachId: coachId ?? null,
     courseName: (raw.courseName || "").trim(),
-    difficulty: mapDifficulty(raw.courseName),
+    // 平台已给出难度时优先（如 JustJerk 由课表图上的彩色星号判定等级）
+    difficulty: raw._difficulty || mapDifficulty(raw.courseName),
     scheduleDate,
     startTime: time.startTime,
     endTime: time.endTime,
@@ -69,6 +75,6 @@ export function mapRawToSchedule(raw, { studioId, coachId, date }) {
     bookingUrl: null,
     // 课程封面图（支持海外平台的 _photoUrl 和 iWOD 的 picUrl）
     coursePicUrl: raw._photoUrl || raw.picUrl || null,
-    remark: [status ? `抓取状态：${status}` : null, raw._roomName ? `场地：${raw._roomName}` : null].filter(Boolean).join(" | ") || null,
+    remark: remark || null,
   };
 }

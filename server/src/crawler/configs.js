@@ -313,6 +313,51 @@ const manualConfigs = [
     cron: null,
     timeFormat: "HH:mm-HH:mm",
   },
+
+  // ────────────── 海外：韩国 JustJerk（首尔 Hapjeong / Ewha） ──────────────
+  {
+    id: "justjerk-seoul",
+    enabled: true,
+    label: "JustJerk Dance Academy (Seoul)",
+
+    studio: {
+      name: "JustJerk Dance Academy",
+      city: "首尔",
+      region: "OVERSEAS",
+    },
+
+    // 官网只有一张课表图片 → 下载 + macOS Vision OCR + 栅格还原（见 engine.js crawlWithJustjerk）
+    mode: "justjerk",
+
+    justjerk: {
+      // OCR 用的 Python 解释器（需装 pyobjc-framework-Vision；留空则读 JUSTJERK_PYTHON 或 python3）
+      python: process.env.JUSTJERK_PYTHON || null,
+      branches: [
+        {
+          key: "hapjeong",
+          label: "합정 Hapjeong",
+          studioName: "JustJerk · Hapjeong（합정）",
+          url: "https://justjerk.co.kr/hapjeongschedule",
+          weekdays: 6, // MON~SAT
+        },
+        {
+          key: "ewha",
+          label: "이화 Ewha",
+          studioName: "JustJerk · Ewha（이화）",
+          url: "https://justjerk.co.kr/ewhaschedule",
+          weekdays: 7, // MON~SUN（周日场次自带 3PM/430PM 时间）
+        },
+      ],
+    },
+
+    // 课表按「月」发布，每天核对一次足够
+    dateMode: "nextDays",
+    days: 45,
+    dates: [],
+    refreshHours: 24,
+    cron: null,
+    timeFormat: "HH:mm-HH:mm",
+  },
 ];
 
 /**

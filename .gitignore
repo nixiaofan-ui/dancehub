@@ -17,5 +17,8 @@ capture/
 backups/
 db-backup/
 
+# JustJerk 课表图片缓存（每次抓取按上传日期重新下载）
+server/.cache/
+
 # 部署构建产物
 *.zip

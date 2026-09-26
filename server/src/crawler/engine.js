@@ -2,12 +2,22 @@
  * 抓取引擎
  * - http 模式：直接调用 iWOD SaaS 的公开课表 API（无需登录），签名算法已逆向复现。
  * - fityun 模式：直接调用菲体云（fityun.cn）的公开课表 API，以请求头 orgid/branchid 定位机构与门店。
+ * - oneMillion / avex 模式：解析日韩舞室官网 SSR 页面里内嵌的 JSON。
+ * - justjerk 模式：JustJerk（首尔）官网只有「课表图片」，走「下载图片 → macOS Vision OCR
+ *   → 栅格还原」的管线（见 tools/justjerk_ocr.py），本文件只负责取图与调用。
  * - automator 模式：通过 miniprogram-automator 启动微信开发者工具，
  *   打开目标小程序 → 跳转课表页 → 按配置的 CSS 选择器抽取课程卡片数据。
  * - mock 模式：返回演示数据（结构与真实卡片一致），便于无开发者工具环境联调。
  */
 
 import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -368,6 +378,148 @@ async function crawlWithAvex(config, _date) {
     });
 }
 
+/* ───────────────────────── JustJerk（首尔）抓取 ───────────────────────── */
+
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const JUSTJERK_OCR_SCRIPT = path.resolve(__dirname, "tools/justjerk_ocr.py");
+const JUSTJERK_CACHE_DIR = path.resolve(__dirname, "../../.cache/justjerk");
+const LEVEL_TO_DIFFICULTY = { 1: "BEGINNER", 2: "BEGINNER", 3: "INTERMEDIATE", 4: "ADVANCED", 5: "ADVANCED" };
+
+/**
+ * 从 Imweb 课表页里挑出「本月课表」图片。
+ *
+ * Imweb 的图片控件形如：
+ *   <div class="_img_box" data-src="https://cdn.imweb.me/upload/<site>/<hash>.png">
+ *     <img src="https://cdn.imweb.me/thumbnail/20260902/<hash>.png" />
+ * 其中 src 是缩略图（路径里带上传日期），data-src 才是原图 —— OCR 用原图准确率明显更高。
+ * 同一页面还有站点模板图（日期是很久以前），所以取「上传日期最新的一张」最稳。
+ *
+ * @param {string} html 课表页 HTML
+ * @returns {{url: string, thumb: string, date: string}|null}
+ */
+export function pickScheduleImage(html) {
+  const re = /<img[^>]*\ssrc="(https:\/\/cdn\.imweb\.me\/thumbnail\/(\d{8})\/[^"]+)"[^>]*>/g;
+  let best = null;
+  for (const m of html.matchAll(re)) {
+    const [, thumb, date] = m;
+    if (best && date <= best.date) continue;
+    // data-src 挂在同一个 _img_box 上，位于该 <img> 之前
+    const before = html.slice(Math.max(0, m.index - 800), m.index);
+    const ds = before.match(/data-src="(https:\/\/cdn\.imweb\.me\/upload\/[^"]+)"/);
+    best = { thumb, date, original: ds ? ds[1] : null };
+  }
+  if (!best) return null;
+  return { url: best.original || best.thumb, thumb: best.thumb, date: best.date };
+}
+
+/** 下载课表图片到本地缓存（同一天只下一次） */
+async function downloadImage(url, filePath) {
+  const resp = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(60000) });
+  if (!resp.ok) throw new Error(`下载课表图片失败 HTTP ${resp.status}`);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, Buffer.from(await resp.arrayBuffer()));
+  return filePath;
+}
+
+/** 调 tools/justjerk_ocr.py（macOS Vision OCR），返回解析后的 JSON */
+function runJustjerkOcr(python, imagePath, branchKey, weekdays = null) {
+  return new Promise((resolve, reject) => {
+    const args = [
+      JUSTJERK_OCR_SCRIPT,
+      imagePath,
+      "--branch", branchKey,
+      "--today", new Date().toISOString().slice(0, 10),
+    ];
+    if (weekdays) args.push("--weekdays", String(weekdays));
+
+    const child = spawn(python, args, { stdio: ["ignore", "pipe", "pipe"] });
+    let out = "", err = "";
+    child.stdout.on("data", (d) => (out += d));
+    child.stderr.on("data", (d) => (err += d));
+    child.on("error", (e) => reject(new Error(`无法启动 ${python}：${e.message}`)));
+    child.on("close", (code) => {
+      if (code !== 0) {
+        return reject(new Error(`课表 OCR 失败（退出码 ${code}）：${err.trim().slice(-300)}`));
+      }
+      try {
+        resolve(JSON.parse(out));
+      } catch (e) {
+        reject(new Error(`课表 OCR 输出不是合法 JSON：${e.message}`));
+      }
+    });
+  });
+}
+
+/** OCR 结果 → 抓取引擎统一的原始条目结构 */
+function justjerkEntriesToRaw(parsed, studioLabel, branchLabel) {
+  return (parsed.entries || []).map((e) => {
+    const coaches = e.coaches || [];
+    const levels = coaches.map((c) => c.level).filter((v) => v != null);
+    const level = levels.length ? Math.min(...levels) : null; // 一格两位老师时取较易的等级
+    return {
+      courseName: cleanCourseName(e.courseName || "OPEN CLASS"),
+      coach: coaches.map((c) => c.name).join(" / "),
+      time: `${e.startTime}-${e.endTime}`,
+      capacity: "",
+      status: "",
+      _studioName: studioLabel,
+      _roomName: branchLabel || parsed.branch,
+      _scheduleDate: e.date,
+      _difficulty: level ? LEVEL_TO_DIFFICULTY[level] : null,
+      _remark: levels.length
+        ? `等级：${coaches.map((c) => `${c.name} LV${c.level ?? "-"}`).join(" / ")}`
+        : null,
+    };
+  });
+}
+
+/**
+ * JustJerk（저스트절크，首尔 Hapjeong / Ewha 两校区）课表抓取。
+ *
+ * 技术路线：官网是 Imweb 建站，SCHEDULE 页**只有一张课表图片**，页面文案明确写着
+ * 「상세한 공지 및 스케쥴 확인은 아래 인스타그램에서 가능합니다」（详细课表请看 Instagram），
+ * 而 Instagram 官方 API 拿不到他人账号内容。所以走：
+ *   取页面 → 找当月课表图 → 下载 → macOS Vision OCR → 栅格还原成结构化条目。
+ *
+ * ⚠ 依赖：本机需为 macOS + 已装 pyobjc-framework-Vision（见 tools/justjerk_ocr.py 头部说明）。
+ *   容器化部署时此模式不可用，需改用预解析结果或人工录入。
+ *
+ * @param {object} config 抓取配置（含 config.justjerk.branches）
+ * @param {Date} _date 基准日期（实际以 python 侧 --today 为准）
+ * @returns {Promise<Array>} 原始条目
+ */
+async function crawlWithJustjerk(config, _date) {
+  const cfg = config.justjerk || {};
+  const branches = cfg.branches || [];
+  if (!branches.length) throw new Error("justjerk 模式缺少 branches 配置");
+
+  const python = cfg.python || process.env.JUSTJERK_PYTHON || "python3";
+  const rows = [];
+
+  for (const br of branches) {
+    if (!br.url) throw new Error(`JustJerk 分支 ${br.key} 缺少 url`);
+    const resp = await fetch(br.url, {
+      headers: { "User-Agent": UA, Accept: "text/html" },
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!resp.ok) throw new Error(`JustJerk ${br.key} 课表页 HTTP ${resp.status}`);
+
+    const img = pickScheduleImage(await resp.text());
+    if (!img) throw new Error(`JustJerk ${br.key} 课表页未找到课表图片`);
+
+    const ext = path.extname(new URL(img.url).pathname) || ".png";
+    const imgPath = path.join(JUSTJERK_CACHE_DIR, `${br.key}-${img.date}${ext}`);
+    if (!fs.existsSync(imgPath)) await downloadImage(img.url, imgPath);
+
+    const parsed = await runJustjerkOcr(python, imgPath, br.key, br.weekdays);
+    const studioLabel = br.studioName || config.studio?.name || "JustJerk";
+    rows.push(...justjerkEntriesToRaw(parsed, studioLabel, br.label));
+  }
+
+  return rows;
+}
+
 /** 演示数据：对齐 MAX POWER 课程卡片（课程名/时间/教练/状态/容量） */
 function mockRaw() {
   return [
@@ -464,6 +616,7 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "fityun") return crawlWithFityun(config, date);
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);
+  if (config.mode === "justjerk") return crawlWithJustjerk(config, date);
   if (config.mode === "mock") return mockRaw();
   if (config.mode === "automator") return crawlWithAutomator(config);
   throw new Error(`未知抓取模式: ${config.mode}`);
