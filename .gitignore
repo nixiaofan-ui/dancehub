@@ -20,5 +20,9 @@ db-backup/
 # JustJerk 课表图片缓存（每次抓取按上传日期重新下载）
 server/.cache/
 
+# Python 字节码缓存（OCR 脚本由 Node 侧 spawn 调用，产物无需入库）
+__pycache__/
+*.py[cod]
+
 # 部署构建产物
 *.zip
