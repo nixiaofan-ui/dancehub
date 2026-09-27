@@ -8,7 +8,13 @@
 #
 # 用法：
 #   set -a; source server/.env; set +a      # 读取下面这些变量
-#   bash server/scripts/sync_cloud_db.sh
+#   bash server/scripts/sync_cloud_db.sh               # 默认 --content-only
+#   bash server/scripts/sync_cloud_db.sh --full        # 整库覆盖（会清掉云端用户/预约/提醒）
+#
+# 两种模式：
+#   --content-only（默认）：只替换 City/Studio/Coach/Schedule/CrawlState 五张内容表，
+#       保留云端真实的 User/Booking/Reminder/Follow —— 增量加舞室时用这个。
+#   --full：整库覆盖，本地有什么云上就是什么，用户数据会被冲掉 —— 只在首次迁移用。
 #
 # 需要的环境变量（不要写死在脚本里，避免密钥进版本库）：
 #   LOCAL_MYSQL_CONTAINER  本机 MySQL 容器名      默认 dancehub-mysql
@@ -35,11 +41,21 @@ TS=$(date +%Y%m%d-%H%M%S)
 DUMP="/tmp/dh_sync_${TS}.sql"
 BACKUP="/tmp/dh_cloud_backup_${TS}.sql"
 
+MODE="content-only"
+[[ "${1:-}" == "--full" ]] && MODE="full"
+CONTENT_TABLES="City Studio Coach Schedule CrawlState"
+TABLES=""
+[[ "${MODE}" == "content-only" ]] && TABLES="${CONTENT_TABLES}"
+
+echo "[0/4] 模式：${MODE}（若非预期请 Ctrl-C）"
+sleep 2
+
 echo "[1/4] 导出本机 ${CLOUD_DB} ..."
 docker exec "${LOCAL_CONTAINER}" mysqldump \
   -uroot -p"${LOCAL_PWD}" \
   --single-transaction --skip-lock-tables \
-  --default-character-set=utf8mb4 "${CLOUD_DB}" >"${DUMP}"
+  --default-character-set=utf8mb4 \
+  "${CLOUD_DB}" ${TABLES} >"${DUMP}"
 echo "      $(wc -c <"${DUMP}") 字节"
 
 # 本机若是 MySQL 8.0，dump 里会带 5.7 不认识的 utf8mb4_0900_ai_ci，导入会直接报错
@@ -59,10 +75,17 @@ docker exec -i "${LOCAL_CONTAINER}" mysql \
   -h "${CLOUD_HOST}" -P "${CLOUD_PORT}" -u"${CLOUD_USER}" -p"${CLOUD_PWD}" \
   --default-character-set=utf8mb4 "${CLOUD_DB}" <"${DUMP}" 2>/dev/null
 
-echo "[4/4] 核对"
-docker exec "${LOCAL_CONTAINER}" mysql \
-  -h "${CLOUD_HOST}" -P "${CLOUD_PORT}" -u"${CLOUD_USER}" -p"${CLOUD_PWD}" \
-  --default-character-set=utf8mb4 "${CLOUD_DB}" \
-  -e "SELECT (SELECT COUNT(*) FROM Studio) AS studios, (SELECT COUNT(*) FROM Schedule) AS schedules, (SELECT MIN(scheduleDate)) AS min_date, (SELECT MAX(scheduleDate)) AS max_date FROM Schedule;" 2>/dev/null
+MYSQL_CLOUD=(docker exec "${LOCAL_CONTAINER}" mysql
+  -h "${CLOUD_HOST}" -P "${CLOUD_PORT}" -u"${CLOUD_USER}" -p"${CLOUD_PWD}"
+  --default-character-set=utf8mb4 "${CLOUD_DB}")
 
-echo "完成。云库备份在 ${BACKUP}"
+# content-only 换了 Schedule 表，可能留下指向已消失 scheduleId 的孤儿提醒，清掉并汇报
+if [[ "${MODE}" == "content-only" ]]; then
+  echo "      清理孤儿提醒（scheduleId 已不存在）..."
+  "${MYSQL_CLOUD[@]}" -e "DELETE FROM Reminder WHERE scheduleId NOT IN (SELECT id FROM Schedule);" 2>/dev/null
+fi
+
+echo "[4/4] 核对"
+"${MYSQL_CLOUD[@]}" -e "SELECT (SELECT COUNT(*) FROM Studio) AS studios, (SELECT COUNT(*) FROM Schedule) AS schedules, (SELECT COUNT(*) FROM City) AS cities, (SELECT COUNT(*) FROM User) AS users, (SELECT COUNT(*) FROM Reminder) AS reminders, (SELECT MIN(scheduleDate)) AS min_date, (SELECT MAX(scheduleDate)) AS max_date FROM Schedule;" 2>/dev/null
+
+echo "完成（模式 ${MODE}）。云库备份在 ${BACKUP}"

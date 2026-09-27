@@ -25,7 +25,9 @@ router.get(
           name: c.name,
           studioCount: c._count.studios,
         }))
-        .filter((c) => c.studioCount > 0),
+        .filter((c) => c.studioCount > 0)
+        // 横滑 chip 条上百来个城市，按门店数排，热门城市才不会被埋在最后
+        .sort((a, b) => b.studioCount - a.studioCount),
     );
   }),
 );
