@@ -29,6 +29,8 @@ Page({
 
   async onLoad() {
     this.currentDate = new Date();
+    // 全局「预约/关注/提醒」写操作计数，用来判断课表数据是否被弄脏
+    this.seenDirty = app.globalData.dirty || 0;
     const g = app.globalData;
     const cities = g.cities || [];
     const filteredCities = cities.filter((c) => c.region === g.region);
@@ -58,10 +60,30 @@ Page({
     }
     // tabBar 页面切走不会被销毁，onLoad 只跑一次。在课程详情或「我的」里
     // 预约/取消之后回到课表，必须自己刷一次，否则「✅ 已约」还停留在上一次
-    // 请求时的状态。静默刷新（不切骨架屏），并做一点节流，避免频繁切 tab
-    // 把列表刷得来回闪。
+    // 请求时的状态。
+    //
+    // 两种情况都刷，但走的判断不同：
+    //   1) 写过数据（globalData.dirty 变了）→ 无条件刷，节流也得让路，
+    //      否则「刚约完切回来」和「没约过切回来」表现一样，用户只能靠切城市重刷
+    //   2) 单纯切 tab 回来 → 1.5 秒节流，避免频繁切 tab 把列表刷得来回闪
+    const dirty = app.globalData.dirty || 0;
     const stale = Date.now() - (this.lastLoadedAt || 0) > 1500;
-    if (stale) this.load({ silent: true });
+    if (dirty !== this.seenDirty || stale) {
+      this.seenDirty = dirty;
+      this.load({ silent: true });
+    }
+  },
+
+  // 下拉刷新：用户主动下拉时不再静默，显示骨架屏 + 出错要提示
+  async onPullDownRefresh() {
+    if (!this.data.cityId) {
+      wx.stopPullDownRefresh();
+      toast(this, "请先选择城市");
+      return;
+    }
+    await this.load();
+    this.seenDirty = app.globalData.dirty || 0;
+    wx.stopPullDownRefresh();
   },
 
   rebuildDates(center) {
@@ -116,6 +138,7 @@ Page({
       const pendingCount = items.filter((i) => i.bookingStatus === "PENDING").length;
       this.setData({ items, pendingCount, loading: false });
       this.lastLoadedAt = Date.now();
+      this.seenDirty = app.globalData.dirty || 0;
     } catch (e) {
       this.setData({ loading: false });
       this.lastLoadedAt = Date.now();
