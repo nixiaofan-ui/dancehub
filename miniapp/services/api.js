@@ -41,7 +41,9 @@ const apiFollows = () => req.get("/follows");
 const apiFollow = (studioId) => req.post("/follows", { studioId });
 const apiUnfollow = (studioId) => req.delete("/follows/" + studioId);
 
-const apiCreateBooking = (scheduleId, method) => req.post("/bookings", { scheduleId, method });
+// force=true：已知撞课、用户确认后仍要预约（服务端不再拦）
+const apiCreateBooking = (scheduleId, method, force) =>
+  req.post("/bookings", { scheduleId, method, force: Boolean(force) });
 // 取消预约：服务端会连同一并返回 hasReminder，用来提示用户提醒是否还开着
 const apiCancelBooking = (scheduleId) => req.delete("/bookings/" + scheduleId);
 const apiBookings = () => req.get("/bookings");

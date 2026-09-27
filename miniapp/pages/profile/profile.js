@@ -94,9 +94,7 @@ Page({
       const res = await api.apiCancelBooking(scheduleId);
       toast(
         this,
-        res && res.hasReminder
-          ? "已取消预约（开课提醒还开着，可在「提醒设置」关掉）"
-          : "已取消预约",
+        res && res.reminderRemoved ? "已取消预约，开课提醒也关掉了" : "已取消预约",
         "success",
       );
       this.loadAll();

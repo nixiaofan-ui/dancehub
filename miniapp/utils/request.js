@@ -39,6 +39,16 @@ Unauthorized.prototype.constructor = Unauthorized;
 
 const isLoginPath = (p) => String(p).replace(/^\/api/, "").split("?")[0] === "/auth/login";
 
+/**
+ * 业务失败时把服务端返回的 body 整个挂在 error 上 —— 光有 message 不够用。
+ * 例：撞课时服务端回 409 + data.conflicts，前端要拿它拼「和哪一节课冲突」的弹窗文案。
+ */
+function buildError(body, fallback) {
+  const err = new Error((body && body.message) || fallback);
+  err.body = body || null;
+  return err;
+}
+
 function callContainer(method, path, data) {
   return new Promise((resolve, reject) => {
     wx.cloud.callContainer({
@@ -54,7 +64,7 @@ function callContainer(method, path, data) {
         }
         const body = res.data;
         if (body && body.code === 0) return resolve(body.data);
-        reject(new Error((body && body.message) || `云托管返回 ${res.statusCode}`));
+        reject(buildError(body, `云托管返回 ${res.statusCode}`));
       },
       fail(err) {
         reject(new Error("云托管调用失败：" + (err.errMsg || err.message || "")));
@@ -77,7 +87,7 @@ function callRequest(method, path, data) {
         }
         const body = res.data;
         if (body && body.code === 0) return resolve(body.data);
-        reject(new Error((body && body.message) || "请求失败"));
+        reject(buildError(body, "请求失败"));
       },
       fail(err) {
         const msg = (err && err.errMsg) || "";

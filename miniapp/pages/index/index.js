@@ -7,6 +7,7 @@ const { API_HOST } = require("../../utils/config");
 const { requestSubscribe } = require("../../utils/subscribe");
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
+const { bookCourse } = require("../../utils/booking");
 
 Page({
   data: {
@@ -199,7 +200,9 @@ Page({
     const item = this.data.panel.item;
     if (!item) return;
     try {
-      await api.apiCreateBooking(item.id, "JUMP");
+      // 撞课且用户放弃时返回 null：面板保持打开，也不跳转
+      const res = await bookCourse(item.id, "JUMP", item);
+      if (!res) return;
       jump.jumpToPlatform(item.studio, item);
       this.setData({ panel: { visible: false, item: null } });
       this.refreshBadge();
@@ -213,7 +216,8 @@ Page({
     const item = this.data.panel.item;
     if (!item) return;
     try {
-      await api.apiCreateBooking(item.id, "MANUAL");
+      const res = await bookCourse(item.id, "MANUAL", item);
+      if (!res) return;
       this.setData({ panel: { visible: false, item: null } });
       this.refreshBadge();
       toast(this, "已标记预约", "success");
@@ -238,9 +242,7 @@ Page({
       this.refreshBadge();
       toast(
         this,
-        res && res.hasReminder
-          ? "已取消预约（开课提醒还开着，可在「我的」关掉）"
-          : "已取消预约",
+        res && res.reminderRemoved ? "已取消预约，开课提醒也关掉了" : "已取消预约",
         "success",
       );
       this.load();

@@ -5,6 +5,7 @@ const jump = require("../../services/jump");
 const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
 const { requestSubscribe } = require("../../utils/subscribe");
 const { confirm } = require("../../utils/confirm");
+const { bookCourse } = require("../../utils/booking");
 const { parseKey } = require("../../utils/date");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -114,7 +115,11 @@ Page({
     if (!d || this.data.busy) return;
     this.setData({ busy: true });
     try {
-      await api.apiCreateBooking(d.id, "JUMP");
+      const res = await bookCourse(d.id, "JUMP", d);
+      if (!res) {
+        this.setData({ busy: false }); // 撞课，用户放弃：记得解锁按钮
+        return;
+      }
       jump.jumpToPlatform(d.studio, {
         bookingUrl: d.bookingUrl,
         courseName: d.courseName,
@@ -133,8 +138,9 @@ Page({
     if (!d || this.data.busy) return;
     this.setData({ busy: true });
     try {
-      await api.apiCreateBooking(d.id, "MANUAL");
+      const res = await bookCourse(d.id, "MANUAL", d);
       this.setData({ busy: false });
+      if (!res) return; // 撞课，用户放弃
       toast(this, "已标记预约", "success");
       this.load();
     } catch (e) {
@@ -158,11 +164,10 @@ Page({
       this.setData({ busy: false });
       toast(
         this,
-        res && res.hasReminder
-          ? "已取消预约（开课提醒还开着，可在下方关掉）"
-          : "已取消预约",
+        res && res.reminderRemoved ? "已取消预约，开课提醒也关掉了" : "已取消预约",
         "success",
       );
+      // 重拉详情：预约状态和提醒开关都在这一份数据里，取消后要一起刷新
       this.load();
     } catch (e) {
       this.setData({ busy: false });
