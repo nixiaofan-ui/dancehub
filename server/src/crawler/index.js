@@ -32,6 +32,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATE_FILE = path.resolve(__dirname, "../../.crawl-state.json"); // 仅一次性迁移用
 const HEARTBEAT_MS = 5 * 60 * 1000; // 心跳：5 分钟
 const DEFAULT_REFRESH_HOURS = 6; // 未配置时的默认刷新间隔
+const CONCURRENCY = Number(process.env.CRAWL_CONCURRENCY || 3); // 一轮同时抓几个配置
+const TICK_BUDGET_MS = Number(process.env.CRAWL_BUDGET_MS || 15 * 60 * 1000); // 一轮最长时间
 
 /**
  * 这些模式一次请求就带回全量课表，忽略传入的 date。
@@ -188,30 +190,125 @@ export async function runAllCrawls({ dryRun = false } = {}) {
   return results;
 }
 
-/** 心跳：到期的配置逐个补跑 */
+/**
+ * 心跳：到期的配置补跑。
+ *
+ * 并发 + 时间预算：全平台 587 家串行要 8 分钟，云端一轮跑太久既拖慢
+ * 下次到期判断，也增加被目标平台限流的窗口。这里开 3 个并发（约 3 分钟），
+ * 并用 TICK_BUDGET_MS 兜底——超预算就把剩下的留给下一轮，它们仍然到期，
+ * 不会漏抓（CrawlState 记的是「上次成功时间」，没抓成功就还是 due）。
+ */
 async function tick(reason = "heartbeat") {
   const now = Date.now();
-  for (const c of crawlerConfigs) {
-    if (!c.enabled) continue;
-    if (running.has(c.id)) continue;
-    if (!isDue(c, now)) continue;
+  const queue = crawlerConfigs.filter(
+    (c) => c.enabled && !running.has(c.id) && isDue(c, now),
+  );
+  if (!queue.length) return;
 
-    const last = lastSuccessMs(c.id);
-    const note = last === null
-      ? "从未成功过"
-      : `距上次成功 ${((now - last) / 3600_000).toFixed(1)}h > ${refreshHours(c)}h`;
-    console.log(`[crawler] ${c.id} 触发抓取（${reason}；${note}）`);
+  const deadline = Date.now() + TICK_BUDGET_MS;
+  let cursor = 0;
+  let overBudget = false;
 
-    running.add(c.id);
+  const worker = async () => {
+    for (;;) {
+      if (Date.now() > deadline) {
+        overBudget = true;
+        return;
+      }
+      const c = queue[cursor++];
+      if (!c) return;
+
+      const last = lastSuccessMs(c.id);
+      const note =
+        last === null
+          ? "从未成功过"
+          : `距上次成功 ${((Date.now() - last) / 3600_000).toFixed(1)}h > ${refreshHours(c)}h`;
+      console.log(`[crawler] ${c.id} 触发抓取（${reason}；${note}）`);
+
+      running.add(c.id);
+      try {
+        const report = await runCrawl(c.id);
+        console.log(
+          `[crawler] ${c.id} 抓取完成：${report.total} 条，门店 ${report.studios?.join(" / ") || "-"}`,
+        );
+      } catch (e) {
+        console.error(`[crawler] ${c.id} 抓取失败:`, e.message);
+      } finally {
+        running.delete(c.id);
+      }
+    }
+  };
+
+  const n = Math.max(1, Math.min(CONCURRENCY, queue.length));
+  console.log(`[crawler] ${reason}：${queue.length} 个配置到期，并发 ${n}`);
+  await Promise.all(Array.from({ length: n }, worker));
+  if (overBudget) {
+    console.warn(
+      `[crawler] 本轮超过时间预算 ${TICK_BUDGET_MS / 60000} 分钟，剩余配置下一轮继续`,
+    );
+  }
+}
+
+/**
+ * 出口连通性自检：容器到底能不能访问外网。
+ *
+ * 云端抓取能不能成立，全看这一条——当初把云端抓取关掉（SKIP_CRAWLER=1）
+ * 很可能就是因为容器出不去公网，而失败又只在日志里，数据端看不出来。
+ * 现在启动时自动跑一次并打日志，也能通过 GET /api/crawler/probe 随时查。
+ */
+export async function probeOutbound() {
+  const checks = [
+    {
+      name: "generic",
+      label: "通用出网（baidu.com）",
+      run: () =>
+        fetch("https://www.baidu.com", { signal: AbortSignal.timeout(8000) }),
+    },
+    {
+      name: "aiwugong",
+      label: "爱舞功课表接口（真实业务请求）",
+      run: () =>
+        fetch("https://wushi.api.aiwugong.cn/Applets/course/index-not-login.html", {
+          method: "POST",
+          headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            host: "wx4d02b14543b4b8b8",
+            brand_id: "149",
+            date: new Date().toISOString().slice(0, 10),
+            page: "1",
+          }),
+          signal: AbortSignal.timeout(12000),
+        }),
+    },
+  ];
+
+  const results = [];
+  for (const c of checks) {
+    const t0 = Date.now();
     try {
-      const report = await runCrawl(c.id);
-      console.log(`[crawler] ${c.id} 抓取完成：${report.total} 条，门店 ${report.studios?.join(" / ") || "-"}`);
+      const r = await c.run();
+      results.push({
+        name: c.name,
+        label: c.label,
+        ok: r.ok,
+        status: r.status,
+        ms: Date.now() - t0,
+      });
     } catch (e) {
-      console.error(`[crawler] ${c.id} 抓取失败:`, e.message);
-    } finally {
-      running.delete(c.id);
+      results.push({
+        name: c.name,
+        label: c.label,
+        ok: false,
+        status: null,
+        ms: Date.now() - t0,
+        error: e.message,
+      });
     }
   }
+  const ok = results.some((r) => r.ok);
+  const summary = results.map((r) => `${r.name}=${r.ok ? "OK" : "FAIL(" + (r.error || r.status) + ")"}`).join(" ");
+  console.log(`[crawler] 出口连通性自检：${ok ? "可用" : "不可用"} — ${summary}`);
+  return { ok, results, checkedAt: new Date().toISOString() };
 }
 
 /** 定时触发器入口（云托管控制台配 cron 调 POST /api/crawler/tick）。

@@ -36,5 +36,16 @@
     ]
   },
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "requiredPrivateInfos": [
+    "getFuzzyLocation"
+  ],
+  "permission": {
+    "scope.userFuzzyLocation": {
+      "desc": "用于自动定位你所在的城市，默认展示当地舞室课表"
+    },
+    "scope.writeClipboard": {
+      "desc": "用于复制舞室名称，方便你在微信里搜索并预约"
+    }
+  }
 }

@@ -51,6 +51,15 @@
   border-color: #7b2fbe;
   font-weight: 900;
 }
+/* 定位入口：跟城市 chip 区分开，摆在横滑条最前面 */
+.chip-locate {
+  background: rgba(0, 245, 212, 0.12);
+  border-color: rgba(0, 245, 212, 0.45);
+  color: #00f5d4;
+}
+.chip-locate.busy {
+  opacity: 0.6;
+}
 
 /* 提醒条 */
 .reminder-strip {

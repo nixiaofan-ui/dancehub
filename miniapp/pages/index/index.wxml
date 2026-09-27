@@ -11,6 +11,9 @@
 
   <!-- 城市快捷选择 -->
   <scroll-view scroll-x class="city-bar" enhanced show-scrollbar="{{false}}">
+    <view class="chip chip-locate {{locating ? 'busy' : ''}}" hover-class="press" bindtap="tapLocate">
+      {{locating ? '定位中…' : '📍 定位'}}
+    </view>
     <view
       wx:for="{{filteredCities}}"
       wx:key="id"
@@ -109,10 +112,10 @@
   </view>
   <view class="sheet-info">教练：{{panel.item.coachName}}</view>
   <view wx:if="{{panel.item.bookingStatus === 'PENDING'}}" class="sheet-warn">
-    已发起预约跳转，去原平台完成后记得标记
+    已复制店名，去微信搜索预约后记得回来标记
   </view>
   <view class="sheet-actions">
-    <button class="action primary" hover-class="press" bindtap="goBook">去原平台预约</button>
+    <button class="action primary" hover-class="press" bindtap="goBook">复制店名去微信预约</button>
     <button class="action secondary" hover-class="press" bindtap="markBooked">我已约好</button>
     <button class="action remind" hover-class="press" bindtap="toggleRemind">
       {{panel.item.reminded ? '已开启提醒（点击关闭）' : '开启开课提醒'}}

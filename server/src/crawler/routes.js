@@ -10,6 +10,7 @@ import {
   getCrawlStatus,
   tickOnce,
   dueCount,
+  probeOutbound,
 } from "./index.js";
 
 const router = Router();
@@ -25,6 +26,11 @@ router.get("/configs/:id", requireAdmin, (req, res) => {
 
 // 状态（最近一次运行结果）
 router.get("/status", requireAdmin, (req, res) => ok(res, getCrawlStatus()));
+
+// 出口连通性自检：容器能不能访问外网 / 抓取目标站点。
+// 不加鉴权：返回值只有「通不通」和 HTTP 状态码，没有密钥等敏感信息，
+// 而排查问题时往往需要在没带 token 的情况下直接 curl 一下。
+router.get("/probe", asyncHandler(async (req, res) => ok(res, await probeOutbound())));
 
 // 手动触发：POST /api/crawler/run            → 跑全部启用配置
 //           POST /api/crawler/run { ids }    → 跑指定配置

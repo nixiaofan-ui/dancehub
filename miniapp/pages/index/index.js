@@ -8,6 +8,7 @@ const { requestSubscribe } = require("../../utils/subscribe");
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
+const { locateCity, openSetting } = require("../../utils/locate");
 
 Page({
   data: {
@@ -15,6 +16,7 @@ Page({
     cities: [],
     filteredCities: [],
     cityId: null,
+    locating: false,
 
     dates: [],
     swiperCurrent: 1,
@@ -51,9 +53,27 @@ Page({
       tb.refreshBadge();
     }
     const g = app.globalData;
+
+    // 后台定位刚落地：切过去并说明，本次不再跑「跟随预约城市」
+    const located = g.locatedCity;
+    if (located && located.id !== this.data.cityId) {
+      g.locatedCity = null;
+      const cities = g.cities || [];
+      this.setData({
+        region: located.region,
+        cityId: located.id,
+        cities,
+        filteredCities: cities.filter((c) => c.region === located.region),
+      });
+      toast(this, `已定位到${located.name}`);
+      this.load();
+      return;
+    }
+
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
-      // 用户在别处（或本页）手动选了城市，以他选的为准
-      this.cityFollowOff = true;
+      // 用户在别处（或本页）手动选了城市，以他选的为准；
+      // 系统自动切过来的（定位/跟随预约）不关掉跟随。
+      this.cityFollowOff = !!g.cityManual;
       const cities = g.cities || [];
       const filteredCities = cities.filter((c) => c.region === g.region);
       this.setData({ region: g.region, cityId: g.cityId, cities: cities, filteredCities: filteredCities });
@@ -233,7 +253,7 @@ Page({
       return;
     }
     const city = filteredCities[0];
-    app.setCity(region, city.id);
+    app.setCity(region, city.id, "manual");
     this.cityFollowOff = true; // 自己选的城市，别再被预约拽走
     this.setData({ region, cityId: city.id, cities, filteredCities });
     this.load();
@@ -242,9 +262,77 @@ Page({
   selectCity(e) {
     const cityId = e.currentTarget.dataset.id;
     if (cityId === this.data.cityId) return;
-    app.setCity(this.data.region, cityId);
+    app.setCity(this.data.region, cityId, "manual");
     this.cityFollowOff = true; // 同上
     this.setData({ cityId });
+    this.load();
+  },
+
+  /**
+   * 点「📍 定位」：授权后把课表切到自己所在的城市。
+   *
+   * 三种失败要分开处理，否则用户只会看到「点了没反应」：
+   *   denied      —— 之前拒绝过，系统不再弹窗，必须引导去设置页
+   *   no-match    —— 定位成功，但所在地还没接入舞室（给出最近的有课城市）
+   *   unsupported —— 基础库太老 / 后台没开通模糊定位接口
+   */
+  async tapLocate() {
+    if (this.data.locating) return;
+    this.setData({ locating: true });
+    try {
+      const r = await locateCity({});
+      if (r.code === "ok") {
+        this.applyLocated(r.city);
+        return;
+      }
+      if (r.code === "denied") {
+        const yes = await confirm({
+          title: "需要定位权限",
+          content: "你之前拒绝了定位授权，微信不会再弹窗。去设置里打开「使用我的地理位置」，就能自动显示你所在城市的课表。",
+          confirmText: "去设置",
+        });
+        if (!yes) return;
+        const state = await openSetting();
+        if (state !== "granted") {
+          toast(this, "仍未开启定位，可手动选择城市");
+          return;
+        }
+        const again = await locateCity({});
+        if (again.code === "ok") this.applyLocated(again.city);
+        else toast(this, "定位失败，可手动选择城市");
+        return;
+      }
+      if (r.code === "no-match") {
+        const near = (r.nearest || []).map((n) => n.name).join("、");
+        wx.showModal({
+          title: "你所在的城市还没接入",
+          content: near
+            ? "目前离你最近的有课城市是：" + near + "。可以先看这些城市，也可以去「发现」页告诉我们你想看哪家舞室。"
+            : "你所在的城市暂时没有收录舞室，去「发现」页告诉我们你想看哪家舞室吧。",
+          showCancel: false,
+        });
+        return;
+      }
+      if (r.code === "unsupported") {
+        toast(this, "当前微信版本不支持定位，请手动选择城市");
+        return;
+      }
+      toast(this, "定位失败，请手动选择城市");
+    } finally {
+      this.setData({ locating: false });
+    }
+  },
+
+  applyLocated(city) {
+    const cities = app.globalData.cities || [];
+    app.setCity(city.region, city.id, "locate");
+    this.setData({
+      region: city.region,
+      cityId: city.id,
+      cities,
+      filteredCities: cities.filter((c) => c.region === city.region),
+    });
+    toast(this, `已定位到${city.name}`);
     this.load();
   },
 

@@ -2,7 +2,7 @@ import "dotenv/config";
 import { createApp } from "./app.js";
 import { redis } from "./lib/redis.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
-import { startCrawlScheduler } from "./crawler/index.js";
+import { startCrawlScheduler, probeOutbound } from "./crawler/index.js";
 
 // ── 容器/云托管适配 ──
 // 云托管要求监听 80 / 8080；本地开发仍可走 3000。
@@ -33,6 +33,12 @@ app.listen(port, "0.0.0.0", () => {
   console.log(
     `[dancehub] NODE_ENV=${process.env.NODE_ENV || "development"} CRAWL_MODE=${crawlMode}` +
       (skipReminder ? " SKIP_REMINDER" : "")
+  );
+
+  // 出口连通性自检（异步，只打日志）：云端抓取能不能跑，全看容器能否出公网。
+  // 三种模式都跑 —— 排查「为什么云上没抓到数据」时，这条日志是唯一决定性证据。
+  probeOutbound().catch((e) =>
+    console.warn(`[dancehub] 连通性自检异常: ${e.message}`)
   );
 
   // 抓取 / 提醒 / redis 任何一个挂掉都不能阻塞启动（云托管要求快速 ready）

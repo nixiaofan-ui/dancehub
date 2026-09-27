@@ -67,12 +67,12 @@ Page({
       const coachName = d.coach ? d.coach.name : "待定";
       const coachInitial = d.coach && d.coach.name ? d.coach.name.charAt(0) : "?";
       const showVideo = VIDEO_PLATFORMS.indexOf(d.studio.platform) >= 0;
-      // 预约按钮文案按可达路径分三档：官方小程序 → 官网（海外店）→ 复制搜索词
-      const bookLabel = d.studio.bookingMiniAppId
-        ? "跳转官方小程序预约"
-        : d.studio.officialUrl
-          ? "复制官网地址去预约"
-          : "复制信息去搜索";
+      // 预约按钮文案：海外官网店复制网址，其余一律复制店名去微信搜索
+      // （不再做小程序互跳：app.json 跳转名单上限 10 个，库里有 100 个不同 appId，
+      //  且批量跳转第三方小程序属平台禁止的「小程序盒子」形态）
+      const bookLabel = d.studio.officialUrl
+        ? "复制官网地址去预约"
+        : "复制店名去微信预约";
       // 海外舞室楼层/教室信息存于 remark（格式「抓取状态：xx | 场地：1F」），
       // 解析出「场地：」之后的值单独展示，不暴露内部抓取状态
       let roomName = "";

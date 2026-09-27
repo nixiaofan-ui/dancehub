@@ -86,11 +86,14 @@ const apiRemoveReminder = (scheduleId) => {
   return req.delete("/reminders/" + scheduleId);
 };
 const apiSubscribeConfig = () => req.get("/config/subscribe");
+// 定位 → 城市：解析放在服务端（城市中心点表 + 「哪些城市真有课」都在库里）
+const apiLocateCity = (lat, lng) => req.post("/cities/locate", { lat, lng });
 
 module.exports = {
   ensureReady,
   apiLogin,
   apiCities,
+  apiLocateCity,
   apiTimeline,
   apiStudios,
   apiStudioDetail,
