@@ -41,7 +41,11 @@ Page({
         follows: follows.map((f) => ({
           ...f,
           platformLabel: PLATFORM_LABEL[f.studio.platform] || f.studio.platform,
-          initial: (f.studio.name || "?").charAt(0),
+          // 品牌名里带 emoji 的话 charAt(0) 会拿到半个字符，先剥掉
+          initial: String(f.studio.name || "?")
+            .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
+            .trim()
+            .charAt(0) || "?",
         })),
         bookings: bookings.map((b) => ({
           ...b,

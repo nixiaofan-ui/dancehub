@@ -13,6 +13,7 @@ import {
   dueCount,
   probeOutbound,
 } from "./index.js";
+import { previewStudioNameFix, applyStudioNameFix } from "./studio-name-fix.js";
 
 const router = Router();
 
@@ -68,6 +69,25 @@ router.post("/run/:id", requireAdmin, asyncHandler(async (req, res) => {
   const { dryRun } = req.body || {};
   ok(res, await runCrawl(req.params.id, { dryRun }), "抓取完成");
 }));
+
+// 店名修复：把只存了分店名的爱舞功系记录补上品牌名。
+// 云库不开公网时这是唯一能改线上数据的通道，所以做成端点而不是只留本地脚本。
+//   GET  /api/crawler/fix-studio-names          → 预演（不写库）
+//   POST /api/crawler/fix-studio-names {apply:true} → 执行
+router.get(
+  "/fix-studio-names",
+  requireAdmin,
+  asyncHandler(async (req, res) => ok(res, await previewStudioNameFix()))
+);
+
+router.post(
+  "/fix-studio-names",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    if (!req.body?.apply) return ok(res, await previewStudioNameFix(), "预演结果");
+    ok(res, await applyStudioNameFix(), "修复完成");
+  })
+);
 
 // 定时触发器入口（云托管控制台配 cron 调用；服务未开外网，仅平台侧可达）。
 // 立即返回，抓取在后台跑；防重入——上一轮没跑完时本次直接跳过。

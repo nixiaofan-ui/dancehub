@@ -16,6 +16,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { composeStudioName } from "./studio-name.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -262,6 +263,7 @@ async function crawlWithAiwugong(config, date) {
     const payload = json.bug || {};
     for (const store of payload.data || []) {
       // store 形如 "DanceStar | 江桥万达店"，也可能只有门店名
+      // 只取最后一段当分店名，品牌名统一用配置里的（比接口里的更干净、带品牌自称）
       const branchName = String(store.store || "").split("|").pop().trim();
       for (const c of store.course || []) {
         const courseName = cleanCourseName(c.name);
@@ -272,7 +274,9 @@ async function crawlWithAiwugong(config, date) {
           time: String(c.time || "").replace("~", "-"),
           capacity: "",
           status: c.is_open_reserve === 0 || c.status_dec === "已满" ? "已满" : "可预约",
-          _studioName: branchName || config.studio?.name || "",
+          // 品牌名 + 分店名。只写分店名会出现「宝安中心店」这种看不出是谁的店，
+          // 而且不同品牌的同名分店（7 家「大学城店」）会按店名被合并成同一条记录。
+          _studioName: composeStudioName(config.studio?.name, branchName),
           _roomName: String(c.classroom || "").trim(),
           _difficulty: mapAiwugongDifficulty(c.difficulty),
           _remark: c.curriculum_name ? `课程类型：${c.curriculum_name}` : null,

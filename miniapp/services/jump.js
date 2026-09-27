@@ -69,9 +69,19 @@ async function copyAndGuide({ keyword, title, content }) {
   modal("复制没成功", "请手动记下：\n「" + keyword + "」\n然后" + content.replace(/^打开/, "打开"));
 }
 
-/** 店名清洗：去掉「（宝安中心店）」这类后缀，搜索命中率更高 */
+/**
+ * 店名清洗：只留品牌名，去掉分店后缀再拿去微信搜索。
+ * 展示名是「品牌·分店」（如「CLAP dance studio·宝安中心店」），
+ * 但微信里搜全名反而搜不到，搜品牌名才能命中它的官方小程序。
+ * 顺带去掉 emoji —— 品牌自称里带的 👏🏻 之类会拖垮搜索命中率。
+ */
 function cleanStudioName(name) {
-  return String(name || "").split("（")[0].split("(")[0].trim();
+  let s = String(name || "").split("（")[0].split("(")[0];
+  const sep = s.indexOf("·");
+  if (sep > 0) s = s.slice(0, sep);
+  // eslint-disable-next-line no-control-regex
+  s = s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "");
+  return s.trim();
 }
 
 /** 国内舞室：复制店名 → 微信首页下拉搜索 → 进官方小程序约课 */
