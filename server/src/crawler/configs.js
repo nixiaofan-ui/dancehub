@@ -9,6 +9,7 @@ const AUTO_CONFIG_FILES = [
   "studios.fityun.json",
   "studios.topcities.json",
   "studios.rawgraphy.json",
+  "studios.aiwugong.json",
 ];
 
 /**
@@ -17,6 +18,7 @@ const AUTO_CONFIG_FILES = [
  * - studios.fityun.json     由 capture/generate_fityun_configs.py 生成（菲体云上海）
  * - studios.topcities.json  由 capture/generate_topcities_configs.py 生成（全国 TOP10 城市）
  * - studios.rawgraphy.json  由 capture/generate_rawgraphy_configs.py 生成（韩国 rawgraphy 平台）
+ * - studios.aiwugong.json   由 capture/scan_aiwugong_brands.mjs 生成（爱舞功/舞十平台）
  * 文件不存在或格式错误时静默跳过，不影响手写配置。
  */
 function loadAutoConfigs() {
@@ -56,6 +58,11 @@ function loadAutoConfigs() {
  *   整周课表在 timeTable.cells（只有教练名），最近可报名课次在 lessons[]（带 genre/duration）。
  *   ⚠ 平台把首尔时间误标成 Z，解析时按字符串取字段，不能用 new Date()。
  *   接入新场馆：capture/generate_rawgraphy_configs.py --range 1 200 扫描 studioId。
+ * - mode: "aiwugong" 走爱舞功 / 舞十平台（wushi.api.aiwugong.cn，Yii2 后端），
+ *   继 iWOD、菲体云之后的**第三套**舞蹈 SaaS，深圳 50+ 家在用（CLAP dance studio 等）。
+ *   免登录课表接口 POST /Applets/course/index-not-login.html，靠 brand_id 定位品牌；
+ *   品牌可枚举（POST /Applets/login/brand.html），见 capture/scan_aiwugong_brands.mjs。
+ *   ⚠ 只给 host 不给 brand_id 会 500（SQL 里 ORDER BY FIELD() 参数为空），brand_id 是钥匙。
  * - mode: "mock" 走演示数据，不依赖任何外部工具，便于无环境时联调整条链路。
  *
  * dateMode:

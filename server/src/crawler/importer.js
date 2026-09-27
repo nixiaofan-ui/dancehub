@@ -122,9 +122,10 @@ export async function importSchedules(config, rows) {
   let skipped = 0;
 
   for (const [studioName, groupRows] of groups) {
-    // iWOD 系店铺的约课小程序 appId → Studio.bookingMiniAppId（预约跳转用）
+    // iWOD / 爱舞功系店铺的约课小程序 appId → Studio.bookingMiniAppId（预约跳转用）
     const extra = {};
-    if (config.http && config.http.appId) extra.bookingMiniAppId = config.http.appId;
+    const bookingAppId = config.http?.appId || config.aiwugong?.host;
+    if (bookingAppId) extra.bookingMiniAppId = bookingAppId;
     // 多门店配置（如 JustJerk 两个校区各自一个官网页）可在条目级覆盖
     // 城市/官网/平台，优先级高于 config.studio
     const rowOverride = {};

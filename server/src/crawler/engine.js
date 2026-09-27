@@ -204,6 +204,98 @@ async function crawlWithFityun(config, date) {
   return out;
 }
 
+/* ───────────────────────── 爱舞功（aiwugong.cn）抓取 ───────────────────────── */
+
+/**
+ * 爱舞功 / 舞十（wushi.api.aiwugong.cn，Yii2 后端）SaaS 约课系统
+ * —— 与 iWOD、菲体云并列的第三套平台，深圳多家舞室在用（CLAP dance studio 等）。
+ *
+ * 逆向要点（2026-09-27 由 CLAP dance studio 小程序包解密 + 接口探测获得）：
+ * - 免登录课表接口 POST /Applets/course/index-not-login.html
+ *     参数 host=<小程序 appId>、brand_id=<品牌ID>、date=YYYY-MM-DD、page=<页码>
+ *     → bug.data[] = [{ store_id, store:"门店名", course:[...] }]，按门店分组
+ * - **brand_id 是钥匙**：不给它就 500（SQL 里 FIELD() 参数为空）。缺 host 时它只用来
+ *   走默认分支，实际过滤靠 brand_id，所以同一平台可以一个 host 抓所有品牌。
+ * - 品牌可枚举：POST /Applets/login/brand.html（host + brand_id）
+ *     → brand_name / slogan / address / city / synopsis，brand_id 为小整数
+ *     据此可批量发现平台上的舞室，见 capture/scan_aiwugong_brands.mjs
+ * - 课程字段：name 课名 / time "14:00~15:30" / teacher.nickname 教练 /
+ *     difficulty "提高班" / classroom 教室 / status_dec "紧张" / is_open_reserve 是否开放预约
+ * - 品牌开关 notlogin_isshowcourse=1 时未登录才看得到课表
+ *
+ * @param {object} config 抓取配置（含 config.aiwugong）
+ * @param {Date} date 要抓取的日期
+ * @returns {Promise<Array>} 原始条目（含 _studioName 门店名、_difficulty 难度）
+ */
+async function crawlWithAiwugong(config, date) {
+  const { baseUrl = "https://wushi.api.aiwugong.cn", host, brandId } = config.aiwugong || {};
+  if (!brandId) throw new Error("aiwugong 模式缺少 brandId 配置");
+  if (!host) throw new Error("aiwugong 模式缺少 host 配置");
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const out = [];
+
+  // 接口按门店分组返回，all 可能超过一页（limit=40），逐页取到 allPage
+  for (let page = 1; page <= 20; page++) {
+    const resp = await fetch(`${baseUrl}/Applets/course/index-not-login.html`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "User-Agent":
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+      },
+      body: new URLSearchParams({
+        host: String(host),
+        brand_id: String(brandId),
+        date: dateStr,
+        page: String(page),
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) throw new Error(`爱舞功接口 HTTP ${resp.status}`);
+
+    const json = await resp.json();
+    if (json.code !== 0) {
+      throw new Error(`爱舞功接口返回异常: ${json.message || json.msg || "code=" + json.code}`);
+    }
+
+    const payload = json.bug || {};
+    for (const store of payload.data || []) {
+      // store 形如 "DanceStar | 江桥万达店"，也可能只有门店名
+      const branchName = String(store.store || "").split("|").pop().trim();
+      for (const c of store.course || []) {
+        const courseName = cleanCourseName(c.name);
+        if (!courseName) continue;
+        out.push({
+          courseName,
+          coach: String(c.teacher?.nickname || c.teacher?.name || "").trim(),
+          time: String(c.time || "").replace("~", "-"),
+          capacity: "",
+          status: c.is_open_reserve === 0 || c.status_dec === "已满" ? "已满" : "可预约",
+          _studioName: branchName || config.studio?.name || "",
+          _roomName: String(c.classroom || "").trim(),
+          _difficulty: mapAiwugongDifficulty(c.difficulty),
+          _remark: c.curriculum_name ? `课程类型：${c.curriculum_name}` : null,
+        });
+      }
+    }
+
+    const allPage = Number(payload.allPage) || 1;
+    if (page >= allPage) break;
+  }
+  return out;
+}
+
+/** 爱舞功难度文案 → 统一枚举（入门班 / 提高班 / 专业班 / 大师班） */
+function mapAiwugongDifficulty(text) {
+  const t = String(text || "");
+  if (/入门|基础|初级/.test(t)) return "BEGINNER";
+  if (/中级|提高/.test(t)) return "INTERMEDIATE";
+  if (/高级|专业|大师|进阶/.test(t)) return "ADVANCED";
+  if (/全|不限/.test(t)) return "ALL_LEVELS";
+  return null;
+}
+
 /* ───────────────────────── 1MILLION 官网抓取 ───────────────────────── */
 
 /**
@@ -784,6 +876,7 @@ export async function crawl(config, date = new Date()) {
   if (!config) throw new Error("缺少抓取配置");
   if (config.mode === "http") return crawlWithHttp(config, date);
   if (config.mode === "fityun") return crawlWithFityun(config, date);
+  if (config.mode === "aiwugong") return crawlWithAiwugong(config, date);
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);
   if (config.mode === "justjerk") return crawlWithJustjerk(config, date);
