@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAdmin } from "../middleware/admin.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
+import { getRuntimeMode } from "../lib/runtime-mode.js";
 import {
   getCrawlerConfig,
   listCrawlerConfigs,
@@ -28,9 +29,20 @@ router.get("/configs/:id", requireAdmin, (req, res) => {
 router.get("/status", requireAdmin, (req, res) => ok(res, getCrawlStatus()));
 
 // 出口连通性自检：容器能不能访问外网 / 抓取目标站点。
-// 不加鉴权：返回值只有「通不通」和 HTTP 状态码，没有密钥等敏感信息，
+// 同时回报当前调度模式 —— 「云端到底在不在自动抓取」是排查线上数据不更新时的
+// 第一个问题，一条 curl 能答完就别让人去翻日志。
+// 不加鉴权：返回值只有「通不通」、HTTP 状态码和模式名，没有密钥等敏感信息，
 // 而排查问题时往往需要在没带 token 的情况下直接 curl 一下。
-router.get("/probe", asyncHandler(async (req, res) => ok(res, await probeOutbound())));
+router.get(
+  "/probe",
+  asyncHandler(async (req, res) => {
+    const [outbound, mode] = await Promise.all([
+      probeOutbound(),
+      Promise.resolve(getRuntimeMode()),
+    ]);
+    ok(res, { ...outbound, mode });
+  })
+);
 
 // 手动触发：POST /api/crawler/run            → 跑全部启用配置
 //           POST /api/crawler/run { ids }    → 跑指定配置

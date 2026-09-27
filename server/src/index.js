@@ -3,23 +3,14 @@ import { createApp } from "./app.js";
 import { redis } from "./lib/redis.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
 import { startCrawlScheduler, probeOutbound } from "./crawler/index.js";
+import { getRuntimeMode } from "./lib/runtime-mode.js";
 
 // ── 容器/云托管适配 ──
 // 云托管要求监听 80 / 8080；本地开发仍可走 3000。
 const port = Number(process.env.PORT || 80);
-// 抓取/提醒调度模式：
-//   scheduler（默认，本地常驻进程）—— 心跳自愈 + 每分钟提醒 cron
-//   trigger（云托管定时触发器）     —— 不启动任何进程内定时器，
-//                                     抓取/提醒均由控制台配的触发器调
-//                                     POST /api/crawler/tick、POST /api/reminders/tick 驱动
-//   off（SKIP_CRAWLER=1，旧开关）   —— 完全不调度
-const crawlMode =
-  process.env.CRAWL_MODE === "trigger"
-    ? "trigger"
-    : process.env.SKIP_CRAWLER === "1"
-      ? "off"
-      : "scheduler";
-const skipReminder = crawlMode === "trigger" || process.env.SKIP_REMINDER === "1";
+// 调度模式判定见 lib/runtime-mode.js —— 自检接口共用同一份逻辑，
+// 保证「线上报告的模式」和「实际启动的定时器」不会漂移。
+const { crawlMode, skipReminder, nodeEnv } = getRuntimeMode();
 
 if (!process.env.DATABASE_URL) {
   console.error("[dancehub] DATABASE_URL 未设置，容器无法启动");
@@ -31,7 +22,7 @@ const app = createApp();
 app.listen(port, "0.0.0.0", () => {
   console.log(`[dancehub] API listening on http://0.0.0.0:${port}`);
   console.log(
-    `[dancehub] NODE_ENV=${process.env.NODE_ENV || "development"} CRAWL_MODE=${crawlMode}` +
+    `[dancehub] NODE_ENV=${nodeEnv} CRAWL_MODE=${crawlMode}` +
       (skipReminder ? " SKIP_REMINDER" : "")
   );
 
