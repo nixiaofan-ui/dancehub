@@ -52,26 +52,91 @@ Page({
     }
     const g = app.globalData;
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
+      // 用户在别处（或本页）手动选了城市，以他选的为准
+      this.cityFollowOff = true;
       const cities = g.cities || [];
       const filteredCities = cities.filter((c) => c.region === g.region);
       this.setData({ region: g.region, cityId: g.cityId, cities: cities, filteredCities: filteredCities });
       this.load();
       return;
     }
+    const dirty = g.dirty || 0;
+    const needFollow = !this.cityChecked || dirty !== this.seenDirty;
+    this.cityChecked = true;
+    this.seenDirty = dirty;
+
+    // 刚约完课 / 首次进课表：先看一眼该停在哪个城市，再决定刷不刷
+    if (needFollow) {
+      const moved = await this.followBookedCity();
+      if (moved) return; // 内部已经 load 过了
+      this.load({ silent: true });
+      return;
+    }
     // tabBar 页面切走不会被销毁，onLoad 只跑一次。在课程详情或「我的」里
     // 预约/取消之后回到课表，必须自己刷一次，否则「✅ 已约」还停留在上一次
-    // 请求时的状态。
-    //
-    // 两种情况都刷，但走的判断不同：
-    //   1) 写过数据（globalData.dirty 变了）→ 无条件刷，节流也得让路，
-    //      否则「刚约完切回来」和「没约过切回来」表现一样，用户只能靠切城市重刷
-    //   2) 单纯切 tab 回来 → 1.5 秒节流，避免频繁切 tab 把列表刷得来回闪
-    const dirty = app.globalData.dirty || 0;
+    // 请求时的状态。静默刷新（不切骨架屏），并做一点节流，避免频繁切 tab
+    // 把列表刷得来回闪。
     const stale = Date.now() - (this.lastLoadedAt || 0) > 1500;
-    if (dirty !== this.seenDirty || stale) {
-      this.seenDirty = dirty;
-      this.load({ silent: true });
+    if (stale) this.load({ silent: true });
+  },
+
+  /**
+   * 把课表停在「有预约的那座城市」。
+   *
+   * 预约往往是在发现页/搜索里跨城市发生的 —— 回到课表时当前城市可能根本不是
+   * 你约了课的地方，列表里一节都看不到，只能自己想起来去切城市。
+   * 这里查一次 /bookings：当前城市一节预约都没有、别处有时，切过去并说明原因。
+   *
+   * 三条约束：
+   *   1) 只统计今天及以后的预约（上过的课不该把城市拽回去）
+   *   2) 当前城市本来就有预约时不动，避免跟用户抢方向盘
+   *   3) 用户手动切过城市后（cityFollowOff）本次会话不再自动跟
+   *
+   * @returns 切了城市返回 true（调用方别再重复 load）
+   */
+  async followBookedCity() {
+    if (this.cityFollowOff) return false;
+    let list;
+    try {
+      list = await api.apiBookings();
+    } catch (e) {
+      return false; // 没登录或接口挂了：照常显示当前城市，不打扰
     }
+    if (!Array.isArray(list) || !list.length) return false;
+
+    const today = todayKey();
+    const counts = new Map();
+    for (const b of list) {
+      const s = b.schedule || {};
+      const day = String(s.scheduleDate || "").slice(0, 10);
+      if (day < today) continue;
+      const name = s.city;
+      if (!name) continue;
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    if (!counts.size) return false;
+
+    const cities = app.globalData.cities || [];
+    const cur = cities.find((c) => c.id === this.data.cityId);
+    if (cur && counts.has(cur.name)) return false;
+
+    // 多座城市都有预约时，取课最多的那座
+    const [name, n] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    const city =
+      cities.find((c) => c.name === name && c.region === this.data.region) ||
+      cities.find((c) => c.name === name);
+    if (!city || city.id === this.data.cityId) return false;
+
+    app.setCity(city.region, city.id);
+    this.setData({
+      region: city.region,
+      cityId: city.id,
+      cities: cities,
+      filteredCities: cities.filter((c) => c.region === city.region),
+    });
+    toast(this, `已切到${city.name}：你有 ${n} 节预约`);
+    await this.load();
+    return true;
   },
 
   // 下拉刷新：用户主动下拉时不再静默，显示骨架屏 + 出错要提示
@@ -169,6 +234,7 @@ Page({
     }
     const city = filteredCities[0];
     app.setCity(region, city.id);
+    this.cityFollowOff = true; // 自己选的城市，别再被预约拽走
     this.setData({ region, cityId: city.id, cities, filteredCities });
     this.load();
   },
@@ -177,6 +243,7 @@ Page({
     const cityId = e.currentTarget.dataset.id;
     if (cityId === this.data.cityId) return;
     app.setCity(this.data.region, cityId);
+    this.cityFollowOff = true; // 同上
     this.setData({ cityId });
     this.load();
   },
