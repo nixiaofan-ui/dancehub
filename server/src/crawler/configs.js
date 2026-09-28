@@ -14,6 +14,7 @@ const AUTO_CONFIG_FILES = [
   "studios.foxdance.json",
   "studios.gsteps.json",
   "studios.jiahe.json",
+  "studios.csdsp.json",
 ];
 
 /**

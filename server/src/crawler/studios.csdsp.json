@@ -1,0 +1,20 @@
+[
+  {
+    "id": "wangpai-xidi",
+    "enabled": true,
+    "label": "王牌嘻帝（福州连锁，csdsp SaaS）",
+    "studio": { "name": "王牌嘻帝", "city": "福州", "region": "CN" },
+    "mode": "csdsp",
+    "csdsp": {
+      "baseUrl": "https://gateway.csdsp.com",
+      "tenantId": "98285824",
+      "spanDays": 7
+    },
+    "dateMode": "today",
+    "days": 1,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

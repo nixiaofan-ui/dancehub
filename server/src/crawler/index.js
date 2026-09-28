@@ -41,7 +41,7 @@ const TICK_BUDGET_MS = Number(process.env.CRAWL_BUDGET_MS || 15 * 60 * 1000); //
  * 而 importer 又是按「studio+date+课名+开始时间」upsert，多出来的全是无用功。
  * 因此只对第一个日期抓一次。
  */
-const DATELESS_MODES = new Set(["oneMillion", "avex", "justjerk", "rawgraphy"]);
+const DATELESS_MODES = new Set(["oneMillion", "avex", "justjerk", "rawgraphy", "csdsp"]);
 
 const statusMap = new Map(); // configId -> { state, lastRunAt, report, error }
 const running = new Set(); // 正在抓取的 configId，防重入

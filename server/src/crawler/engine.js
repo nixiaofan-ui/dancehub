@@ -394,6 +394,151 @@ function guessCityFromAddress(addr) {
   return m ? m[1] : "";
 }
 
+/* ───────────── csdsp.com SaaS（王牌嘻帝等，uni-app 多租户）抓取 ───────────── */
+
+/**
+ * csdsp.com 是继 iWOD / 菲体云 / 爱舞功 / styd 之后的**又一套舞蹈培训 SaaS**，
+ * 逆向自 Mac 微信缓存包 wx5556c123a9c51bc7（外壳 appid wxe2477036d5f43693）。
+ *
+ * ⚠ 核心机制：不是「一家一个小程序」，而是**一套 uni-app 包 + 后台注入 ext.tenantId**：
+ *   app-config.json 的 `ext: { tenantId: "98285824" }` 决定这家是哪家。
+ *   所以接入新品牌的唯一门槛是**拿到 tenantId**（从它自己的包里解出来），
+ *   拿到之后所有接口完全通用 —— 这点是它比 iWOD 好接的地方。
+ *   ⚠ tenantId 不连续（试打 98285825/98285826 全是 500），**无法枚举**，
+ *   只能靠解包，别去扫号段。
+ *
+ * - 网关：`https://gateway.csdsp.com`，接口前缀 `/mp/public/`，**全部免登录**
+ * - 租户：  GET /mp/public/tenant?tenantId=X → companyName（"王牌嘻帝"）
+ * - 校区：  GET /mp/public/campusList?tenantId=X → deptId/deptName/location/coordinate
+ * - 课表：  GET /mp/public/lectureList?tenantId=X&startDate=…&endDate=…
+ *   ⭐ **带日期区间一次能拉整周**（实测 7 天 303 节），不像 iWOD 要按天翻页。
+ *   ⚠ 不带日期参数会返回全历史（王牌嘻帝 15580 条、17MB+），千万别裸调。
+ * - 日期格式 `YYYY-M-D HH:mm:ss`（月日不补零也认）；
+ *   另有 schoolTime=YYYY-MM-DD 可只取单日。
+ *
+ * 课程字段：classesName（⚠ 自带校区前缀，如「五四北宝宝娟抖音舞成人入门」）、
+ * teacherName、genreName（Jazz/Choreo/Hiphop…）、campusId、level（"入门"）、
+ * startTime/endTime、startDate（"2026/09/28 12:30:00"）、
+ * reserveNum（已约）/reserveLimit（上限）/reservable。
+ */
+async function crawlWithCsdsp(config, date) {
+  const { baseUrl = "https://gateway.csdsp.com", tenantId } = config.csdsp || {};
+  if (!tenantId) throw new Error("csdsp 配置缺少 tenantId");
+  const brand = (config.studio?.name || "").trim();
+  // 一个请求拉多少天（0/未设 = 7）。实测 7 天最稳，再长意义不大
+  const spanRaw = config.csdsp?.spanDays;
+  const span = spanRaw != null ? Math.max(Number(spanRaw) || 7, 1) : 7;
+
+  // 校区档案：作用同嘉禾 —— 当天没课的分店也要留在库里
+  const campuses = await fetchCsdspCampuses(baseUrl, tenantId);
+  const campusMap = new Map();
+  for (const c of campuses) campusMap.set(c.deptId, c);
+
+  const out = [];
+  out.ensureStudios = campuses.map((c) => ({
+    name: `${brand}·${c.short}`,
+    address: c.location,
+  }));
+
+  // 本地日期（不能用 toISOString：容器按 UTC 跑会偏移一天）
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const dateStr = `${y}-${m}-${d}`;
+  const to = new Date(date.getTime() + (span - 1) * 86400000);
+  const toStr = `${to.getFullYear()}-${String(to.getMonth() + 1).padStart(2, "0")}-${String(to.getDate()).padStart(2, "0")}`;
+  const qs = new URLSearchParams({
+    tenantId: String(tenantId),
+    startDate: `${dateStr} 00:00:00`,
+    endDate: `${toStr} 23:59:59`,
+  });
+  const resp = await fetch(`${baseUrl}/mp/public/lectureList?${qs}`, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!resp.ok) throw new Error(`csdsp 课表接口 HTTP ${resp.status}`);
+  const list = await resp.json();
+  if (!Array.isArray(list?.data)) throw new Error("csdsp 课表返回格式异常");
+
+  for (const lec of list.data) {
+    const campus = campusMap.get(String(lec.campusId || ""));
+    const branch = campus ? campus.short : "";
+    const raw = String(lec.classesName || "").trim();
+    if (!raw) continue;
+    // 课程名自带校区前缀（「五四北宝宝娟抖音舞成人入门」），剥掉后才是有效信息
+    const courseName = stripCampusPrefix(raw, branch);
+    const limit = Number(lec.reserveLimit) || 0;
+    const used = Number(lec.reserveNum) || 0;
+    const full = String(lec.reservable || "0") !== "1" || (limit > 0 && used >= limit);
+
+    out.push({
+      courseName,
+      coach: String(lec.teacherName || "").trim(),
+      time: `${String(lec.startTime || "").trim()}-${String(lec.endTime || "").trim()}`,
+      capacity: limit ? `${Math.max(limit - used, 0)}/${limit}` : "",
+      status: full ? "已满" : "可预约",
+      _studioName: `${brand}${branch ? `·${branch}` : ""}`,
+      _address: campus ? campus.location : "",
+      _remark: [
+        lec.genreName ? `舞种：${lec.genreName}` : null,
+        lec.level ? `难度：${lec.level}` : null,
+      ]
+        .filter(Boolean)
+        .join(" | "),
+      // 每节课自带真实日期，一次跨界请求写回各自那天
+      _scheduleDate: normalizeDate(lec.startDate),
+    });
+  }
+  return out;
+}
+
+/**
+ * 校区档案：GET /mp/public/campusList。
+ * 顺手算出 short 名（"五四北校区" → "五四北"），课表名前缀就靠它剥。
+ * 失败返回空数组 —— 不阻塞本轮抓课（此时 campusId 反查不到，门店名回落品牌名）。
+ */
+async function fetchCsdspCampuses(baseUrl, tenantId) {
+  try {
+    const resp = await fetch(`${baseUrl}/mp/public/campusList?tenantId=${tenantId}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) return [];
+    const list = await resp.json();
+    if (!Array.isArray(list?.data)) return [];
+    return list.data
+      .filter((c) => String(c.deptCategory || "") === "CAMPUS")
+      .map((c) => {
+        const full = String(c.deptName || "").trim();
+        return {
+          deptId: String(c.deptId || ""),
+          full,
+          short: full.replace(/校区$/, "").trim() || full,
+          location: String(c.location || "").trim(),
+        };
+      })
+      .filter((c) => c.deptId && c.short);
+  } catch {
+    return [];
+  }
+}
+
+/** "五四北宝宝娟抖音舞成人入门" 去掉前缀 "五四北" → "宝宝娟抖音舞成人入门" */
+function stripCampusPrefix(name, prefix) {
+  if (!prefix) return name;
+  if (name.startsWith(prefix) && name.length > prefix.length) {
+    return name.slice(prefix.length).trim();
+  }
+  return name;
+}
+
+/** "2026/09/28 12:30:00" → "2026-09-28"；拿不到返回空（外部回落到 _date） */
+function normalizeDate(text) {
+  const m = String(text || "").trim().match(/(\d{4})[/_-](\d{1,2})[/_-](\d{1,2})/);
+  if (!m) return "";
+  return `${m[1]}-${String(m[2]).padStart(2, "0")}-${String(m[3]).padStart(2, "0")}`;
+}
+
 /* ───────────────────── G-STEPS（api.gsteps.cn）抓取 ───────────────────── */
 
 /**
@@ -1305,6 +1450,7 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "gsteps") return crawlWithGsteps(config, date);
   if (config.mode === "foxdance") return crawlWithFoxdance(config, date);
   if (config.mode === "aiwugong") return crawlWithAiwugong(config, date);
+  if (config.mode === "csdsp") return crawlWithCsdsp(config, date);
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);
   if (config.mode === "justjerk") return crawlWithJustjerk(config, date);
