@@ -6,8 +6,10 @@
     "pages/import/import",
     "pages/webview/webview",
     "pages/studio/weekly",
+    "pages/coach/index",
     "pages/course/detail",
-    "pages/about/about"
+    "pages/about/about",
+    "pages/report/index"
   ],
   "window": {
     "navigationStyle": "custom",

@@ -44,6 +44,20 @@ function apiLogin() {
 
 const apiCities = (region) => req.get("/cities", region ? { region } : {});
 const apiTimeline = (cityId, date) => req.get("/timeline", { cityId, date });
+/**
+ * 自选门店组的合并课表（多店视图）。
+ * 三个入口共用：品牌多店 / 已关注门店筛选 / 老师主页。
+ * @param {number[]} ids 门店 id
+ * @param {string} [from] 起始日期；不传=只看今天
+ * @param {string} [to] 结束日期；不传=只看 from（或今天）
+ */
+const apiMultiTimeline = (ids, from, to) =>
+  req.get("/timeline/multi", {
+    studioIds: (ids || []).join(","),
+    ...(from ? { from } : {}),
+    ...(to ? { to } : {}),
+  });
+const apiBrands = (cityId) => req.get("/studios/brands", { cityId });
 const apiStudios = (params) => req.get("/studios", params || {});
 const apiStudioDetail = (id) => req.get(`/studios/${id}`);
 const apiStudioTodaySchedules = (studioId) =>
@@ -85,7 +99,17 @@ const apiRemoveReminder = (scheduleId) => {
   markDirty();
   return req.delete("/reminders/" + scheduleId);
 };
-const apiSubscribeConfig = () => req.get("/config/subscribe");
+// 老师主页：同城同名老师未来两周的课（含任教门店清单）
+const apiCoachTimeline = (name, cityId, days) =>
+  req.get("/coaches/timeline", { name, cityId, days: days || 14 });
+// 不想看的老师（本地即时生效，云端用于跨设备同步）
+const apiBlocked = () => req.get("/blocked");
+const apiBlock = (name) => req.post("/blocked", { name });
+const apiUnblock = (name) => req.delete("/blocked/" + encodeURIComponent(name));
+// 结构化逐条录入课表（用户手动补抓不到的店）
+const apiImportSchedule = (payload) => req.post("/imports/schedule", payload);
+// 缺失舞室提报
+const apiSubmitReport = (payload) => req.post("/reports", payload);
 // 定位 → 城市：解析放在服务端（城市中心点表 + 「哪些城市真有课」都在库里）
 const apiLocateCity = (lat, lng) => req.post("/cities/locate", { lat, lng });
 
@@ -95,6 +119,8 @@ module.exports = {
   apiCities,
   apiLocateCity,
   apiTimeline,
+  apiMultiTimeline,
+  apiBrands,
   apiStudios,
   apiStudioDetail,
   apiStudioTodaySchedules,
@@ -112,4 +138,10 @@ module.exports = {
   apiAddReminder,
   apiRemoveReminder,
   apiSubscribeConfig,
+  apiCoachTimeline,
+  apiBlocked,
+  apiBlock,
+  apiUnblock,
+  apiSubmitReport,
+  apiImportSchedule,
 };

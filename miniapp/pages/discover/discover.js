@@ -64,6 +64,7 @@ Page({
     statusBarHeight: 20,
     followedIds: [],
     loading: false,
+    brands: [],
   },
 
   async onLoad() {
@@ -103,6 +104,7 @@ Page({
     // 先置 loading，避免首次进入时闪一下空状态
     this.setData({ loading: true });
     await api.ensureReady();
+    this.loadBrands();
     try {
       const params = { cityId: this.data.cityId };
       if (this.data.keyword) params.keyword = this.data.keyword;
@@ -174,6 +176,38 @@ Page({
 
   onSearch(e) {
     this.setData({ keyword: e.detail.value });
+  },
+
+  /**
+   * 同城多店品牌 —— 这些品牌开了好几家分店，会员通常是通卡，
+   * 所以单独给一条横滑入口，点进去直接看全部门店的合并课表。
+   * 失败就静默：品牌是加分项，不该因为它报错挡住整个发现页。
+   */
+  async loadBrands() {
+    try {
+      const brands = await api.apiBrands(this.data.cityId);
+      this.setData({ brands: brands || [] });
+    } catch (e) {
+      this.setData({ brands: [] });
+    }
+  },
+
+  goReport() {
+    wx.navigateTo({ url: "/pages/report/index" });
+  },
+
+  goBrand(e) {
+    const idx = Number(e.currentTarget.dataset.index);
+    const b = this.data.brands[idx];
+    if (!b) return;
+    const ids = b.stores.map((s) => s.id).join(",");
+    wx.navigateTo({
+      url:
+        "/pages/studio/weekly?ids=" +
+        ids +
+        "&title=" +
+        encodeURIComponent(b.name),
+    });
   },
 
   onSearchConfirm() {

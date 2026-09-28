@@ -92,6 +92,75 @@ export async function getCityDaySchedules(cityId, dateKey) {
   return data;
 }
 
+/**
+ * 自定义门店组合某一天的课表。
+ * 与 getCityDaySchedules 的区别：不看城市，只看传入的门店 id 集合，
+ * 供「品牌多店」「老师跨店」这类自选门店组复用。
+ *
+ * 不走 Redis 缓存：门店组合是任意的，key 会爆炸且命中率极低，
+ * 单日几十到几百条直接查库更快也更省心。
+ *
+ * @param {number[]} studioIds
+ * @param {string} dateKey YYYY-MM-DD（或区间起始日）
+ * @param {string} [endKey] 给了就查 [dateKey, endKey] 区间，否则只查 dateKey 当天
+ */
+export async function getStudiosDaySchedules(studioIds, dateKey, endKey) {
+  const ids = [...new Set(studioIds.map(Number))].filter(Boolean);
+  if (!ids.length) return [];
+
+  const where = {
+    studioId: { in: ids },
+    studio: { status: true },
+  };
+  where.scheduleDate = endKey
+    ? { gte: parseDateKey(dateKey), lte: parseDateKey(endKey) }
+    : parseDateKey(dateKey);
+
+  const schedules = await prisma.schedule.findMany({
+    where,
+    include: scheduleInclude,
+    // 区间查询必须先把日期排好，否则多天混在一起前端没法按天分组
+    orderBy: endKey
+      ? [{ scheduleDate: "asc" }, { startTime: "asc" }]
+      : { startTime: "asc" },
+  });
+
+  return serializeTimeline(schedules);
+}
+
+/**
+ * 某个老师未来在某个城市的全部课程。
+ *
+ * 老师是跟着人走的，但数据里 Coach 挂在门店下 —— 同一个人在 A 店和 B 店
+ * 是两条不同 id 的记录。所以这里按「同城 + 同名」聚合，
+ * 这是目前唯一能跨店认出同一个老师的办法。
+ *
+ * 误差两边都有：不同人重名会被当成同一个（舞蹈圈重名率不高，可接受），
+ * 同一人用不同艺名会漏掉。等有精力做教练 Identity 表再收敛。
+ *
+ * @param {string} coachName
+ * @param {number} cityId
+ * @param {string} fromKey YYYY-MM-DD
+ * @param {string} [toKey]
+ */
+export async function getCoachSchedules(coachName, cityId, fromKey, toKey) {
+  const where = {
+    coach: { name: coachName, studio: { cityId: Number(cityId) } },
+    studio: { status: true },
+    scheduleDate: toKey
+      ? { gte: parseDateKey(fromKey), lte: parseDateKey(toKey) }
+      : { gte: parseDateKey(fromKey) },
+  };
+
+  const schedules = await prisma.schedule.findMany({
+    where,
+    include: scheduleInclude,
+    orderBy: [{ scheduleDate: "asc" }, { startTime: "asc" }],
+  });
+
+  return serializeTimeline(schedules);
+}
+
 export async function createSchedule(data) {
   const schedule = await prisma.schedule.create({ data });
   await invalidateTimelineCache();

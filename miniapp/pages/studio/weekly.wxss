@@ -255,10 +255,90 @@
   border-radius: 20rpx;
   padding: 4rpx 14rpx;
 }
-.c-coach {
+/* 多店视图：门店 chips */
+.multi-head {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2rpx solid #2b3050;
+  border-left: 10rpx solid #00f5d4;
+  border-radius: 16rpx;
+  padding: 20rpx 0 16rpx;
+  margin-bottom: 20rpx;
+}
+.multi-row {
+  display: flex;
+  align-items: center;
+  padding: 0 24rpx;
+  margin-bottom: 14rpx;
+}
+.multi-sub {
+  flex: 1;
+  min-width: 0;
   font-size: 24rpx;
   color: #a8adc2;
+  font-weight: 700;
+}
+.multi-all {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: #00f5d4;
+  border: 2rpx solid #00f5d4;
+  border-radius: 28rpx;
+  padding: 6rpx 24rpx;
+  font-weight: 900;
+}
+.store-bar {
+  white-space: nowrap;
+  padding: 0 24rpx;
+}
+.store-chip {
+  display: inline-block;
+  font-size: 26rpx;
+  color: #a8adc2;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2rpx solid rgba(255, 255, 255, 0.08);
+  border-radius: 32rpx;
+  padding: 10rpx 24rpx;
+  margin-right: 14rpx;
+  font-weight: 700;
+}
+.store-chip.on {
+  color: #0e0e1c;
+  background: #00f5d4;
+  border-color: #00f5d4;
+}
+.sc-count {
+  font-size: 20rpx;
+  margin-left: 8rpx;
+  opacity: 0.7;
+}
+
+/* 课卡片上的门店标签（多店视图才有） */
+.c-meta-row {
+  display: flex;
+  align-items: center;
   margin-top: 6rpx;
+}
+.c-coach {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #a8adc2;
+  margin-top: 0;
+  font-weight: 700;
+}
+.c-store-tag {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #ff9f6b;
+  background: rgba(255, 107, 53, 0.12);
+  border: 1rpx solid rgba(255, 107, 53, 0.3);
+  border-radius: 8rpx;
+  padding: 3rpx 12rpx;
+  margin-left: 12rpx;
+  max-width: 180rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
 }
 .c-level {

@@ -108,6 +108,19 @@
   color: #0e0e1c;
   font-weight: 900;
 }
+/* tab 上的数量小标 */
+.tab-n {
+  display: inline-block;
+  min-width: 32rpx;
+  font-size: 18rpx;
+  color: #0e0e1c;
+  background: #00f5d4;
+  border-radius: 16rpx;
+  padding: 0 8rpx;
+  margin-left: 6rpx;
+  line-height: 1.6;
+  font-weight: 900;
+}
 
 /* 关注 */
 .follow-card {

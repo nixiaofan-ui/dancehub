@@ -9,6 +9,7 @@ const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
 const { locateCity, openSetting } = require("../../utils/locate");
+const { isBlocked } = require("../../utils/blocked");
 
 Page({
   data: {
@@ -25,6 +26,13 @@ Page({
     items: [],
     pendingCount: 0,
     loading: false,
+
+    // 已关注门店筛选条
+    storeChips: [],
+    showStoreBar: false,
+    // 因「屏蔽老师」而隐藏的课
+    hiddenCount: 0,
+    showBlocked: false,
 
     panel: { visible: false, item: null },
   },
@@ -220,8 +228,21 @@ Page({
           slotText,
         };
       });
+      // 两级过滤都在本地做：数据是当天整城拉回来的，
+      // 第一级剔掉屏蔽老师的课，第二级按勾选的门店筛 —— 都不用重新请求
+      this.rawItems = items;
+      const hidden = items.filter((i) => !this.isVisibleCoach(i)).length;
+      const base = this.data.showBlocked ? items : items.filter((i) => this.isVisibleCoach(i));
+
+      this.syncStoreChips(base);
+      const visible = this.filterByStore(base);
       const pendingCount = items.filter((i) => i.bookingStatus === "PENDING").length;
-      this.setData({ items, pendingCount, loading: false });
+
+      // 藏了多少课要让用户看见，别悄悄替他做决定
+      const hiddenCount = this.data.showBlocked ? 0 : hidden;
+
+      this.setData({ items: visible, pendingCount, hiddenCount, loading: false });
+      this.allItems = base;
       this.lastLoadedAt = Date.now();
       this.seenDirty = app.globalData.dirty || 0;
     } catch (e) {
@@ -230,6 +251,101 @@ Page({
       // 后台静默刷新失败就不弹提示了：用户没主动操作，不该被报错打断
       if (!silent) toast(this, e.message);
     }
+  },
+
+  /**
+   * 构建「已关注门店」筛选条。
+   * 只有 1 家时不显示 —— 只有一个选项的开关是纯粹的噪音。
+   */
+  syncStoreChips(items) {
+    const map = new Map();
+    items.forEach((i) => {
+      const sid = i.studio && i.studio.id;
+      if (!sid) return;
+      if (!map.has(sid)) {
+        map.set(sid, { id: sid, short: i.studio.short || i.studio.name, count: 0 });
+      }
+      map.get(sid).count += 1;
+    });
+    const chips = [...map.values()].sort((a, b) => b.count - a.count);
+
+    // 首次进来全选；之后保留用户上次勾选，但剔掉已经不在列表里的门店
+    let ids = this.activeIds || [];
+    ids = ids.filter((id) => map.has(id));
+    if (!ids.length) ids = chips.map((c) => c.id);
+    this.activeIds = ids;
+
+    const active = new Set(ids);
+    this.setData({
+      storeChips: chips.map((c) => ({ ...c, on: active.has(c.id) })),
+      showStoreBar: chips.length > 1,
+    });
+  },
+
+  filterByStore(items) {
+    if (!this.activeIds || !this.activeIds.length) return items;
+    const active = new Set(this.activeIds);
+    return items.filter((i) => i.studio && active.has(i.studio.id));
+  },
+
+  /**
+   * 没被屏蔽的老师。
+   * 屏蔽名单可能刚被改过（从老师页返回），所以每次渲染重新读 Storage，
+   * 不在 page 实例上缓存。
+   */
+  isVisibleCoach(item) {
+    const name = item.coach ? item.coach.name : item.coachName;
+    return !isBlocked(name);
+  },
+
+  toggleShowBlocked() {
+    const show = !this.data.showBlocked;
+    this.setData({ showBlocked: show });
+    const raw = this.rawItems || [];
+    const base = show ? raw : raw.filter((i) => this.isVisibleCoach(i));
+    this.syncStoreChips(base);
+    this.allItems = base;
+    this.setData({
+      items: this.filterByStore(base),
+      hiddenCount: 0,
+    });
+  },
+
+  goCoach(e) {
+    const name = e.currentTarget.dataset.name;
+    if (!name || name === "待定") return;
+    wx.navigateTo({
+      url:
+        "/pages/coach/index?name=" +
+        encodeURIComponent(name) +
+        "&cityId=" +
+        this.data.cityId,
+    });
+  },
+
+  tapStoreChip(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    const active = new Set(this.activeIds || []);
+    if (active.has(id)) {
+      if (active.size === 1) return toast(this, "至少保留一家门店");
+      active.delete(id);
+    } else {
+      active.add(id);
+    }
+    this.activeIds = [...active];
+    this.setData({
+      storeChips: (this.data.storeChips || []).map((c) => ({ ...c, on: active.has(c.id) })),
+      items: this.filterByStore(this.allItems || []),
+    });
+  },
+
+  tapAllStores() {
+    const chips = this.data.storeChips || [];
+    this.activeIds = chips.map((c) => c.id);
+    this.setData({
+      storeChips: chips.map((c) => ({ ...c, on: true })),
+      items: this.filterByStore(this.allItems || []),
+    });
   },
 
   switchRegion(e) {

@@ -73,6 +73,22 @@ model User {
   follows    Follow[]
   bookings   Booking[]
   reminders  Reminder[]
+  blocks     CoachBlock[]
+}
+
+/// 用户屏蔽的老师（产品文案叫「不想看」）。
+/// 按「名字」屏蔽而不是按 coachId：同一个老师在不同门店是两条 Coach 记录，
+/// 按 id 屏蔽只能屏蔽掉其中一家店的课，等于没屏蔽。
+/// 代价是同名会被一起屏蔽 —— 对「不想再上到雷老师的课」这个诉求来说可以接受。
+model CoachBlock {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  coachName String   @db.VarChar(191)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, coachName])
+  @@index([userId])
 }
 
 model Studio {
@@ -191,4 +207,26 @@ model Follow {
 
   @@unique([userId, studioId])
   @@index([studioId])
+}
+
+enum ReportStatus {
+  PENDING
+  DONE
+  REJECTED
+}
+
+/// 用户提报「我要的舞室没有」。
+/// 抓取只能覆盖用那几套 SaaS 的店，头部独立舞室永远有漏；
+/// 与其我们自己猜，不如让用户直接告诉我们缺谁 —— 这份名单比任何爬虫都准。
+model StudioReport {
+  id        Int          @id @default(autoincrement())
+  userId    Int?
+  name      String       @db.VarChar(191)
+  city      String?      @db.VarChar(191)
+  contact   String?      @db.VarChar(191)
+  comment   String?      @db.Text
+  status    ReportStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+
+  @@index([status])
 }

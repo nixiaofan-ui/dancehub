@@ -37,6 +37,28 @@
     <view class="search-btn" hover-class="press" bindtap="onSearchConfirm">搜索</view>
   </view>
 
+  <!-- 多店品牌：同城开了好几家分店的品牌，点进去一次看完全部门店的课 -->
+  <view wx:if="{{brands.length}}" class="brand-block">
+    <view class="brand-head">
+      <view class="brand-title">连锁 / 多店品牌</view>
+      <view class="brand-sub">一次看完全部分店</view>
+    </view>
+    <scroll-view scroll-x class="brand-bar" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{brands}}"
+        wx:key="name"
+        class="brand-card"
+        hover-class="press"
+        data-index="{{index}}"
+        bindtap="goBrand"
+      >
+        <view class="bc-name">{{item.name}}</view>
+        <view class="bc-count">{{item.storeCount}} 家分店</view>
+        <view class="bc-branch">{{item.stores[0].branch}} 等</view>
+      </view>
+    </scroll-view>
+  </view>
+
   <view wx:if="{{loading && sections.length === 0}}" class="loading">
     <view class="dancer-lg">
       <view class="d-head"></view>
@@ -60,6 +82,13 @@
     </view>
     <view class="empty-title">搜了个寂寞</view>
     <view class="empty-sub">换个关键词，试试手气</view>
+    <button class="empty-report" hover-class="press" bindtap="goReport">没找到我要的舞室？告诉我们</button>
+  </view>
+
+  <!-- 常驻提报入口：搜得到不代表搜得全，缺谁让用户直接告诉我们 -->
+  <view class="report-row" hover-class="press" bindtap="goReport">
+    <view class="rr-text">没找到你想去的舞室？<text class="rr-em">告诉我们</text></view>
+    <view class="rr-arrow">›</view>
   </view>
 
   <view class="studio-list">

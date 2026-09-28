@@ -3,6 +3,7 @@ const api = require("../../services/api");
 const { BOOKING_STATUS_LABEL, PLATFORM_LABEL } = require("../../utils/constants");
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
+const { getBlocked, unblock } = require("../../utils/blocked");
 
 Page({
   data: {
@@ -12,6 +13,7 @@ Page({
     bookings: [],
     reminders: [],
     loading: false,
+    blocked: [],
   },
 
   async onLoad() {
@@ -25,7 +27,39 @@ Page({
       tb.setData({ selected: 2 });
       tb.refreshBadge();
     }
+    // 屏蔽名单可能刚在老师页改过，每次进页面都重读一次本地
+    this.loadBlocked();
     this.loadAll();
+  },
+
+  /**
+   * 本机名单为准，云端那份只在有网时补进来。
+   * 用户在这恢复显示后要立刻看到列表变化，等接口往返太慢。
+   */
+  loadBlocked() {
+    const local = getBlocked();
+    this.setData({ blocked: local });
+    api.ensureReady()
+      .then(() => api.apiBlocked())
+      .then((remote) => {
+        const merged = [...new Set(local.concat(remote || []))];
+        this.setData({ blocked: merged });
+      })
+      .catch(() => {});
+  },
+
+  async unblockCoach(e) {
+    const name = e.currentTarget.dataset.name;
+    if (!name) return;
+    unblock(name);
+    this.loadBlocked();
+    try {
+      await api.apiUnblock(name);
+    } catch (err) {
+      // 本地已经恢复显示了，云端同步失败不当成错误打断用户
+      console.error("[dancehub] 取消屏蔽同步失败:", err);
+    }
+    toast(this, `已恢复「${name}」的课`, "success");
   },
 
   async loadAll() {

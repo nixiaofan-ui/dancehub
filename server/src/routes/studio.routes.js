@@ -7,6 +7,7 @@ import { ok, fail } from "../utils/response.js";
 import { toDateKey, parseDateKey } from "../services/schedule.service.js";
 import { pickStyles } from "../services/dance-style.service.js";
 import { sortStudiosByName } from "../services/studio-sort.service.js";
+import { splitBrandBranch } from "../lib/studio-name.js";
 
 const router = Router();
 
@@ -70,6 +71,54 @@ router.get(
         styles: styleMap.get(s.id) || [],
       })),
     );
+  }),
+);
+
+/**
+ * 同城多店品牌：GET /api/studios/brands?cityId=17
+ *
+ * 门店名是「品牌·分店」格式，按「·」前面的部分聚合成品牌。
+ * 只返回同城 ≥2 家门店的品牌 —— 单店品牌没有「合并看课」的价值，
+ * 它的入口就是门店本身。
+ *
+ * ⚠️ 依赖名字格式，属轻量方案：648 家没走 SaaS 品牌归一化的单店名
+ * 无法参与（它们的 name 没有分隔符）。正式建 Brand 表前先用这个，
+ * 代价是覆盖率不全，好处是立刻能用且不需要回填历史数据。
+ */
+router.get(
+  "/brands",
+  asyncHandler(async (req, res) => {
+    const { cityId } = req.query;
+    if (!cityId) return fail(res, 400, "cityId 必填");
+
+    const studios = await prisma.studio.findMany({
+      where: { cityId: Number(cityId), status: true },
+      select: { id: true, name: true },
+    });
+
+    const map = new Map();
+    for (const s of studios) {
+      const dot = s.name.indexOf("·");
+      if (dot <= 0) continue;
+      const brand = s.name.slice(0, dot).trim();
+      if (!brand) continue;
+      if (!map.has(brand)) map.set(brand, []);
+      // 分店名走清洗：原始数据里常见「北京路店（点击有地图指引）」这种营销尾巴，
+      // 直接展示会把 chip 撑爆，且和多店课表里的短名不一致
+      const { branch } = splitBrandBranch(s.name);
+      map.get(brand).push({ id: s.id, name: s.name, branch });
+    }
+
+    const brands = [...map.entries()]
+      .filter(([, stores]) => stores.length >= 2)
+      .map(([name, stores]) => ({
+        name,
+        storeCount: stores.length,
+        stores: stores.slice().sort((a, b) => a.branch.localeCompare(b.branch, "zh")),
+      }))
+      .sort((a, b) => b.storeCount - a.storeCount || a.name.localeCompare(b.name, "zh"));
+
+    ok(res, brands);
   }),
 );
 

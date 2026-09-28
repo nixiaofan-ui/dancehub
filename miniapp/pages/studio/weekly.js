@@ -33,13 +33,37 @@ Page({
     dayItems: [],
     bookedCount: 0,
     weekBookedCount: 0,
+    // 多店模式：从品牌页/自选门店进来时走这套
+    multiMode: false,
+    multiTitle: "",
+    stores: [], // [{id, short, name, count, hasClass}]
+    activeStoreIds: [], // 当前勾选的门店，空数组语义=全不选（初始化时会置为全选）
+    allStoreIds: [],
   },
 
   onLoad(query) {
-    this.studioId = Number(query.id);
     this.weeksCache = {};
     this.weekMonday = null;
     this.bookedIds = new Set();
+
+    // 多店入口：/pages/studio/weekly?ids=1,2,3&title=品牌名
+    // 单店入口：/pages/studio/weekly?id=1 —— 保持原逻辑不变
+    const ids = query.ids ? query.ids.split(",").map(Number).filter(Boolean) : null;
+    if (ids && ids.length) {
+      this.multiMode = true;
+      this.allStoreIds = ids;
+      this.setData({
+        multiMode: true,
+        multiTitle: decodeURIComponent(query.title || "多店课表"),
+        activeStoreIds: ids,
+        selectedKey: todayKey(),
+      });
+      this.initWeek(new Date());
+      return;
+    }
+
+    this.multiMode = false;
+    this.studioId = Number(query.id);
     this.setData({ studioId: this.studioId, selectedKey: todayKey() });
     this.initWeek(new Date());
     this.loadStudio();
@@ -96,19 +120,45 @@ Page({
 
   loadWeek(monday) {
     const from = dateKey(monday);
+    const to = dateKey(addDays(monday, 6));
     if (this.weeksCache[from]) {
       this.applyWeekData();
       return;
     }
     this.setData({ loading: true });
-    api
-      .apiStudioSchedules(this.studioId, from, dateKey(addDays(monday, 6)))
+
+    const request = this.multiMode
+      ? api.apiMultiTimeline(this.allStoreIds, from, to)
+      : api.apiStudioSchedules(this.studioId, from, to);
+
+    request
       .then((res) => {
+        let rows = res;
+        // 多店接口把门店清单和课分开返回，先记住门店短名，
+        // 卡片上要贴一枚「哪家店」的标签，但不该重复整个「品牌·分店」全名
+        if (this.multiMode) {
+          rows = (res && res.items) || [];
+          if (res && res.studios) {
+            // 首次进入默认全选：用户是从「这个品牌」点进来的，
+            // 他想看的就是全部门店，让他自己关掉比让他一家家打开更省事
+            const ids = this.data.activeStoreIds.length
+              ? this.data.activeStoreIds
+              : res.studios.map((s) => s.id);
+            const active = new Set(ids);
+            this.setData({
+              stores: res.studios.map((s) => ({ ...s, on: active.has(s.id) })),
+              activeStoreIds: ids,
+            });
+          }
+        }
+
         const grouped = {};
-        (res || []).forEach((s) => {
+        (rows || []).forEach((s) => {
           if (!grouped[s.scheduleDate]) grouped[s.scheduleDate] = [];
           grouped[s.scheduleDate].push({
             id: s.id,
+            studioId: s.studio ? s.studio.id : null,
+            studioShort: s.studio ? s.studio.name : "",
             courseName: s.courseName,
             coachName: s.coach ? s.coach.name : "待定",
             startTime: s.startTime,
@@ -120,6 +170,20 @@ Page({
             diffClass: (s.difficulty || "ALL_LEVELS").toLowerCase(),
           });
         });
+
+        // 短名统一从 studios 列表取，保证 chip 和卡片标签一致
+        if (this.multiMode && res && res.studios) {
+          const shortMap = {};
+          res.studios.forEach((s) => {
+            shortMap[s.id] = s.short;
+          });
+          Object.values(grouped).forEach((list) => {
+            list.forEach((i) => {
+              if (shortMap[i.studioId]) i.studioShort = shortMap[i.studioId];
+            });
+          });
+        }
+
         this.weeksCache[from] = grouped;
         this.applyWeekData();
       })
@@ -130,23 +194,71 @@ Page({
       });
   },
 
+  /**
+   * 多店模式下的门店勾选。
+   * 至少保留一家 —— 全不选会得到一个空列表，用户会以为没课或接口坏了。
+   */
+  tapStore(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    const active = new Set(this.data.activeStoreIds);
+    if (active.has(id)) {
+      if (active.size === 1) return toast(this, "至少保留一家门店");
+      active.delete(id);
+    } else {
+      active.add(id);
+    }
+    this.applyStoreFilter([...active]);
+  },
+
+  tapAllStores() {
+    this.applyStoreFilter([...this.allStoreIds]);
+  },
+
+  /**
+   * 统一更新「勾选门店 + chip 高亮 + 当天课表」。
+   * chip 的 on 字段在这里算好，不用 WXML 里做 indexOf
+   * （小程序模板对数组方法支持不完整，写在数据里最稳）。
+   */
+  applyStoreFilter(activeIds) {
+    const active = new Set(activeIds);
+    const stores = (this.data.stores || []).map((s) => ({ ...s, on: active.has(s.id) }));
+    this.setData({ activeStoreIds: activeIds, stores });
+    this.applyWeekData();
+  },
+
+  /**
+   * 按当前勾选门店过滤某一天的课。
+   * 周视图上的「今天有没有课」小圆点也要跟着过滤，
+   * 否则会出现「日期上有课、点进去却空白」。
+   */
+  visibleOf(grouped, key) {
+    let list = grouped[key] || [];
+    if (this.multiMode) {
+      const active = new Set(this.data.activeStoreIds);
+      list = list.filter((i) => active.has(i.studioId));
+    }
+    return list;
+  },
+
   applyWeekData() {
     const grouped = this.weeksCache[dateKey(this.weekMonday)] || {};
     const booked = this.bookedIds || new Set();
-    // 标记不写进 weeksCache —— 缓存的是课表本身，预约状态每次重算
+
     const weekDays = this.data.weekDays.map((d) => {
-      const list = grouped[d.key] || [];
+      const list = this.visibleOf(grouped, d.key);
       return {
         ...d,
         hasClass: list.length > 0,
         bookedCount: list.filter((i) => booked.has(i.id)).length,
       };
     });
+
     const selectedKey = this.data.selectedKey || todayKey();
-    const dayItems = (grouped[selectedKey] || []).map((i) => ({
+    const dayItems = this.visibleOf(grouped, selectedKey).map((i) => ({
       ...i,
       booked: booked.has(i.id),
     }));
+
     this.setData({
       weekDays,
       loading: false,
@@ -166,15 +278,9 @@ Page({
   selectDay(e) {
     const key = e.currentTarget.dataset.key;
     if (key === this.data.selectedKey) return;
-    const grouped = this.weeksCache[dateKey(this.weekMonday)] || {};
-    const booked = this.bookedIds || new Set();
-    const dayItems = (grouped[key] || []).map((i) => ({ ...i, booked: booked.has(i.id) }));
-    this.setData({
-      selectedKey: key,
-      selectedTitle: this.dayTitle(key),
-      dayItems,
-      bookedCount: dayItems.filter((i) => i.booked).length,
-    });
+    this.setData({ selectedKey: key });
+    // 重算而不是直接取缓存切片：多店模式还要按勾选门店过一遍
+    this.applyWeekData();
   },
 
   onWeekChange(e) {

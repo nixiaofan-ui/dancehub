@@ -1,8 +1,29 @@
-<nav-bar title="课表" show-back="{{true}}" />
+<nav-bar title="{{multiMode ? multiTitle : '课表'}}" show-back="{{true}}" />
 
 <view class="body">
-  <!-- 舞室头 -->
-  <view class="studio-head">
+  <!-- 多店视图：门店 chips，可多选，下方课表实时跟着变 -->
+  <view wx:if="{{multiMode}}" class="multi-head">
+    <view class="multi-row">
+      <view class="multi-sub">勾选门店，同屏对比它们当天的课</view>
+      <view class="multi-all" hover-class="press" bindtap="tapAllStores">全选</view>
+    </view>
+    <scroll-view scroll-x class="store-bar" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{stores}}"
+        wx:key="id"
+        class="store-chip {{item.on ? 'on' : ''}}"
+        hover-class="press"
+        data-id="{{item.id}}"
+        bindtap="tapStore"
+      >
+        {{item.short}}
+        <text class="sc-count">{{item.count}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 单店视图：舞室头 -->
+  <view wx:else class="studio-head">
     <view class="head-info">
       <view class="head-name">{{studio ? studio.name : '加载中…'}}</view>
       <view class="head-meta">{{studio ? studio.cityName + ' · ' + studio.platformLabel : ''}}</view>
@@ -72,7 +93,10 @@
           <view class="c-name">{{item.courseName}}</view>
           <view wx:if="{{item.booked}}" class="c-booked">✅ 已约</view>
         </view>
-        <view class="c-coach">教练：{{item.coachName}}</view>
+        <view class="c-meta-row">
+          <view class="c-coach">教练：{{item.coachName}}</view>
+          <view wx:if="{{multiMode}}" class="c-store-tag">{{item.studioShort}}</view>
+        </view>
       </view>
       <view class="c-level">
         <view class="lv-text">{{item.level}}</view>

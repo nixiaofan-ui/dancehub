@@ -1,9 +1,87 @@
-<nav-bar title="课表录入" />
+<nav-bar title="课表录入" show-back="{{true}}" />
 
 <view class="body">
-  <view class="empty">
-    <view class="icon">{{region === 'CN' ? '🎫' : '🎟️'}}</view>
-    <view class="empty-title">课表录入功能开发中</view>
-    <view class="empty-sub">从舞室公众号复制课表文本，粘贴即可自动解析导入</view>
+  <view class="intro">
+    抓不到的独立舞室可以自己录。录完会进公共课表，别人也搜得到 ——
+    所以请按真实课表填，别替我们发挥。
+  </view>
+
+  <view class="form">
+    <view class="field">
+      <view class="label">门店名称 <text class="req">*</text></view>
+      <input
+        class="input"
+        placeholder="库里没有的店会顺手建出来"
+        placeholder-class="ph"
+        value="{{studioName}}"
+        bindinput="onStudio"
+      />
+    </view>
+
+    <view class="field">
+      <view class="label">日期</view>
+      <picker mode="selector" range="{{dates}}" value="{{dateIndex}}" bindchange="onDate">
+        <view class="pick">{{dateText}}</view>
+      </picker>
+    </view>
+
+    <view class="row2">
+      <view class="field half">
+        <view class="label">开始 <text class="req">*</text></view>
+        <picker mode="selector" range="{{starts}}" value="{{startIndex}}" bindchange="onStart">
+          <view class="pick {{startIndex < 0 ? 'ph-pick' : ''}}">{{startIndex < 0 ? '选择时间' : startText}}</view>
+        </picker>
+      </view>
+      <view class="field half">
+        <view class="label">结束</view>
+        <picker mode="selector" range="{{ends}}" value="{{endIndex}}" bindchange="onEnd">
+          <view class="pick {{endIndex < 0 ? 'ph-pick' : ''}}">{{endIndex < 0 ? '默认90分钟' : endText}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="field">
+      <view class="label">课程名称 <text class="req">*</text></view>
+      <input
+        class="input"
+        placeholder="例如：Jazz 基础"
+        placeholder-class="ph"
+        value="{{courseName}}"
+        bindinput="onCourse"
+      />
+    </view>
+
+    <view class="field">
+      <view class="label">教练</view>
+      <input
+        class="input"
+        placeholder="可留空"
+        placeholder-class="ph"
+        value="{{coachName}}"
+        bindinput="onCoach"
+      />
+    </view>
+
+    <view class="field">
+      <view class="label">难度</view>
+      <picker mode="selector" range="{{diffs}}" value="{{diffIndex}}" bindchange="onDiff">
+        <view class="pick">{{diffs[diffIndex]}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <button class="submit {{submitBusy ? 'busy' : ''}}" hover-class="press" bindtap="submit">
+    {{submitBusy ? '录入中…' : '录入这一节'}}
+  </button>
+
+  <view wx:if="{{lastResult}}" class="done">
+    ✅ 已录入：{{lastResult.studio}} · {{lastResult.date}} {{lastResult.time}} · {{lastResult.course}}
+    <view class="done-sub">继续录下一节吧</view>
+  </view>
+
+  <view class="report-link" hover-class="press" bindtap="goReport">
+    不确定这家店叫什么？去提报
   </view>
 </view>
+
+<toast id="toast" />

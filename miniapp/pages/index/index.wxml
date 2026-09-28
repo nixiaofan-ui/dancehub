@@ -48,8 +48,29 @@
     <view class="arrow" hover-class="press" bindtap="nextDay">›</view>
   </view>
 
+  <!-- 已关注门店筛选：多家店同时看时，用它决定时间轴里出现谁 -->
+  <view wx:if="{{showStoreBar}}" class="store-filter">
+    <scroll-view scroll-x class="store-scroll" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{storeChips}}"
+        wx:key="id"
+        class="sf-chip {{item.on ? 'on' : ''}}"
+        hover-class="press"
+        data-id="{{item.id}}"
+        bindtap="tapStoreChip"
+      >{{item.short}}<text class="sf-n">{{item.count}}</text></view>
+    </scroll-view>
+    <view class="sf-all" hover-class="press" bindtap="tapAllStores">全选</view>
+  </view>
+
   <!-- 时间轴 -->
   <view class="timeline" wx:if="{{!loading}}">
+    <view wx:if="{{hiddenCount > 0}}" class="hidden-strip" hover-class="press" bindtap="toggleShowBlocked">
+      已隐藏 {{hiddenCount}} 节不想看的课 · 点击展开
+    </view>
+    <view wx:if="{{showBlocked}}" class="hidden-strip on" hover-class="press" bindtap="toggleShowBlocked">
+      正在显示全部课程 · 点击重新隐藏
+    </view>
     <view wx:if="{{items.length === 0}}" class="empty">
       <view class="dancer-lg empty-dancer">
         <view class="d-head"></view>
@@ -86,7 +107,7 @@
           {{item.courseName}}
           <text class="diff">{{item.diffLabel}}</text>
         </view>
-        <view class="coach">教练：{{item.coachName}}</view>
+        <view class="coach" hover-class="press" data-name="{{item.coachName}}" bindtap="goCoach">教练：{{item.coachName}}</view>
         <view class="card-foot">
           <view wx:if="{{item.slotText}}" class="slot {{item.slotClass}}">{{item.slotText}}</view>
           <view class="btn-row">

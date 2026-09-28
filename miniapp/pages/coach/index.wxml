@@ -1,0 +1,66 @@
+<nav-bar title="教练" show-back="{{true}}" />
+
+<view class="body">
+  <view wx:if="{{loading}}" class="tip">正在整理这位老师的课…</view>
+
+  <block wx:else>
+    <view class="coach-head">
+      <view class="ch-name">{{name}}</view>
+      <view class="ch-meta" wx:if="{{studios.length}}">
+        在 {{studios.length}} 家舞室任教 · 未来两周 {{total}} 节课
+      </view>
+      <view class="ch-meta" wx:else>未来两周暂无排课</view>
+    </view>
+
+    <!-- 任教门店：这老师在哪跑，是这张页最值钱的一句话 -->
+    <scroll-view wx:if="{{studios.length}}" scroll-x class="st-bar" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{studios}}"
+        wx:key="id"
+        class="st-item"
+        hover-class="press"
+        data-id="{{item.id}}"
+        bindtap="goStudio"
+      >
+        <view class="st-short">{{item.short}}</view>
+        <view class="st-count">{{item.count}} 节</view>
+      </view>
+    </scroll-view>
+
+    <view wx:for="{{days}}" wx:key="key" class="day-block">
+      <view class="day-label">{{item.label}} · {{item.items.length}} 节</view>
+      <view
+        wx:for="{{item.items}}"
+        wx:for-item="s"
+        wx:key="id"
+        class="card {{s.diffClass}} {{s.booked ? 'booked' : ''}}"
+        hover-class="press"
+        data-id="{{s.id}}"
+        bindtap="goCourse"
+      >
+        <view class="c-time">{{s.timeLabel}}</view>
+        <view class="c-main">
+          <view class="c-name-row">
+            <view class="c-name">{{s.courseName}}</view>
+            <view wx:if="{{s.booked}}" class="c-booked">✅ 已约</view>
+          </view>
+          <view class="c-meta">
+            <text class="c-store">{{s.studioShort}}</text>
+            <text class="c-diff">{{s.diffLabel}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="block-row">
+      <view class="block-hint">
+        {{blocked ? '已在课表里隐藏这位老师的课' : '上过不喜欢的课？可以不再显示这位老师'}}
+      </view>
+      <button class="block-btn {{blocked ? 'off' : ''}}" hover-class="press" bindtap="toggleBlock">
+        {{blocked ? '恢复显示' : '不想看他的课'}}
+      </button>
+    </view>
+  </block>
+</view>
+
+<toast id="toast" />

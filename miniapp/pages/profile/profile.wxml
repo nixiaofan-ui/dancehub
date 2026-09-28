@@ -19,6 +19,32 @@
     <view class="tab {{tab === 'follows' ? 'on' : ''}}" data-tab="follows" bindtap="switchTab">关注</view>
     <view class="tab {{tab === 'bookings' ? 'on' : ''}}" data-tab="bookings" bindtap="switchTab">预约记录</view>
     <view class="tab {{tab === 'reminders' ? 'on' : ''}}" data-tab="reminders" bindtap="switchTab">提醒设置</view>
+    <view class="tab {{tab === 'blocked' ? 'on' : ''}}" data-tab="blocked" bindtap="switchTab">
+      不看的老师<text wx:if="{{blocked.length}}" class="tab-n">{{blocked.length}}</text>
+    </view>
+  </view>
+
+  <!-- 不想看的老师：屏蔽必须能撤销，否则就是单向黑名单 -->
+  <view wx:if="{{tab === 'blocked'}}">
+    <view wx:if="{{blocked.length === 0}}" class="empty">
+      <view class="dancer-lg empty-dancer">
+        <view class="d-head"></view>
+        <view class="d-torso"></view>
+        <view class="d-limb d-arm-l"></view>
+        <view class="d-limb d-arm-r"></view>
+        <view class="d-limb d-leg-l"></view>
+        <view class="d-limb d-leg-r"></view>
+      </view>
+      <view class="empty-title">没有屏蔽任何老师</view>
+      <view class="empty-sub">在课表里点教练名，可以把他藏起来</view>
+    </view>
+    <view wx:for="{{blocked}}" wx:key="*this" class="record-card">
+      <view class="record-head">
+        <text class="record-course">{{item}}</text>
+      </view>
+      <view class="record-meta">课表里已隐藏这位老师的课</view>
+      <button class="close-remind" data-name="{{item}}" bindtap="unblockCoach">恢复显示</button>
+    </view>
   </view>
 
   <!-- 关注 -->

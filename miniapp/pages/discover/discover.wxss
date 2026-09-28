@@ -108,6 +108,101 @@
   font-weight: 900;
 }
 
+/* 缺失舞室提报 */
+.empty-report {
+  margin-top: 28rpx;
+  font-size: 26rpx;
+  color: #00f5d4;
+  background: transparent;
+  border: 2rpx solid rgba(0, 245, 212, 0.45);
+  border-radius: 40rpx;
+  padding: 12rpx 32rpx;
+  font-weight: 900;
+}
+.report-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding: 20rpx 24rpx;
+  background: #16213e;
+  border: 1rpx dashed rgba(255, 255, 255, 0.16);
+  border-radius: 14rpx;
+}
+.rr-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #a8adc2;
+  font-weight: 700;
+}
+.rr-em {
+  color: #00f5d4;
+}
+.rr-arrow {
+  flex-shrink: 0;
+  font-size: 32rpx;
+  color: #00f5d4;
+  margin-left: 12rpx;
+}
+
+/* 多店品牌横滑区 */
+.brand-block {
+  margin-bottom: 20rpx;
+}
+.brand-head {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 14rpx;
+}
+.brand-title {
+  font-size: 28rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.brand-sub {
+  font-size: 22rpx;
+  color: #a8adc2;
+  margin-left: 14rpx;
+  font-weight: 700;
+}
+.brand-bar {
+  white-space: nowrap;
+}
+.brand-card {
+  display: inline-block;
+  width: 240rpx;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2rpx solid #2b3050;
+  border-left: 8rpx solid #00f5d4;
+  border-radius: 14rpx;
+  padding: 18rpx 20rpx;
+  margin-right: 16rpx;
+  vertical-align: top;
+}
+.bc-name {
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bc-count {
+  font-size: 22rpx;
+  color: #00f5d4;
+  margin-top: 8rpx;
+  font-weight: 700;
+}
+.bc-branch {
+  font-size: 20rpx;
+  color: #a8adc2;
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
 /*
  * 舞室卡片
  *

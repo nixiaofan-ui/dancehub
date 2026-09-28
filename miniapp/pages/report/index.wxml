@@ -1,0 +1,61 @@
+<nav-bar title="提报舞室" show-back="{{true}}" />
+
+<view class="body">
+  <view class="intro">
+    我们按城市批量接入了一千多家舞室，但肯定还有漏的。把你常去却搜不到的
+    告诉我们，排进接入队列 —— 你提的比我们自己猜的准。
+  </view>
+
+  <view class="form">
+    <view class="field">
+      <view class="label">舞室名称 <text class="req">*</text></view>
+      <input
+        class="input"
+        placeholder="例如：G社 / 糖芭蕾"
+        placeholder-class="ph"
+        value="{{name}}"
+        bindinput="onName"
+      />
+    </view>
+
+    <view class="field">
+      <view class="label">所在城市</view>
+      <input
+        class="input"
+        placeholder="默认当前城市"
+        placeholder-class="ph"
+        value="{{city}}"
+        bindinput="onCity"
+      />
+    </view>
+
+    <view class="field">
+      <view class="label">补充信息</view>
+      <textarea
+        class="input area"
+        placeholder="大概地址、主打风格、小程序或公众号名字…"
+        placeholder-class="ph"
+        value="{{comment}}"
+        bindinput="onComment"
+        maxlength="300"
+      />
+    </view>
+
+    <view class="field">
+      <view class="label">联系方式（可选，补上了告诉你）</view>
+      <input
+        class="input"
+        placeholder="微信号"
+        placeholder-class="ph"
+        value="{{contact}}"
+        bindinput="onContact"
+      />
+    </view>
+  </view>
+
+  <button class="submit {{submitting ? 'busy' : ''}}" hover-class="press" bindtap="submit">
+    {{submitting ? '提交中…' : '提交'}}
+  </button>
+</view>
+
+<toast id="toast" />

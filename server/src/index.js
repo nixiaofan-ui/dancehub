@@ -4,6 +4,7 @@ import { redis } from "./lib/redis.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
 import { startCrawlScheduler, probeOutbound } from "./crawler/index.js";
 import { getRuntimeMode } from "./lib/runtime-mode.js";
+import { ensureSchema } from "./lib/ensure-schema.js";
 
 // ── 容器/云托管适配 ──
 // 云托管要求监听 80 / 8080；本地开发仍可走 3000。
@@ -24,6 +25,12 @@ app.listen(port, "0.0.0.0", () => {
   console.log(
     `[dancehub] NODE_ENV=${nodeEnv} CRAWL_MODE=${crawlMode}` +
       (skipReminder ? " SKIP_REMINDER" : "")
+  );
+
+  // 补齐新增表（幂等 DDL）。容器不像本地那样跑 prisma migrate deploy，
+  // 没有它线上就会一直缺表。失败只 warn，不让整个服务起不来。
+  ensureSchema().catch((err) =>
+    console.warn(`[dancehub] ensure-schema 失败: ${err.message}`)
   );
 
   // 出口连通性自检（异步，只打日志）：云端抓取能不能跑，全看容器能否出公网。
