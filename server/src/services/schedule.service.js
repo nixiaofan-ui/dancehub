@@ -70,6 +70,10 @@ function serializeTimeline(schedules, userId) {
     endTime: s.endTime.toTimeString().slice(0, 5),
     bookingUrl: s.bookingUrl,
     coursePicUrl: s.coursePicUrl,
+    // 舞室官方系统里的真实已约人数（null = 该平台不公开）。
+    // 列表页用它标「N 人已约」热度；注意和 Booking 表计数不是一个东西。
+    bookedNum: s.bookedNum ?? null,
+    capacity: s.capacity,
     remark: s.remark,
     // 自己录的课前端要标「我录的」并允许删除，光给 ownerId 前端没法比对
     mine: uid ? Number(s.ownerId) === uid : false,

@@ -249,3 +249,20 @@
   border-radius: 20rpx;
   background: #23263a;
 }
+
+/* 预约人数：真实数据来源标注 + 刷新入口 */
+.live-tip {
+  float: right;
+  font-size: 22rpx;
+  color: #00f5d4;
+  font-weight: 900;
+  padding: 4rpx 16rpx;
+}
+.room-tip {
+  font-size: 22rpx;
+  color: #a8adc2;
+  font-weight: 700;
+}
+.info-val .info-sub {
+  margin-top: 4rpx;
+}

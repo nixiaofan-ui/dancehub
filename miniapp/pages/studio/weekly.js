@@ -181,6 +181,8 @@ Page({
             level: LV_LABEL[s.difficulty] || "LV?",
             diffLabel: DIFF_LABEL[s.difficulty] || s.difficulty,
             diffClass: (s.difficulty || "ALL_LEVELS").toLowerCase(),
+            // 舞室官方系统的真实已约人数，null = 该平台不公开，模板里不显示热度
+            bookedNum: s.bookedNum != null ? Number(s.bookedNum) : null,
           });
         });
 

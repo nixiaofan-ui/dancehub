@@ -59,11 +59,20 @@
     <view class="info-row">
       <view class="info-ico">👥</view>
       <view class="info-main">
-        <view class="info-label">预约人数</view>
-        <view class="info-val">{{bookedCount}} / {{capacity}} 人</view>
-        <view class="progress">
+        <view class="info-label">
+          预约人数
+          <text class="live-tip" bindtap="onTapRefreshLive">{{refreshing ? "刷新中…" : "刷新"}}</text>
+        </view>
+        <view wx:if="{{bookedNum != null}}" class="info-val">
+          {{shownCount}} / {{capacity}} 人
+          <text class="room-tip">（还差 {{capacity - shownCount > 0 ? capacity - shownCount : 0}} 人满班）</text>
+        </view>
+        <view wx:elif="{{bookedCount > 0}}" class="info-val">{{bookedCount}} / {{capacity}} 人</view>
+        <view wx:else class="info-val">{{bookedNum === 0 ? "0 / " + capacity + " 人" : "该舞室未公开"}}</view>
+        <view wx:if="{{bookedNum != null}}" class="progress">
           <view class="progress-bar" style="width: {{progress}}%;"></view>
         </view>
+        <view class="info-sub">{{bookMeta}}</view>
       </view>
     </view>
   </view>

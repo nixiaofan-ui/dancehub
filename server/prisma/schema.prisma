@@ -160,6 +160,11 @@ model Schedule {
   endTime      DateTime   @db.Time
   bookingUrl   String?
   capacity     Int        @default(30)
+  // 舞室官方系统里的真实已约人数（非本小程序用户数）。
+  // 抓取时从平台接口的「已约」字段取（iWOD reserved_num / 爱舞功 student_count /
+  // 共享中街 reserveNum / …），配合 capacity（总容量）算出真实拥挤度。
+  // null = 该平台不提供或未抓到，前端应显示「未知」而不是 0。
+  bookedNum    Int?
   remark       String?
   // 课程封面图（iWOD 的 pic 字段；菲体云暂无）
   coursePicUrl String?

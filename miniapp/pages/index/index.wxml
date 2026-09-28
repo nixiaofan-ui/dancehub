@@ -121,6 +121,12 @@
           data-city-id="{{cityId}}"
           bindtap="goCoach"
         >教练：{{item.coachName}}<text wx:if="{{item.fav}}" class="fav-mark">★</text></view>
+        <!-- 真实已约人数：来自舞室官方系统（不是本小程序用户数），
+             没拿到就按老规矩显示 remark 里的文字状态 -->
+        <view
+          wx:if="{{item.bookedNum > 0}}"
+          class="hot-line"
+        >🔥 已有 {{item.bookedNum}} 人约<text wx:if="{{item.capacity}}" class="hot-cap"> / 上限 {{item.capacity}}</text></view>
         <view class="card-foot">
           <view wx:if="{{item.slotText}}" class="slot {{item.slotClass}}">{{item.slotText}}</view>
           <view class="btn-row">

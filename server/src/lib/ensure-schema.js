@@ -81,6 +81,12 @@ ALTER TABLE \`Schedule\`
     FOREIGN KEY (\`ownerId\`) REFERENCES \`User\`(\`id\`) ON DELETE SET NULL ON UPDATE CASCADE;
 `;
 
+/** 真实已约人数（舞室官方系统口径），区别于本小程序的 Booking 表计数 */
+const SCHEDULE_BOOKEDNUM_SQL = `
+ALTER TABLE \`Schedule\`
+  ADD COLUMN \`bookedNum\` INT NULL;
+`;
+
 async function run(label, sql) {
   try {
     await prisma.$executeRawUnsafe(sql);
@@ -109,5 +115,8 @@ export async function ensureSchema() {
   // 存量库已经有 Schedule 表，只缺这一列
   if (!(await columnExists("Schedule", "ownerId"))) {
     await run("Schedule.ownerId", SCHEDULE_OWNER_SQL);
+  }
+  if (!(await columnExists("Schedule", "bookedNum"))) {
+    await run("Schedule.bookedNum", SCHEDULE_BOOKEDNUM_SQL);
   }
 }

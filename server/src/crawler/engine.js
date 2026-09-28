@@ -115,18 +115,29 @@ async function crawlWithHttp(config, date) {
   // 映射为通用卡片结构；_studioName 供 importer 按门店分别入库
   return timetable
     .filter((c) => c && c.name)
-    .map((c) => ({
-      courseName: cleanCourseName(c.name),
-      coach: (c.coach || "").trim(),
-      time: c.time || "",
-      capacity: c.remain || (c.max_count != null ? String(c.max_count) : ""),
-      status: c.newStatus || c.status || "",
-      // 课程封面图（iWOD 独有；CDN 有防盗链，小程序 image 天然带 Referer 可直连）
-      picUrl: c.pic || "",
-      _studioName: fallbackName || (c.boxName || "").trim(),
-      // 教室名（iWOD classroomName，如「大教室」），透传进 remark 供详情页展示
-      _roomName: String(c.classroomName || c.classroom_name || "").trim(),
-    }));
+    .map((c) => {
+      // ⚠ iWOD 的 remain 字段名是骗人的：它形如 "28/20"，用 status 交叉验证过
+      // —— status=full（已满）的课分子总是大于分母（28/20、47/40、15/14），
+      //    status=able 的课分子小于分母（0/50、2/20、10/45）。
+      // 所以分子是「已预约人数」，分母才是总容量。当成「剩余名额」去减就整个反了。
+      // 注意：其它平台（菲体云/共享中街等）我统一拼的是「剩余/总数」，
+      // 两种格式分子语义相反，各自通过 _bookedNum 显式传递，不要让下游猜。
+      const ratio = String(c.remain || "").match(/^(\d+)\s*\/\s*(\d+)$/);
+      const bookedNum = ratio ? Number(ratio[1]) : null;
+      return {
+        courseName: cleanCourseName(c.name),
+        coach: (c.coach || "").trim(),
+        time: c.time || "",
+        capacity: c.remain || (c.max_count != null ? String(c.max_count) : ""),
+        status: c.newStatus || c.status || "",
+        _bookedNum: bookedNum,
+        // 课程封面图（iWOD 独有；CDN 有防盗链，小程序 image 天然带 Referer 可直连）
+        picUrl: c.pic || "",
+        _studioName: fallbackName || (c.boxName || "").trim(),
+        // 教室名（iWOD classroomName，如「大教室」），透传进 remark 供详情页展示
+        _roomName: String(c.classroomName || c.classroom_name || "").trim(),
+      };
+    });
 }
 
 /* ───────────────────────── 菲体云 HTTP 抓取 ───────────────────────── */
@@ -282,6 +293,7 @@ async function crawlWithStyd(config, date) {
         time,
         capacity,
         status: max && used != null && used >= max ? "已满" : "可预约",
+        _bookedNum: used,
         _studioName: (shop.name || config.studio?.name || "").trim(),
         // category_name 多为「舞龄50节课起」这类门槛说明，透传进 remark
         _remark: String(c.category_name || "").trim(),
@@ -349,6 +361,7 @@ async function crawlWithJiahe(config, date) {
         time: String(c.time || "").trim(),
         capacity: max ? `${used != null ? Math.max(max - used, 0) : ""}/${max}` : "",
         status: max && used != null && used >= max ? "已满" : "可预约",
+        _bookedNum: used,
         _studioName: `${brand}·${storeName}`,
         _city: city,
         _address: String(store.address || "").trim(),
@@ -477,6 +490,7 @@ async function crawlWithCsdsp(config, date) {
       time: `${String(lec.startTime || "").trim()}-${String(lec.endTime || "").trim()}`,
       capacity: limit ? `${Math.max(limit - used, 0)}/${limit}` : "",
       status: full ? "已满" : "可预约",
+      _bookedNum: used,
       _studioName: `${brand}${branch ? `·${branch}` : ""}`,
       _address: campus ? campus.location : "",
       _remark: [
@@ -656,6 +670,7 @@ async function crawlWithGsteps(config, date) {
         time: end ? `${start}-${end}` : start,
         capacity: max ? `${used != null ? Math.max(max - used, 0) : ""}/${max}` : "",
         status: max && used != null && used >= max ? "已满" : "可预约",
+        _bookedNum: used,
         _studioName: `${brand}·${studioName}${realCity ? `（${realCity}）` : ""}`,
         // 行级覆盖城市：不传的话上海分店会全部落进北京
         ...(realCity ? { _city: realCity } : {}),
@@ -758,6 +773,7 @@ async function crawlWithFoxdance(config, date) {
           time,
           capacity,
           status: max && used != null && used >= max ? "已满" : "可预约",
+          _bookedNum: used,
           _studioName: (shop.name || config.studio?.name || "").trim(),
           // 舞种 + 难度拼进备注，前端可按需展示
           _remark: [c.dance_name, c.level_name].filter(Boolean).join("·"),

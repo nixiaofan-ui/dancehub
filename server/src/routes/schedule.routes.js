@@ -4,6 +4,7 @@ import { requireAdmin } from "../middleware/admin.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
+import { getLiveBooking } from "../lib/live-booking.js";
 import {
   listSchedules,
   createSchedule,
@@ -110,8 +111,31 @@ router.get(
       },
       bookingStatus: booking ? booking.status : null,
       reminded: Boolean(reminder),
+      // ⚠ 这两个数字口径完全不同，别混：
+      //   bookedCount = Booking 表计数 = **本小程序**用户约了几个人（几乎总是 0）
+      //   bookedNum   = 舞室官方系统里的真实已约人数（可能为 null = 平台没提供）
       bookedCount,
+      bookedNum: schedule.bookedNum,
+      liveCheckedAt: schedule.updatedAt,
     });
+  }),
+);
+
+/**
+ * 实时刷新该课程的预约人数。
+ * 详情页下拉/进入时调用；回源失败会静默降级到库里的旧值，不会抛错。
+ */
+router.get(
+  "/:id/live-booking",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { studio: { include: { city: true } } },
+    });
+    if (!schedule) return fail(res, 404, "课程不存在");
+    const live = await getLiveBooking(schedule);
+    ok(res, live);
   }),
 );
 

@@ -476,3 +476,14 @@
   color: #ff6b6b;
   border: 2rpx solid rgba(255, 107, 107, 0.5);
 }
+/* 真实约课热度（数据来自舞室官方系统，非本小程序用户数） */
+.hot-line {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #ff6b35;
+  font-weight: 900;
+}
+.hot-cap {
+  color: #a8adc2;
+  font-weight: 700;
+}

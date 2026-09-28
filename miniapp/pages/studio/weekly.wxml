@@ -102,6 +102,7 @@
             bindtap="goCoach"
           >教练：{{item.coachName}}</view>
           <view wx:if="{{multiMode}}" class="c-store-tag">{{item.studioShort}}</view>
+          <view wx:if="{{item.bookedNum > 0}}" class="c-hot">🔥{{item.bookedNum}}人</view>
         </view>
       </view>
       <view class="c-level">

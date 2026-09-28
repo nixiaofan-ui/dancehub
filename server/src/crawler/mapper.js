@@ -72,6 +72,9 @@ export function mapRawToSchedule(raw, { studioId, coachId, date }) {
     startTime: time.startTime,
     endTime: time.endTime,
     capacity: parseCapacity(raw.capacity) ?? 30,
+    // 真实已约人数。抓不到就存 null 而不是 0 —— 0 和「不知道」是两回事：
+    // 存 0 会让用户以为「没人约」，实际可能只是这平台没返回该字段。
+    bookedNum: raw._bookedNum != null ? Number(raw._bookedNum) : null,
     bookingUrl: null,
     // 课程封面图（支持海外平台的 _photoUrl 和 iWOD 的 picUrl）
     coursePicUrl: raw._photoUrl || raw.picUrl || null,

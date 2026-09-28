@@ -419,3 +419,12 @@
   font-weight: 900;
   margin-top: 6rpx;
 }
+
+/* 真实约课人数热度标：来自舞室官方系统，不是本小程序用户数 */
+.c-hot {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #ff6b35;
+  font-weight: 900;
+  margin-left: 10rpx;
+}

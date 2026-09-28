@@ -66,6 +66,8 @@ const apiStudioSchedules = (studioId, from, to) =>
   req.get("/schedules", { studioId, from, to });
 const apiScheduleDetail = (id) => req.get(`/schedules/${id}`);
 const apiScheduleVideoPreview = (id) => req.get(`/schedules/${id}/video-preview`);
+// 实时回源舞室官方系统取当前真实已约人数（失败会静默降级到库里的旧值）
+const apiLiveBooking = (id) => req.get(`/schedules/${id}/live-booking`);
 
 const apiFollows = () => req.get("/follows");
 const apiFollow = (studioId) => {
@@ -157,6 +159,7 @@ module.exports = {
   apiStudioSchedules,
   apiScheduleDetail,
   apiScheduleVideoPreview,
+  apiLiveBooking,
   apiFollows,
   apiFollow,
   apiUnfollow,

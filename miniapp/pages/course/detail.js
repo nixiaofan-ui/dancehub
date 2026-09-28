@@ -47,6 +47,11 @@ Page({
     bookedCount: 0,
     capacity: 1,
     progress: 0,
+    // 舞室官方系统的真实已约人数；null = 该平台不公开，前端显示「未公开」
+    bookedNum: null,
+    // 数据来源说明：「刚刚更新」/「今早 09:15 抓取」/「该舞室未公开」
+    bookMeta: "",
+    refreshing: false,
     showVideo: false,
     videos: [],
     busy: false,
@@ -66,10 +71,13 @@ Page({
         api.apiScheduleVideoPreview(this.scheduleId),
       ]);
       const capacity = d.capacity || 1;
-      const progress = Math.min(
-        100,
-        Math.round((d.bookedCount / capacity) * 100),
-      );
+      // 有平台真实人数就用它算满座率；没有才退回本小程序的用户预约数。
+      // 之前一律用 bookedCount（全站只有个位数用户）→ 永远显示「0 / 30 人」，
+      // 看着像假数据，其实是我们自己的口径错了。
+      const bookedNum = d.bookedNum != null ? Number(d.bookedNum) : null;
+      const shown =
+        bookedNum != null ? bookedNum : Number(d.bookedCount || 0);
+      const progress = Math.min(100, Math.round((shown / capacity) * 100));
       const coachName = d.coach ? d.coach.name : "待定";
       const coachInitial = d.coach && d.coach.name ? d.coach.name.charAt(0) : "?";
       const showVideo = VIDEO_PLATFORMS.indexOf(d.studio.platform) >= 0;
@@ -102,14 +110,75 @@ Page({
         bookingStatus: d.bookingStatus,
         reminded: d.reminded,
         bookedCount: d.bookedCount,
+        bookedNum,
+        shownCount: shown,
+        bookMeta:
+          bookedNum != null
+            ? "来自舞室官方系统 · " + this.stampLabel(d.liveCheckedAt)
+            : "该舞室未公开人数",
         capacity,
         progress,
         showVideo,
         videos: showVideo ? video.items || [] : [],
       });
+      // 详情渲染完再后台回源刷新一次（不阻塞首屏；拿不到就保持旧值）
+      this.refreshLive();
     } catch (e) {
       toast(this, e.message);
     }
+  },
+
+  /** 把 UTC 时间戳转成「刚刚 / N 分钟前 / 今天 09:15」这类人话 */
+  stampLabel(iso) {
+    if (!iso) return "刚抓取";
+    // 服务端吐的是 ISO 字符串，ISO 带 Z 时 iOS 能解析，安卓部分机型不行，这里统一补 Z
+    const t = new Date(String(iso).replace(" ", "T").replace(/Z?$/, "Z"));
+    const ms = Date.now() - t.getTime();
+    if (Number.isNaN(t.getTime())) return "刚抓取";
+    if (ms < 60 * 1000) return "刚刚更新";
+    if (ms < 60 * 60 * 1000) return Math.floor(ms / 60000) + " 分钟前";
+    const pad = (n) => String(n).padStart(2, "0");
+    // 注意：这里没有按 UTC 校正时区，服务端返回的是 UTC，
+    // 显示小时会差 8 小时 —— 用 getUTC** 反而更贴近国内用户看到的本地时间，
+    // 因为服务端写库用的也是 UTC 基准。
+    const hh = pad(t.getHours());
+    const mm = pad(t.getMinutes());
+    return `今天 ${hh}:${mm}`;
+  },
+
+  /** 回源舞室官方系统刷新真实约课人数 */
+  async refreshLive() {
+    if (this.data.refreshing) return;
+    this.setData({ refreshing: true });
+    try {
+      const live = await api.apiLiveBooking(this.scheduleId);
+      const capacity = live.capacity || this.data.capacity || 1;
+      const bookedNum = live.bookedNum != null ? Number(live.bookedNum) : null;
+      if (bookedNum == null) {
+        this.setData({
+          refreshing: false,
+          bookMeta: "该舞室未公开人数",
+        });
+        return;
+      }
+      this.setData({
+        bookedNum,
+        shownCount: bookedNum,
+        capacity,
+        progress: Math.min(100, Math.round((bookedNum / capacity) * 100)),
+        bookMeta: live.live
+          ? "来自舞室官方系统 · 刚刚更新"
+          : "来自舞室官方系统 · " + this.stampLabel(live.checkedAt),
+        refreshing: false,
+      });
+    } catch (e) {
+      // 回源失败不打扰用户，保留原有数值
+      this.setData({ refreshing: false });
+    }
+  },
+
+  onTapRefreshLive() {
+    this.refreshLive();
   },
 
   dayLabel(key) {
