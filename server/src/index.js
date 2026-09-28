@@ -6,6 +6,7 @@ import { startCrawlScheduler, probeOutbound } from "./crawler/index.js";
 import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
+import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
 
 // ── 容器/云托管适配 ──
 // 云托管要求监听 80 / 8080；本地开发仍可走 3000。
@@ -37,6 +38,13 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       calibrateGstepsCity({ log: (m) => console.log(m) }).catch((err) =>
         console.warn(`[dancehub] G-STEPS 城市校准失败: ${err.message}`)
+      )
+    )
+    // 嘉禾门店补齐（幂等）：课表接口只给「当天有课」的门店，新开的马家堡店
+    // 这类没排课的分店会整个从库里消失。启动时按门店档案补一次。
+    .then(() =>
+      ensureJiaheStores({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 嘉禾门店补齐失败: ${err.message}`)
       )
     );
 
