@@ -99,6 +99,17 @@ const apiRemoveReminder = (scheduleId) => {
   markDirty();
   return req.delete("/reminders/" + scheduleId);
 };
+/**
+ * 订阅消息配置：拿课程提醒模板 ID，以及「服务端到底配没配」。
+ * 没配时小程序端不该弹订阅授权 —— 用户授了也发不出去，等于骗授权。
+ *
+ * ⚠ 这个函数曾经只剩导出、丢了定义（下方 module.exports 里那一行），
+ *   而 module.exports 是模块顶层执行的：名字一旦未定义，整个 api.js
+ *   求值就抛 ReferenceError，连带 app.js 与每个页面都注册失败，
+ *   界面只剩一片背景色 + 控制台一行 "Page ... has not been registered yet"。
+ *   改完本文件请跑 npm run check:register。
+ */
+const apiSubscribeConfig = () => req.get("/config/subscribe");
 // 老师主页：同城同名老师未来两周的课（含任教门店清单）
 const apiCoachTimeline = (name, cityId, days) =>
   req.get("/coaches/timeline", { name, cityId, days: days || 14 });

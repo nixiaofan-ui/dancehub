@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "check:register": "node tools/check-miniapp-register.js"
+  },
   "devDependencies": {
     "miniprogram-automator": "^0.12.1"
   }
