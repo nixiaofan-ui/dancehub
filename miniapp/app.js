@@ -2,6 +2,9 @@ const { apiLogin, apiCities, apiSubscribeConfig } = require("./services/api");
 const { USE_CLOUD, CLOUD_RUNNER_ID } = require("./utils/config");
 const { locateCity, readLocateCache } = require("./utils/locate");
 
+// 启动初始化的总超时上限：见 init() 里的说明
+const INIT_TIMEOUT_MS = 15000;
+
 App({
   globalData: {
     token: "",
@@ -86,7 +89,35 @@ App({
   },
 
   async init() {
+    /**
+     * 总闸：无论哪一步卡住，都要在有限时间内结束。
+     *
+     * 请求层虽然加了超时，但 wx.login 本身也可能既不 success 也不 fail
+     * （开发者工具重开、云环境异常时就遇到过），那样 init() 会永远 pending。
+     * app.ready 一 pending，所有页面的 ensureReady 就一起卡死，
+     * 微信判定 appLaunch timeout，界面只剩一片背景色。
+     *
+     * 这里用 race 兜底：超时也走 catch 分支，把 initError 写进 globalData，
+     * 页面据此渲染错误态 + 重试入口，而不是干等着白屏。
+     */
+    let timer;
+    const guard = new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("初始化超时：服务无响应")), INIT_TIMEOUT_MS);
+    });
     try {
+      await Promise.race([this.doInit(), guard]);
+    } catch (e) {
+      console.error("[dancehub] init failed:", e);
+      // 页面可以据此显示「连不上服务」而不是干等着空白。
+      // 注意：不要在这里 throw —— app.ready 变成 rejected 会让所有页面的
+      // ensureReady 直接抛异常，反而把首屏打空。
+      this.globalData.initError = (e && e.message) || "初始化失败";
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+
+  async doInit() {
       this.globalData.cityManual = !!wx.getStorageSync("dh_city_manual");
       const res = await apiLogin();
       this.globalData.token = res.token;
@@ -120,12 +151,5 @@ App({
 
       // 首屏已经能渲染了，定位只做锦上添花（异步，失败也不影响使用）
       this.locateInBackground();
-    } catch (e) {
-      console.error("[dancehub] init failed:", e);
-      // 页面可以据此显示「连不上服务」而不是干等着空白。
-      // 注意：不要在这里 throw —— app.ready 变成 rejected 会让所有页面的
-      // ensureReady 直接抛异常，反而把首屏打空。
-      this.globalData.initError = (e && e.message) || "初始化失败";
-    }
   },
 });

@@ -29,6 +29,8 @@ Page({
     items: [],
     pendingCount: 0,
     loading: false,
+    // 加载失败的常驻错误提示（空串表示正常）。见 load() 的 catch。
+    loadError: "",
 
     // 已关注门店筛选条
     storeChips: [],
@@ -190,11 +192,14 @@ Page({
   async load(opts) {
     const silent = !!(opts && opts.silent);
     if (!this.data.cityId) return;
-    await api.ensureReady();
     // 静默刷新（onShow 触发）不动 loading，否则每次切回 tab 都闪一下骨架屏
     if (!silent) this.setData({ loading: true });
     const key = dateKey(this.currentDate);
     try {
+      // ensureReady 必须包在 try 里：它 await 的是 app.ready，
+      // 服务不可达时会直接抛，放在外面就成了没人接的 rejection，
+      // 界面停在空白上，连一句失败原因都没有。
+      await api.ensureReady();
       const res = await api.apiTimeline(this.data.cityId, key);
       const now = new Date();
       const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -244,16 +249,28 @@ Page({
       // 藏了多少课要让用户看见，别悄悄替他做决定
       const hiddenCount = this.data.showBlocked ? 0 : hidden;
 
-      this.setData({ items: visible, pendingCount, hiddenCount, loading: false });
+      this.setData({ items: visible, pendingCount, hiddenCount, loading: false, loadError: "" });
       this.allItems = base;
       this.lastLoadedAt = Date.now();
       this.seenDirty = app.globalData.dirty || 0;
     } catch (e) {
-      this.setData({ loading: false });
       this.lastLoadedAt = Date.now();
       // 后台静默刷新失败就不弹提示了：用户没主动操作，不该被报错打断
-      if (!silent) toast(this, e.message);
+      if (silent) {
+        this.setData({ loading: false });
+        return;
+      }
+      // 服务不可达时只弹一闪而过的 toast 是不够的 —— toast 消失后界面仍是一片空白，
+      // 用户分不清是「今天没课」还是「小程序坏了」。留一条常驻错误条 + 重试入口。
+      this.setData({ loading: false, loadError: e.message || "加载失败" });
+      toast(this, e.message);
     }
+  },
+
+  /** 错误条点击重试：清掉错误态重新拉一次，别让用户只能杀掉小程序重进 */
+  reload() {
+    this.setData({ loadError: "" });
+    this.load();
   },
 
   /**

@@ -12,6 +12,47 @@ let networkHinted = false;
 
 const cloudReady = () => USE_CLOUD && typeof wx.cloud !== "undefined" && CLOUD_RUNNER_ID && !CLOUD_RUNNER_ID.startsWith("REPLACE_ME");
 
+/**
+ * 请求超时上限（毫秒）。
+ *
+ * 为什么必须有：wx.cloud.callContainer 没有内置的 timeout 参数（wx.request 才有）。
+ * 云托管遇到冷启动（最小实例数为 0 时首次拉起要几十秒）或服务异常时，
+ * 这个 Promise 可以一直 pending 不返回。而 app.js 的 init() 会 await 它、
+ * 页面又 await app.ready —— 三层串起来，onLaunch 迟迟结束不了，
+ * 微信直接判 `appLaunch timeout`，用户看到的画面就是**一片背景色**：
+ * 既没内容也没报错，只能靠猜是代码坏了还是服务挂了。
+ *
+ * 加了超时以后，故障变成可感知的错误，由调用方兜底渲染并给出重试入口，
+ * 而不是把首屏一直按在空白上。
+ */
+const REQUEST_TIMEOUT_MS = 10000;
+
+function withTimeout(promise, ms, tag) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      console.error("[DanceHub] 请求超时", tag, `${ms}ms —— 按失败处理，界面走兜底渲染`);
+      reject(new Error(`${tag} 超时：服务 ${ms / 1000} 秒无响应`));
+    }, ms);
+    promise.then(
+      (v) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(e);
+      }
+    );
+  });
+}
+
 function withToken(method, data) {
   const app = getApp();
   const token = app && app.globalData.token ? app.globalData.token : "";
@@ -129,7 +170,8 @@ function callRequest(method, path, data) {
 
 // 不带任何重试的裸调用，避免自动重登逻辑里再套自动重登（死循环）
 function raw(method, path, data) {
-  return cloudReady() ? callContainer(method, path, data) : callRequest(method, path, data);
+  const p = cloudReady() ? callContainer(method, path, data) : callRequest(method, path, data);
+  return withTimeout(p, REQUEST_TIMEOUT_MS, `${method} ${path}`);
 }
 
 // 401 时并发请求会一起失败，只重登一次拿新 token，别把 wx.login 打爆

@@ -430,3 +430,40 @@
   color: #ff6b6b;
   border: 2rpx solid rgba(255, 107, 107, 0.45);
 }
+
+/* ===== 加载失败错误条 =====
+   云托管冷启动或服务异常时，请求可能十几秒没回音。
+   那时界面若只剩背景色，用户只会以为小程序坏了 —— 留一条说清原因的错误条
+   并给出重试入口，比默默空白要好得多。 */
+.load-error {
+  margin: 24rpx 0;
+  padding: 32rpx;
+  background: rgba(255, 107, 107, 0.08);
+  border: 2rpx solid rgba(255, 107, 107, 0.35);
+  border-radius: 32rpx;
+  text-align: center;
+}
+.le-title {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #ff6b6b;
+  letter-spacing: 2rpx;
+}
+.le-desc {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+  word-break: break-all;
+}
+.le-btn {
+  margin: 24rpx auto 0;
+  width: 240rpx;
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 36rpx;
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #ff6b6b;
+  border: 2rpx solid rgba(255, 107, 107, 0.5);
+}

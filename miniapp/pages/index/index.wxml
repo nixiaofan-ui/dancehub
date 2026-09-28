@@ -63,6 +63,13 @@
     <view class="sf-all" hover-class="press" bindtap="tapAllStores">全选</view>
   </view>
 
+  <!-- 服务不可达：不能只留一片空白，给出原因和重试入口 -->
+  <view wx:if="{{loadError}}" class="load-error">
+    <view class="le-title">连不上服务</view>
+    <view class="le-desc">{{loadError}}</view>
+    <view class="le-btn" hover-class="press" bindtap="reload">点击重试</view>
+  </view>
+
   <!-- 时间轴 -->
   <view class="timeline" wx:if="{{!loading}}">
     <view wx:if="{{hiddenCount > 0}}" class="hidden-strip" hover-class="press" bindtap="toggleShowBlocked">
