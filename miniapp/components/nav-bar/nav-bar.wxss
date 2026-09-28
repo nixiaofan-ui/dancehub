@@ -13,11 +13,22 @@
   display: flex;
   align-items: center;
 }
+/*
+ * 返回键的可点区域。
+ * 原来只有「‹」字形本身那么大，手指很难点中，用户反馈「顶部返回触达不了」。
+ * 撑成 76rpx 的方块、并向左吃掉导航栏内边距 —— 看起来还是一个小箭头，
+ * 命中面积大了好几倍（2026-09-28 修）。
+ */
 .nav-back {
   font-size: 48rpx;
   line-height: 1;
-  margin-right: 12rpx;
-  padding: 4rpx 12rpx 4rpx 0;
+  min-width: 76rpx;
+  height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8rpx;
+  margin-left: -20rpx;
   color: #00f5d4;
   font-weight: 900;
 }

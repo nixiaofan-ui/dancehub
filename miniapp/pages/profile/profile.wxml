@@ -15,6 +15,13 @@
     <text class="about-arrow">›</text>
   </view>
 
+  <!-- 课表录入：抓不到的店由用户补。页面早就做好了，缺的就是这个入口 -->
+  <view class="about-entry" hover-class="press" bindtap="goImport">
+    <text class="about-ico">✎</text>
+    <text class="about-txt">补录课表 · 没抓到的店你来填</text>
+    <text class="about-arrow">›</text>
+  </view>
+
   <!-- 标签横向滚动：五个标签等分会把字挤到一起 -->
   <scroll-view scroll-x class="tabs" enhanced show-scrollbar="{{false}}">
     <view class="tabs-inner">

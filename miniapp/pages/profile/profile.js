@@ -145,6 +145,11 @@ Page({
     wx.navigateTo({ url: "/pages/about/about" });
   },
 
+  /** 课表录入：抓取覆盖不到的门店，让用户自己补一节 */
+  goImport() {
+    wx.navigateTo({ url: "/pages/import/import" });
+  },
+
   async unfollow(e) {
     const id = e.currentTarget.dataset.id;
     try {

@@ -37,6 +37,18 @@
     <view class="search-btn" hover-class="press" bindtap="onSearchConfirm">搜索</view>
   </view>
 
+  <!--
+    自选组合：品牌条只能对比「同一个品牌的分店」，而真实需求常常是
+    「我公司附近这三家、不管是不是一个牌子」，所以单独给一个自由挑选的入口。
+  -->
+  <view class="pick-entry" hover-class="press" bindtap="goPick">
+    <view class="pe-main">
+      <view class="pe-title">自选组合</view>
+      <view class="pe-sub">不限品牌，挑任意几家门店同屏对比</view>
+    </view>
+    <view class="pe-arrow">›</view>
+  </view>
+
   <!-- 多店品牌：同城开了好几家分店的品牌，点进去一次看完全部门店的课 -->
   <view wx:if="{{brands.length}}" class="brand-block">
     <view class="brand-head">

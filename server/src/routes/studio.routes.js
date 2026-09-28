@@ -98,14 +98,12 @@ router.get(
 
     const map = new Map();
     for (const s of studios) {
-      const dot = s.name.indexOf("·");
-      if (dot <= 0) continue;
-      const brand = s.name.slice(0, dot).trim();
+      // 品牌名统一走 splitBrandBranch：「·」和「（分店）」两种写法都认。
+      // 只认「·」时「MAX POWER STUDIO（汶水路店）」这类老数据会被当成单店，
+      // 同城三家分店聚不成品牌，发现页品牌条里就漏了它（2026-09-28 修）
+      const { brand, branch } = splitBrandBranch(s.name);
       if (!brand) continue;
       if (!map.has(brand)) map.set(brand, []);
-      // 分店名走清洗：原始数据里常见「北京路店（点击有地图指引）」这种营销尾巴，
-      // 直接展示会把 chip 撑爆，且和多店课表里的短名不一致
-      const { branch } = splitBrandBranch(s.name);
       map.get(brand).push({ id: s.id, name: s.name, branch });
     }
 

@@ -38,16 +38,29 @@ export function cleanName(name, max = 12) {
 
 /**
  * 「品牌·分店」→ { brand, branch }；没有分隔符则 brand 为空。
+ *
+ * 两种分隔符都认：
+ *   1. 「·」——爱舞功/嘉禾抓取时拼出来的标准格式
+ *   2. 全角括号——老数据是「MAX POWER STUDIO（汶水路店）」这种，
+ *      只认「·」会让这些同城分店聚不成品牌（发现页品牌条里查无此店，
+ *      三家分店各自散在列表里）。2026-09-28 修。
+ *
+ * ⚠ 括号里是营销尾巴（「（点击有地图指引）」）时不能当分店名，
+ *    否则会造出一个叫「点击有地图指引」的分店。
  * @param {string} name
  */
 export function splitBrandBranch(name) {
   if (!name) return { brand: "", branch: "" };
-  const dot = name.indexOf("·");
-  if (dot <= 0) return { brand: "", branch: cleanName(name) };
-  return {
-    brand: name.slice(0, dot).trim(),
-    branch: cleanName(name.slice(dot + 1)),
-  };
+  const raw = String(name).trim();
+  const dot = raw.indexOf("·");
+  if (dot > 0) {
+    return { brand: raw.slice(0, dot).trim(), branch: cleanName(raw.slice(dot + 1)) };
+  }
+  const m = raw.match(/^(.*?)\s*[（(]\s*([^）)]+?)\s*[）)]\s*$/);
+  if (m && m[1].trim() && m[2].trim() && !NOISE_RE.test(raw)) {
+    return { brand: m[1].trim(), branch: cleanName(m[2]) };
+  }
+  return { brand: "", branch: cleanName(raw) };
 }
 
 /**

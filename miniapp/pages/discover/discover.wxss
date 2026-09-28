@@ -446,3 +446,31 @@
   font-weight: 900;
   box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.5);
 }
+/* 自选组合入口：跨品牌挑门店，和下面的「连锁品牌」条是两种不同需求 */
+.pick-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16rpx 24rpx;
+  padding: 22rpx 24rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(90deg, rgba(0, 245, 212, 0.14), rgba(255, 107, 53, 0.14));
+  border: 2rpx solid rgba(0, 245, 212, 0.4);
+}
+.pe-title {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.pe-sub {
+  font-size: 22rpx;
+  color: #a8adc2;
+  font-weight: 700;
+  margin-top: 4rpx;
+}
+.pe-arrow {
+  font-size: 40rpx;
+  color: #00f5d4;
+  font-weight: 900;
+  padding-left: 12rpx;
+}

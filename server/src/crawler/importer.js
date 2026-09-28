@@ -108,7 +108,30 @@ export async function upsertSchedule(entry) {
  * @param rows 原始条目，每条需带 _date（Date 类型）；可带 _studioName 覆盖默认 studio
  * @returns {{ studios, created, updated, skipped, total }} 汇总（多门店时按门店细分）
  */
-export async function importSchedules(config, rows) {
+export async function importSchedules(config, rows, ensureStudios = []) {
+  /**
+   * 只要建店、不排课的门店。
+   * 有的平台（嘉禾）课表接口只返回「今天有课」的门店，当天没排课的分店
+   * 会整个从库里消失 —— 用户翻列表时以为没接入。档案接口能拿到全量门店，
+   * 这里先把它们建出来，课为 0 也留一条记录。
+   */
+  for (const ref of ensureStudios) {
+    if (!ref || !ref.name) continue;
+    try {
+      const studioRef = {
+        ...config.studio,
+        name: ref.name,
+        ...(ref.city ? { city: ref.city } : {}),
+        ...(ref.address ? { address: ref.address } : {}),
+      };
+      await findOrCreateStudio(studioRef, {
+        bookingMiniAppId: config.http?.appId || config.aiwugong?.host,
+      });
+    } catch (e) {
+      console.warn("[importer] 建店失败:", ref && ref.name, e.message);
+    }
+  }
+
   // 按门店分组（http 模式的分店用 _studioName，缺省回落到 config.studio.name）
   const groups = new Map();
   for (const row of rows) {

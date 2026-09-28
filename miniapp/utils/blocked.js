@@ -70,4 +70,33 @@ function mergeRemote(remote) {
   return merged;
 }
 
-module.exports = { getBlocked, isBlocked, block, unblock, mergeRemote, KEY };
+/**
+ * 把课表切成「正常显示」和「被屏蔽老师折叠成一行」两组。
+ *
+ * 为什么是折叠而不是彻底消失：过滤掉之后用户会怀疑「这家店今天是不是没课、
+ * 数据是不是没抓到」，无法确认屏蔽到底生效没有。留一行「已隐藏 XX 的 3 节课」
+ * 既证明设置生效，又给了反悔入口（点开就能恢复）。
+ *
+ * @param {Array} items 课表条目
+ * @param {(item) => string} nameOf 取教练名的函数
+ * @returns {{visible: Array, folded: Array<{coachName: string, count: number, items: Array}>}}
+ */
+function foldBlocked(items, nameOf) {
+  const blocked = readCache();
+  const visible = [];
+  const foldedMap = new Map();
+  (items || []).forEach((i) => {
+    const n = nameOf(i);
+    if (n && blocked.indexOf(n) >= 0) {
+      if (!foldedMap.has(n)) foldedMap.set(n, { coachName: n, count: 0, items: [] });
+      const g = foldedMap.get(n);
+      g.count += 1;
+      g.items.push(i);
+    } else {
+      visible.push(i);
+    }
+  });
+  return { visible, folded: [...foldedMap.values()] };
+}
+
+module.exports = { getBlocked, isBlocked, block, unblock, mergeRemote, foldBlocked, KEY };

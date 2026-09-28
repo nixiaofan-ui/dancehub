@@ -322,7 +322,15 @@ async function crawlWithJiahe(config, date) {
   const list = await resp.json();
   if (!Array.isArray(list)) throw new Error("jiahe 接口返回格式异常");
 
+  /**
+   * 门店清单单独拉一份：/courses 只返回「今天有课」的门店，
+   * 当天没排课的门店（如 2026-09 新开的马家堡店）会整个消失在库里 ——
+   * 用户翻门店列表时以为没接入。所以这里用 /stores 的全量门店建店，
+   * 课为 0 也留一条记录，点进去显示「暂无排课」比查无此店可信。
+   * 这个接口失败不影响本轮抓课，静默降级。
+   */
   const out = [];
+  out.ensureStudios = await fetchJiaheStores(baseUrl, brand);
   for (const store of list) {
     const storeName = String(store.name || "").trim();
     if (!storeName) continue;
@@ -348,6 +356,32 @@ async function crawlWithJiahe(config, date) {
     }
   }
   return out;
+}
+
+/**
+ * 嘉禾门店档案：GET v1.0.0/stores（13 家，跨北京/广州/青岛/天津/邯郸）。
+ * 只用来「建店」，不参与排课。失败返回空数组 —— 门店档案是锦上添花，
+ * 不能因为它挂了就让当天的课一条都进不来。
+ */
+async function fetchJiaheStores(baseUrl, brand) {
+  try {
+    const resp = await fetch(`${baseUrl}/stores`, {
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) return [];
+    const list = await resp.json();
+    if (!Array.isArray(list)) return [];
+    return list
+      .map((s) => ({
+        name: `${brand}·${String(s.store_name || "").trim()}`,
+        city: guessCityFromAddress(s.address),
+        address: String(s.address || "").trim(),
+      }))
+      .filter((s) => s.name.length > brand.length + 1);
+  } catch {
+    return [];
+  }
 }
 
 /**

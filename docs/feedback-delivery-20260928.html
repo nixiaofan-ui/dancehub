@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DanceHub 体验版 · 反馈处理交付清单</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#fff; --ink:#1a1d24; --sub:#5b6472; --line:#e4e8ef;
+    --ok:#1f9d55; --ok-bg:#e8f7ee; --warn:#c8811a; --warn-bg:#fdf4e3;
+    --block:#c0392b; --block-bg:#fdeceb; --acc:#2b6cb0; --acc-bg:#e8f1fb;
+    --soft:#f2f4f8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);
+    font:15px/1.75 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    padding:32px 20px 64px}
+  .wrap{max-width:900px;margin:0 auto}
+
+  header{margin-bottom:24px}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px}
+  .meta{color:var(--sub);font-size:14px}
+
+  .verdict{margin:20px 0;padding:16px 20px;background:var(--acc-bg);
+    border-left:4px solid var(--acc);border-radius:0 8px 8px 0;font-size:14px}
+  .verdict b{font-size:16px;display:block;margin-bottom:4px}
+
+  h2{font-size:19px;margin:34px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h2 span{color:var(--sub);font-weight:400;font-size:13px;margin-left:8px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:20px 22px;margin-bottom:14px}
+  .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .card-title{font-size:17px;font-weight:700}
+  .badge{flex-shrink:0;font-size:12px;padding:3px 10px;border-radius:20px;font-weight:600;white-space:nowrap}
+  .b-ok{background:var(--ok-bg);color:var(--ok)}
+  .b-part{background:var(--warn-bg);color:var(--warn)}
+  .b-none{background:var(--block-bg);color:var(--block)}
+
+  .quote{background:var(--soft);border-radius:8px;padding:10px 14px;
+    font-size:14px;color:var(--sub);margin-bottom:12px}
+  .quote::before{content:"你提的：";color:var(--ink);font-weight:600}
+
+  .row{display:flex;gap:10px;margin:8px 0;font-size:14px}
+  .row .k{flex-shrink:0;width:76px;color:var(--sub);font-weight:600}
+  .row .v{flex:1}
+  ul{margin:4px 0 0 18px}
+  li{margin:3px 0;font-size:14px}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14px}
+  th{background:var(--soft);text-align:left;padding:10px 14px;font-weight:600;font-size:13px}
+  td{padding:9px 14px;border-top:1px solid var(--line)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+
+  .note{font-size:13px;color:var(--sub);margin-top:8px}
+  .todo li{color:var(--sub)}
+  .todo li b{color:var(--ink)}
+  footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);
+    font-size:13px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>DanceHub 体验版 · 反馈处理交付清单</h1>
+  <div class="meta">更新时间：2026 年 9 月 28 日 · 服务端版本 dancehub-server-032 · 数据每日自动更新</div>
+</header>
+
+<div class="verdict">
+  <b>你们提的 5 条意见，4 条已经做完上线，1 条做成了长期通道</b>
+  其中「跨店看课」「按老师找课」「屏蔽老师」三条，我们查了数据才发现是同一个根因：
+  课表是按门店组织的，可人是跟着老师走的 —— 实测 25%~40% 的老师同时在多家舞室教课（杭州最高 40%）。
+  所以这一版补上了「老师」这个维度。
+</div>
+
+<h2>一、逐条回应 <span>你提的 → 我们做了什么 → 在哪用</span></h2>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">① 想同时看两家的课，不用再来回切换门店</div>
+    <div class="badge b-ok">已上线</div>
+  </div>
+  <div class="quote">要看 A 店和 B 店的课，必须切过去看一家、再切回来看另一家，记不住谁几点有课。</div>
+  <div class="row"><div class="k">做了什么</div><div class="v">
+    <ul>
+      <li><b>多店品牌页</b>：同一个品牌在同城的所有分店合成一个入口，一次看完全部分店的课</li>
+      <li><b>课表页门店筛选</b>：顶部可以勾选多家已关注的舞室，选几家就把几家的课混在同一条时间轴上</li>
+      <li><b>自选组合</b>：不限于同一品牌，任意几家都能凑在一起对比</li>
+    </ul>
+  </div></div>
+  <div class="row"><div class="k">在哪用</div><div class="v">发现页「多店品牌」入口 · 课表页顶部门店标签（可多选）· 门店页品牌模式</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">② 按老师找课：这个老师接下来在哪教、都有什么课</div>
+    <div class="badge b-ok">已上线</div>
+  </div>
+  <div class="quote">我是跟着老师选课的，不是跟着舞室选的。想知道这个老师接下来两周在哪几家上课。</div>
+  <div class="row"><div class="k">做了什么</div><div class="v">
+    新增<b>老师主页</b>：点任何一位教练的名字，就能看到他未来两周的课，
+    按日期排好、标出在哪个店上，顶部汇总「在 N 家舞室任教 · 未来两周 M 节课」。
+  </div></div>
+  <div class="row"><div class="k">在哪点</div><div class="v">
+    课表卡片 · 课程详情页教练名 · 门店周课表教练名 ·「我的」常看老师名单 —— 四处都能进
+  </div></div>
+  <div class="row"><div class="k">说明</div><div class="v">
+    按「同城 + 同名」聚合。代价是极少数同名不同人的老师会被合到一起，我们选了覆盖更广的那一侧。
+  </div></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">③ 不想看到某位老师的课 / 想把本命老师标出来</div>
+    <div class="badge b-ok">已上线</div>
+  </div>
+  <div class="quote">有些老师的课我从来不上，能不能别出现在课表里。</div>
+  <div class="row"><div class="k">做了什么</div><div class="v">
+    <ul>
+      <li><b>不看的老师</b>：老师主页一键屏蔽，课表里这些课折叠成一行「已隐藏 N 节 · 点击展开」，随时可撤销</li>
+      <li><b>常看的老师</b>（这版顺手加的）：给喜欢的老师标星，课表里他的名字会提亮并带 ★，一眼挑出来</li>
+    </ul>
+  </div></div>
+  <div class="row"><div class="k">在哪用</div><div class="v">老师主页底部按钮 ·「我的 → 常看的老师 / 不看的老师」两个页签</div></div>
+  <div class="row"><div class="k">说明</div><div class="v">名单跟着账号走，换手机、重装小程序都还在。</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">④ 我常去的舞室搜不到</div>
+    <div class="badge b-part">部分已上线 · 长期进行中</div>
+  </div>
+  <div class="quote">列表里没有我常去的那家，能不能补上。</div>
+  <div class="row"><div class="k">做了什么</div><div class="v">
+    <ul>
+      <li><b>常驻提报入口</b>：发现页底部「没找到你要的舞室？告诉我们」，提报后会进我们的待接清单</li>
+      <li><b>这版实际补接</b>了 7 套新平台的课表系统，把此前搜不到的品牌接了进来</li>
+    </ul>
+  </div></div>
+  <div class="row"><div class="k">说明</div><div class="v">
+    提报不等于立刻出现：每家舞室的课表系统都不一样，需要我们单独对接，一般要几天。
+    提过的我们会排期处理，也会在后续版本里告诉你进度。
+  </div></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">⑤ 自己录入课表</div>
+    <div class="badge b-ok">已上线</div>
+  </div>
+  <div class="quote">这家舞室的课你们抓不到，我能不能自己加进去。</div>
+  <div class="row"><div class="k">做了什么</div><div class="v">
+    重做了录入页，改成<b>结构化表单</b>：舞室名、课程名、老师、日期、时间段逐项填。
+    同名舞室和老师会自动复用，不用重复建。
+  </div></div>
+  <div class="row"><div class="k">在哪用</div><div class="v">底部「录入」页 · 发现页也有入口</div></div>
+  <div class="row"><div class="k">说明</div><div class="v">
+    自己录的课<b>只有你自己看得见</b>，不会进公共课表 —— 避免录错影响别人。
+    可以在「我的 → 我录的课」里管理、删除。
+  </div></div>
+</div>
+
+<h2>二、这版顺带补的舞室 <span>此前搜不到的品牌，现已接入</span></h2>
+
+<table>
+  <tr><th>品牌</th><th>接入门店</th><th>覆盖城市</th><th>状态</th></tr>
+  <tr><td>G-STEPS（G社）</td><td class="num">41</td><td>北京 39 / 上海 2</td><td>已上线</td></tr>
+  <tr><td>Fox 舞蹈厂牌</td><td class="num">10</td><td>广州（番禺/天河/越秀/白云/海珠）</td><td>已上线</td></tr>
+  <tr><td>嘉禾舞社</td><td class="num">7</td><td>邯郸等多城</td><td>已上线</td></tr>
+  <tr><td>SUPER 舞蹈室</td><td class="num">6</td><td>深圳</td><td>已上线</td></tr>
+  <tr><td>T.I. 舞蹈</td><td class="num">3</td><td>—</td><td>已上线</td></tr>
+  <tr><td>HERE&amp;NOW 街舞</td><td class="num">2</td><td>北京</td><td>已上线</td></tr>
+  <tr><td>D-DAY</td><td class="num">2</td><td>南京</td><td>已上线</td></tr>
+  <tr><td>INTREPID</td><td class="num">1</td><td>北京</td><td>已上线</td></tr>
+  <tr><td>糖芭蕾</td><td class="num">1</td><td>北京</td><td>已上线</td></tr>
+  <tr><td>ss 舞室 / 福州王牌嘻帝 / 君华</td><td class="num">0</td><td>—</td><td>待接入</td></tr>
+</table>
+<div class="note">库内现有 1,286 家舞室、8.3 万+ 节课、1.8 万+ 位老师，覆盖 101 个城市，课表每天自动刷新。</div>
+
+<h2>三、这版还修掉的问题 <span>你没提，但我们自己查出来了</span></h2>
+<ul>
+  <li><b>打开只剩一片底色</b>：一处代码错误导致整个小程序启动失败（不是网络问题），已修，并加了开机自检防止复发</li>
+  <li><b>启动卡住不动</b>：服务响应慢时页面会一直转圈，现在超过 15 秒会给出提示和「重试」按钮，不再干等</li>
+  <li><b>G-STEPS 分店城市错乱</b>：上海的分店被挂到了北京名下，已按官方门店档案校准（北京 39 / 上海 2）</li>
+  <li><b>课表翻很久才能回到顶部</b>：双击顶部标题栏即可回顶，全部页面都支持</li>
+</ul>
+
+<h2>四、还没做到的 <span>如实说明，避免你以为坏了</span></h2>
+<ul class="todo">
+  <li><b>ss 舞室、福州王牌嘻帝、君华</b>暂时还没接 —— 这三家的课表系统还没找到公开入口。提报过的话我们在排。</li>
+  <li><b>嘉禾舞社北京门店</b>暂缺，目前接进来的是外地的门店。</li>
+  <li><b>课表只显示已关注舞室的课</b>：新账号一节课都没有是正常的，先去发现页关注几家。</li>
+  <li><b>自己录的课只有本人可见</b>，不会出现在公共课表里。</li>
+  <li><b>老师按「同名」聚合</b>：极少数同名不同人的老师会并在一起显示。</li>
+</ul>
+
+<footer>
+  还有什么没解决、或者新发现的问题，直接在发现页底部「告诉我们」提，我们看得到。<br>
+  DanceHub · 2026-09-28
+</footer>
+
+</div>
+</body>
+</html>

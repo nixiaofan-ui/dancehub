@@ -28,6 +28,10 @@ Page({
     cityId: null,
     loading: true,
     studios: [],
+    // 过去一周按「周几」归并的排课规律（主视图）
+    weekdays: [],
+    pastTotal: 0,
+    // 未来可约的课（多数老师为空，空则提示）
     days: [],
     total: 0,
     blocked: false,
@@ -68,37 +72,71 @@ Page({
       .catch(() => {});
   },
 
+  /**
+   * 老师主页 = 「上周排课规律」+「未来可约」。
+   *
+   * 为什么主视图改成过去一周：绝大多数舞室只在小程序里放最近几天甚至当天的课，
+   * 「未来两周 N 节课」常年是 0，看着像数据没抓到。而库里保留了历史课，
+   * 用「他上周固定周几在哪家店、几点、上什么」来描述这位老师，
+   * 才是用户真能拿去安排时间的信（`2026-09-28` 改）。
+   */
   async load() {
     await api.ensureReady();
     try {
-      const res = await api.apiCoachTimeline(this.name, this.cityId, 14);
-      // 课程已按 日期→时间 排好，这里只需切成「天」的小节
+      const [past, future] = await Promise.all([
+        api.apiCoachTimeline(this.name, this.cityId, 7, "past"),
+        api.apiCoachTimeline(this.name, this.cityId, 14),
+      ]);
+
+      const decorate = (s) => ({
+        id: s.id,
+        courseName: s.courseName,
+        coachName: s.coach ? s.coach.name : this.name,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        timeLabel: s.startTime + " - " + s.endTime,
+        studioShort: s.studio.short || s.studio.name,
+        studioId: s.studio.id,
+        diffLabel: DIFF_LABEL[s.difficulty] || s.difficulty,
+        diffClass: (s.difficulty || "ALL_LEVELS").toLowerCase(),
+        booked: !!s.bookingStatus,
+        bookingStatus: s.bookingStatus || null,
+      });
+
+      // ── 过去一周：按「周几」归并，看出这位老师的固定档期 ──
+      const weekdayMap = new Map();
+      (past.items || []).forEach((s) => {
+        const d = parseKey(s.scheduleDate);
+        const wd = d.getDay(); // 0=周日
+        if (!weekdayMap.has(wd)) weekdayMap.set(wd, []);
+        weekdayMap.get(wd).push(decorate(s));
+      });
+      const weekdays = [...weekdayMap.entries()]
+        .sort((a, b) => (a[0] === 0 ? 7 : a[0]) - (b[0] === 0 ? 7 : b[0]))
+        .map(([wd, list]) => ({
+          weekday: "周" + WEEK_CN[wd],
+          count: list.length,
+          items: list.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime))),
+        }));
+
+      // ── 未来：能约的课按日期分小节（多数老师这里是空的，空就提示）──
       const bucket = new Map();
-      (res.items || []).forEach((s) => {
+      (future.items || []).forEach((s) => {
         if (!bucket.has(s.scheduleDate)) bucket.set(s.scheduleDate, []);
-        bucket.get(s.scheduleDate).push({
-          id: s.id,
-          courseName: s.courseName,
-          coachName: s.coach ? s.coach.name : this.name,
-          startTime: s.startTime,
-          endTime: s.endTime,
-          timeLabel: s.startTime + " - " + s.endTime,
-          studioShort: s.studio.short || s.studio.name,
-          diffLabel: DIFF_LABEL[s.difficulty] || s.difficulty,
-          diffClass: (s.difficulty || "ALL_LEVELS").toLowerCase(),
-          booked: !!s.bookingStatus,
-          bookingStatus: s.bookingStatus || null,
-        });
+        bucket.get(s.scheduleDate).push(decorate(s));
       });
       const days = [...bucket.entries()].map(([key, list]) => ({
         key,
         label: dayLabel(key),
         items: list,
       }));
+
       this.setData({
+        weekdays,
         days,
-        studios: res.studios || [],
-        total: (res.items || []).length,
+        studios: past.studios || [],
+        pastTotal: (past.items || []).length,
+        total: (future.items || []).length,
         loading: false,
       });
     } catch (e) {

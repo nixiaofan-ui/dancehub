@@ -199,6 +199,11 @@ Page({
     wx.navigateTo({ url: "/pages/report/index" });
   },
 
+  /** 自选组合：跨品牌自由挑门店一起看课 */
+  goPick() {
+    wx.navigateTo({ url: "/pages/studio/pick" });
+  },
+
   goBrand(e) {
     const idx = Number(e.currentTarget.dataset.index);
     const b = this.data.brands[idx];

@@ -13,9 +13,9 @@
         </button>
       </view>
       <view class="ch-meta" wx:if="{{studios.length}}">
-        在 {{studios.length}} 家舞室任教 · 未来两周 {{total}} 节课
+        过去一周在 {{studios.length}} 家舞室上过 {{pastTotal}} 节课
       </view>
-      <view class="ch-meta" wx:else>未来两周暂无排课</view>
+      <view class="ch-meta" wx:else>过去一周没有抓到这位老师的排课</view>
     </view>
 
     <!-- 任教门店：这老师在哪跑，是这张页最值钱的一句话 -->
@@ -33,6 +33,42 @@
       </view>
     </scroll-view>
 
+    <!--
+      主视图：过去一周的排课规律。
+      舞蹈工作室普遍只放最近几天的课，「未来两周」常年是 0，
+      所以这里用「上周周几 · 几点 · 哪家店 · 什么课」来描述这位老师。
+    -->
+    <view class="section-title">上周排课规律</view>
+    <view wx:if="{{weekdays.length === 0}}" class="tip">过去一周没有这位老师的课</view>
+    <view wx:for="{{weekdays}}" wx:key="weekday" class="day-block">
+      <view class="day-label">{{item.weekday}} · {{item.count}} 节</view>
+      <view
+        wx:for="{{item.items}}"
+        wx:for-item="s"
+        wx:key="id"
+        class="card {{s.diffClass}}"
+        hover-class="press"
+        data-id="{{s.id}}"
+        bindtap="goCourse"
+      >
+        <view class="c-time">{{s.timeLabel}}</view>
+        <view class="c-main">
+          <view class="c-name-row">
+            <view class="c-name">{{s.courseName}}</view>
+          </view>
+          <view class="c-meta">
+            <text class="c-store">{{s.studioShort}}</text>
+            <text class="c-diff">{{s.diffLabel}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 次视图：真的有未来课表时才占地方，否则一句话带过 -->
+    <view class="section-title">接下来能约</view>
+    <view wx:if="{{days.length === 0}}" class="tip">
+      这位老师还没放出未来的课，按上面的规律去蹲就行
+    </view>
     <view wx:for="{{days}}" wx:key="key" class="day-block">
       <view class="day-label">{{item.label}} · {{item.items.length}} 节</view>
       <view

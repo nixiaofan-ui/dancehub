@@ -1,0 +1,41 @@
+<nav-bar title="自选组合" show-back="{{true}}" />
+
+<view class="body">
+  <view class="hint">
+    不限品牌，挑任意几家门店一起看课。选完进同一张表，按门店切换对比。
+  </view>
+
+  <input
+    class="search"
+    placeholder="搜门店名"
+    placeholder-class="ph"
+    value="{{keyword}}"
+    bindinput="onSearch"
+  />
+
+  <view class="pick-bar">
+    <text class="pb-count">已选 {{picked.length}} 家</text>
+    <text class="pb-clear" hover-class="press" bindtap="clear">清空</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="tip">正在加载{{cityName}}的门店…</view>
+  <view wx:elif="{{studios.length === 0}}" class="tip">没有匹配的门店</view>
+
+  <view
+    wx:for="{{studios}}"
+    wx:key="id"
+    class="row {{picked.indexOf(item.id) >= 0 ? 'on' : ''}}"
+    hover-class="press"
+    data-id="{{item.id}}"
+    bindtap="toggle"
+  >
+    <view class="row-name">{{item.name}}</view>
+    <view class="row-box">{{picked.indexOf(item.id) >= 0 ? '✓' : ''}}</view>
+  </view>
+
+  <view class="footer">
+    <button class="cmp-btn" hover-class="press" bindtap="goCompare">
+      开始对比（{{picked.length}}）
+    </button>
+  </view>
+</view>

@@ -156,13 +156,16 @@ export async function runCrawl(configId, { dryRun = false } = {}) {
     const once = DATELESS_MODES.has(config.mode);
     const loopDates = once ? dates.slice(0, 1) : dates;
     const rows = [];
+    // 抓取器可以额外挂一份「只要建店」的门店清单（嘉禾：当天没课的新店也要入库）
+    const ensureStudios = [];
     for (const date of loopDates) {
       const raw = await crawl(config, date);
+      if (Array.isArray(raw.ensureStudios)) ensureStudios.push(...raw.ensureStudios);
       rows.push(...raw.map((r) => ({ ...r, _date: date })));
     }
     const report = dryRun
       ? { dryRun: true, total: rows.length, rows: rows.map((r) => ({ ...r, _date: r._date.toISOString().slice(0, 10) })) }
-      : await importSchedules(config, rows);
+      : await importSchedules(config, rows, ensureStudios);
 
     statusMap.set(configId, { state: "done", lastRunAt: startedAt, report, error: null });
     entry.lastSuccessAt = new Date().toISOString();

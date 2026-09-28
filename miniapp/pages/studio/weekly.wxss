@@ -386,3 +386,36 @@
   font-size: 26rpx;
   font-weight: 700;
 }
+
+/* 被屏蔽老师的折叠行：不彻底消失，留一行证明设置生效 + 给反悔入口 */
+.fold-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 24rpx;
+  margin-top: 16rpx;
+  border-radius: 16rpx;
+  background: rgba(168, 173, 194, 0.08);
+  border: 2rpx dashed rgba(168, 173, 194, 0.45);
+}
+.fold-row.open {
+  border-style: solid;
+  border-color: rgba(0, 245, 212, 0.5);
+}
+.fr-text {
+  font-size: 24rpx;
+  color: #a8adc2;
+  font-weight: 700;
+}
+.fr-btn {
+  font-size: 22rpx;
+  color: #00f5d4;
+  font-weight: 900;
+  padding-left: 16rpx;
+}
+.c-hidden-tip {
+  font-size: 18rpx;
+  color: #ff6b35;
+  font-weight: 900;
+  margin-top: 6rpx;
+}

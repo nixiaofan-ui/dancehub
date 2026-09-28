@@ -188,3 +188,22 @@
   color: #00f5d4;
   border-color: rgba(0, 245, 212, 0.5);
 }
+
+/* 分区标题：把「上周规律」和「未来可约」两块分开 */
+.section-title {
+  margin: 28rpx 0 12rpx;
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #00f5d4;
+  letter-spacing: 2rpx;
+}
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 8rpx;
+  height: 24rpx;
+  background: #ff6b35;
+  border-radius: 4rpx;
+  margin-right: 12rpx;
+  vertical-align: -2rpx;
+}

@@ -111,8 +111,19 @@ const apiRemoveReminder = (scheduleId) => {
  */
 const apiSubscribeConfig = () => req.get("/config/subscribe");
 // 老师主页：同城同名老师未来两周的课（含任教门店清单）
-const apiCoachTimeline = (name, cityId, days) =>
-  req.get("/coaches/timeline", { name, cityId, days: days || 14 });
+/**
+ * 老师主页课表。
+ * direction 默认是未来；`past` 取过去 N 天 —— 多数舞室只放最近几天的课，
+ * 「未来两周」经常是空的，而库里保留了历史课，用「上周固定周几在哪上课」
+ * 描述这位老师对用户更有用。
+ */
+const apiCoachTimeline = (name, cityId, days, direction) =>
+  req.get("/coaches/timeline", {
+    name,
+    cityId,
+    days: days || 14,
+    ...(direction ? { direction } : {}),
+  });
 // 不想看的老师（本地即时生效，云端用于跨设备同步）
 const apiBlocked = () => req.get("/blocked");
 const apiBlock = (name) => req.post("/blocked", { name });

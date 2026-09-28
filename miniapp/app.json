@@ -6,6 +6,7 @@
     "pages/import/import",
     "pages/webview/webview",
     "pages/studio/weekly",
+    "pages/studio/pick",
     "pages/coach/index",
     "pages/course/detail",
     "pages/about/about",

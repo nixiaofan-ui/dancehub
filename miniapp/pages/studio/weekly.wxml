@@ -108,6 +108,20 @@
         <view class="lv-text">{{item.level}}</view>
         <view class="lv-diff">{{item.diffLabel}}</view>
       </view>
+      <view wx:if="{{item.hidden}}" class="c-hidden-tip">已屏蔽</view>
+    </view>
+
+    <!-- 被屏蔽的老师：课不消失，折叠成一行，点开可临时看 / 去老师页取消 -->
+    <view
+      wx:for="{{foldedRows}}"
+      wx:key="coachName"
+      class="fold-row {{item.open ? 'open' : ''}}"
+      hover-class="press"
+      data-name="{{item.coachName}}"
+      bindtap="toggleFold"
+    >
+      <view class="fr-text">已隐藏「{{item.coachName}}」的 {{item.count}} 节课</view>
+      <view class="fr-btn">{{item.open ? '收起' : '展开'}}</view>
     </view>
   </view>
 </view>

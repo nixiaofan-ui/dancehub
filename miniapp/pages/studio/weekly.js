@@ -5,6 +5,7 @@ const { toast } = require("../../utils/toast");
 const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
+const { foldBlocked } = require("../../utils/blocked");
 
 const WEEK_LABEL = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -46,6 +47,8 @@ Page({
     stores: [], // [{id, short, name, count, hasClass}]
     activeStoreIds: [], // 当前勾选的门店，空数组语义=全不选（初始化时会置为全选）
     allStoreIds: [],
+    // 被屏蔽的老师：课不直接消失，折叠成一行（点了展开才把课放回列表）
+    foldedRows: [],
   },
 
   onLoad(query) {
@@ -79,6 +82,9 @@ Page({
   onShow() {
     // 从课程详情返回时预约可能已经取消/新增，课表上的标记得跟着变
     this.loadBookings();
+    // 也可能刚在老师主页点了「不想看他的课」——屏蔽名单是本地的，
+    // 回到这张表必须立刻生效，否则用户会以为屏蔽没用
+    if (this.weekMonday) this.applyWeekData();
   },
 
   /**
@@ -247,24 +253,45 @@ Page({
     return list;
   },
 
+  /**
+   * 展开 / 收起某位被屏蔽老师的课。
+   * 收起状态下它们只剩一行提示，展开才把课插回列表（标成「已隐藏」样式）。
+   */
+  toggleFold(e) {
+    const name = e.currentTarget.dataset.name;
+    const shown = this.data._shownBlocked || {};
+    if (shown[name]) delete shown[name];
+    else shown[name] = true;
+    this._shownBlocked = shown;
+    this.applyWeekData();
+  },
+
   applyWeekData() {
     const grouped = this.weeksCache[dateKey(this.weekMonday)] || {};
     const booked = this.bookedIds || new Set();
 
     const weekDays = this.data.weekDays.map((d) => {
-      const list = this.visibleOf(grouped, d.key);
+      // 周视图小圆点只认「没被屏蔽」的课，否则会出现「这天有课，点进去是空的」
+      const { visible } = this.splitByBlocked(grouped, d.key);
       return {
         ...d,
-        hasClass: list.length > 0,
-        bookedCount: list.filter((i) => booked.has(i.id)).length,
+        hasClass: visible.length > 0,
+        bookedCount: visible.filter((i) => booked.has(i.id)).length,
       };
     });
 
     const selectedKey = this.data.selectedKey || todayKey();
-    const dayItems = this.visibleOf(grouped, selectedKey).map((i) => ({
-      ...i,
-      booked: booked.has(i.id),
-    }));
+    const { visible, folded } = this.splitByBlocked(grouped, selectedKey);
+    const shown = this._shownBlocked || {};
+    const decorate = (i, hidden) => ({ ...i, booked: booked.has(i.id), hidden });
+
+    const dayItems = visible.map((i) => decorate(i, false));
+    folded.forEach((g) => {
+      if (!shown[g.coachName]) return;
+      g.items.forEach((i) => dayItems.push(decorate(i, true)));
+    });
+    // 展开的课要插回正确的时间位置，不能一股脑堆在列表最后
+    dayItems.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
     this.setData({
       weekDays,
@@ -272,9 +299,19 @@ Page({
       selectedKey,
       selectedTitle: this.dayTitle(selectedKey),
       dayItems,
+      foldedRows: folded.map((g) => ({
+        coachName: g.coachName,
+        count: g.count,
+        open: !!shown[g.coachName],
+      })),
       bookedCount: dayItems.filter((i) => i.booked).length,
       weekBookedCount: weekDays.reduce((n, d) => n + d.bookedCount, 0),
     });
+  },
+
+  /** 某一天的课按「是否被屏蔽」分成两组 */
+  splitByBlocked(grouped, key) {
+    return foldBlocked(this.visibleOf(grouped, key), (i) => i.coachName);
   },
 
   dayTitle(key) {

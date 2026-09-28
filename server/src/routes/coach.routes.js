@@ -26,14 +26,19 @@ router.get(
 
     const today = toDateKey(new Date());
     const days = Math.min(Math.max(Number(req.query.days) || 14, 1), 30);
-    const to = addDays(today, days - 1);
+    // direction=past → 过去 N 天。为什么需要它：多数舞室只放当天/最近几天的课，
+    // 「未来两周 N 节课」经常是 0，看着像没数据；而库里保留了历史课，
+    // 用「上周排课规律」（周几 · 哪家店 · 几点 · 什么课）描述这位老师，信息量更高。
+    const past = req.query.direction === "past";
+    const from = past ? addDays(today, -days) : today;
+    const to = past ? addDays(today, -1) : addDays(today, days - 1);
 
     const [schedules, bookings] = await Promise.all([
-      getCoachSchedules(name, cityId, today, to, req.userId),
+      getCoachSchedules(name, cityId, from, to, req.userId),
       prisma.booking.findMany({
         where: {
           userId: req.userId,
-          schedule: { scheduleDate: { gte: new Date(today), lte: new Date(to) } },
+          schedule: { scheduleDate: { gte: new Date(from), lte: new Date(to) } },
         },
         select: { scheduleId: true, status: true },
       }),
@@ -65,7 +70,8 @@ router.get(
     ok(res, {
       name,
       cityId: Number(cityId),
-      from: today,
+      direction: past ? "past" : "future",
+      from,
       to,
       studios: [...studioMap.values()].sort((a, b) => b.count - a.count),
       items,
