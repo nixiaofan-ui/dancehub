@@ -1,0 +1,88 @@
+[
+  {
+    "id": "foxdance-gz",
+    "enabled": true,
+    "label": "Fox 舞蹈厂牌（广州）",
+    "studio": {
+      "name": "Fox舞蹈厂牌",
+      "city": "广州",
+      "region": "CN"
+    },
+    "mode": "foxdance",
+    "foxdance": {
+      "baseUrl": "https://admin.foxdance.com.cn/index.php/api",
+      "shops": [
+        {
+          "id": 1,
+          "name": "Fox舞蹈·长隆店（广州）"
+        },
+        {
+          "id": 2,
+          "name": "Fox舞蹈·岗顶店（广州）"
+        },
+        {
+          "id": 3,
+          "name": "Fox舞蹈·万胜围店（广州）"
+        },
+        {
+          "id": 4,
+          "name": "Fox舞蹈·农讲所店（广州）"
+        },
+        {
+          "id": 5,
+          "name": "Fox舞蹈·永泰（广州）"
+        },
+        {
+          "id": 6,
+          "name": "Fox舞蹈·黄埔店（广州）"
+        },
+        {
+          "id": 7,
+          "name": "Fox舞蹈·客村店（广州）"
+        },
+        {
+          "id": 8,
+          "name": "Fox舞蹈·南村店（广州）"
+        },
+        {
+          "id": 9,
+          "name": "Fox舞蹈·梅花园店（广州）"
+        },
+        {
+          "id": 10,
+          "name": "Fox舞蹈·西门口店（广州）"
+        },
+        {
+          "id": 11,
+          "name": "Fox舞蹈·龙洞店（广州）"
+        },
+        {
+          "id": 12,
+          "name": "Fox舞蹈·嘉禾店（广州）"
+        },
+        {
+          "id": 13,
+          "name": "Fox舞蹈·大石店（广州）"
+        },
+        {
+          "id": 14,
+          "name": "Fox舞蹈·天河客运站店（广州）"
+        },
+        {
+          "id": 16,
+          "name": "Fox舞蹈·龙归店（广州）"
+        },
+        {
+          "id": 17,
+          "name": "Fox舞蹈·百脑汇（广州）"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

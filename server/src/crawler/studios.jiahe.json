@@ -1,0 +1,18 @@
+[
+  {
+    "id": "jiahe-wushe",
+    "enabled": true,
+    "label": "嘉禾舞社（全国连锁）",
+    "studio": { "name": "嘉禾舞社", "city": "北京", "region": "CN" },
+    "mode": "jiahe",
+    "jiahe": {
+      "baseUrl": "https://app.jiahewushe.com/v1.0.0"
+    },
+    "dateMode": "nextDays",
+    "days": 1,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

@@ -129,7 +129,7 @@ export async function importSchedules(config, rows) {
     // 多门店配置（如 JustJerk 两个校区各自一个官网页）可在条目级覆盖
     // 城市/官网/平台，优先级高于 config.studio
     const rowOverride = {};
-    for (const key of ["_officialUrl", "_platform", "_address"]) {
+    for (const key of ["_officialUrl", "_platform", "_address", "_city"]) {
       const v = groupRows.find((r) => r[key])?.[key];
       if (v) rowOverride[key] = v;
     }
@@ -139,6 +139,8 @@ export async function importSchedules(config, rows) {
       ...(rowOverride._officialUrl ? { officialUrl: rowOverride._officialUrl } : {}),
       ...(rowOverride._platform ? { platform: rowOverride._platform } : {}),
       ...(rowOverride._address ? { address: rowOverride._address } : {}),
+      // 跨城市连锁（如嘉禾舞社：北京/广州/青岛/天津/邯郸）按门店地址覆盖城市
+      ...(rowOverride._city ? { city: rowOverride._city } : {}),
     };
     const studio = await findOrCreateStudio(studioRef, extra);
     for (const row of groupRows) {

@@ -291,6 +291,259 @@ async function crawlWithStyd(config, date) {
   return out;
 }
 
+/* ─────────────────── 嘉禾舞社（app.jiahewushe.com）抓取 ─────────────────── */
+
+/**
+ * 嘉禾舞社（北京起家，跨城连锁）小程序 wx657a98be3f6c70ce 逆向所得：
+ * - ⚠ URL 有个隐藏前缀：`baseUrl + "/v" + apiVersion + "/" + 路径`，
+ *   即 `https://app.jiahewushe.com/v1.0.0/xxx`（config.js 里 apiVersion:"1.0.0"）。
+ *   直接打 `/stores`、`/api/stores` 一律返回「未找到相关服务」。
+ * - 门店：GET v1.0.0/stores（13 家：北京 8 + 广州 / 青岛 / 天津 / 邯郸）
+ * - 课表：GET v1.0.0/courses → **一次返回全部门店**，按门店分组：
+ *   `[{ id, name(门店名), address, longitude, latitude, courses:[ ... ] }]`
+ *   课程字段：course_name（"Jazz · 基础"，舞种·难度已拼好）、teacher_names、
+ *   time（"12:30-13:30"）、student_number（容量）、student_count（已约）。
+ * - ⚠ `date` 参数无效：给 2026-09-28 / 10-01 / 10-05 返回的课程 id 完全一致，
+ *   接口实际只给「当天可预约」的课表。所以配置必须 days:1，靠每天刷新覆盖未来，
+ *   不能按 nextDays:7 抓（会把同一批课重复写成 7 天）。
+ * - 门店跨城，`_city` 从 address 前缀（"北京市"/"广州市"…）推断，
+ *   由 importer.js 的 rowOverride 写进 Studio.city。
+ */
+async function crawlWithJiahe(config, date) {
+  const { baseUrl = "https://app.jiahewushe.com/v1.0.0" } = config.jiahe || {};
+  const brand = (config.studio?.name || "嘉禾舞社").trim();
+
+  const resp = await fetch(`${baseUrl}/courses`, {
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!resp.ok) throw new Error(`jiahe 接口 HTTP ${resp.status}`);
+
+  const list = await resp.json();
+  if (!Array.isArray(list)) throw new Error("jiahe 接口返回格式异常");
+
+  const out = [];
+  for (const store of list) {
+    const storeName = String(store.name || "").trim();
+    if (!storeName) continue;
+    const city = guessCityFromAddress(store.address);
+
+    for (const c of store.courses || []) {
+      const courseName = cleanCourseName(c.course_name);
+      if (!courseName) continue;
+
+      const max = c.student_number != null ? Number(c.student_number) : null;
+      const used = c.student_count != null ? Number(c.student_count) : null;
+
+      out.push({
+        courseName,
+        coach: String(c.teacher_names || "").trim(),
+        time: String(c.time || "").trim(),
+        capacity: max ? `${used != null ? Math.max(max - used, 0) : ""}/${max}` : "",
+        status: max && used != null && used >= max ? "已满" : "可预约",
+        _studioName: `${brand}·${storeName}`,
+        _city: city,
+        _address: String(store.address || "").trim(),
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * 从 "北京市海淀区…" / "广州市天河区…" 提取城市名（去掉「市/省」）。
+ * ⚠ 匹配不到时必须返回空串：部分门店地址是「长楹天街西区…」这种商圈名开头，
+ *    硬截前几字会得到「长楹天」这种假城市；返回空则由 importer 回落到 config.studio.city。
+ */
+function guessCityFromAddress(addr) {
+  const m = String(addr || "").trim().match(/^([\u4e00-\u9fa5]{2,4}?)[市省]/);
+  return m ? m[1] : "";
+}
+
+/* ───────────────────── G-STEPS（api.gsteps.cn）抓取 ───────────────────── */
+
+/**
+ * G-STEPS 街舞（北京，自研 Go 后端）小程序 wxdbbcee97b5a718d4 逆向所得：
+ * - 域：`https://api.gsteps.cn/v2/`（另有 signin/poster/ai 三个子域，课表只用 v2）
+ * - 课表：POST v2/activity/query/fast，**必须 JSON body**（发 form 会报
+ *   `invalid character 'm' looking for beginning of value`），免登录可用。
+ * - 入参：`start_date` / `end_date`（YYYY-MM-DD，同一天即单日课表）、
+ *   `page`、`page_size`。⚠ `page_size` 服务端锁死 20，给 100/500 也只返 20 条，
+ *   必须靠 page 递增翻页（北京单日约 832 节 ≈ 42 页）。
+ * - ⚠ 传 `studio_id` 无效：返回体里仍会带上别家门店的课。
+ *   所以**一次请求就是全平台全城课表**，按返回里的 `studio_name` 分店落库即可。
+ * - 课程字段：course_name / teacher_name / course_kind_name（舞种）/ course_level_name（难度）/
+ *   start_time（"2026-09-29 09:30:00"）/ duration（分钟）/ classroom / studio_name /
+ *   max_member / reserved_count。start_time 未带日期过滤时是 Go 零值 "0001-01-01 00:00:00"。
+ * - 门店档案：GET v2/studio/list（免登录，40 家，含 address/latitude/longitude）。
+ */
+async function crawlWithGsteps(config, date) {
+  const { baseUrl = "https://api.gsteps.cn/v2" } = config.gsteps || {};
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const dateStr = `${y}-${m}-${d}`;
+
+  const brand = (config.studio?.name || "G-STEPS").trim();
+  const city = config.studio?.city || "";
+
+  const out = [];
+  let page = 1;
+  // 单日上限 60 页（1200 节），足够覆盖全城；翻到返回不足 20 条即结束
+  while (page <= 60) {
+    const resp = await fetch(`${baseUrl}/activity/query/fast`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mini_type: 1,
+        visiting_appid: "wxdbbcee97b5a718d4",
+        start_date: dateStr,
+        end_date: dateStr,
+        page,
+        page_size: 20,
+      }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!resp.ok) throw new Error(`gsteps 接口 HTTP ${resp.status}`);
+
+    const body = await resp.json();
+    if (body?.code !== 0) break;
+
+    const list = body?.res?.list || [];
+    if (!list.length) break;
+
+    for (const c of list) {
+      const courseName = cleanCourseName(c.course_name);
+      if (!courseName) continue;
+
+      // start_time: "2026-09-29 09:30:00" → "09:30"，结束时间靠 duration 推算
+      const start = String(c.start_time || "").slice(11, 16);
+      if (!/^\d{2}:\d{2}$/.test(start)) continue; // 零值/脏数据直接跳过
+      const dur = Number(c.duration || 0);
+      const end = dur ? addMinutes(start, dur) : "";
+
+      const max = c.max_member != null ? Number(c.max_member) : null;
+      const used = c.reserved_count != null ? Number(c.reserved_count) : null;
+
+      out.push({
+        courseName,
+        coach: String(c.teacher_name || "").trim(),
+        time: end ? `${start}-${end}` : start,
+        capacity: max ? `${used != null ? Math.max(max - used, 0) : ""}/${max}` : "",
+        status: max && used != null && used >= max ? "已满" : "可预约",
+        _studioName: `${brand}·${String(c.studio_name || "").trim()}${city ? `（${city}）` : ""}`,
+        _remark: [c.course_kind_name, c.course_level_name].filter(Boolean).join("·"),
+      });
+    }
+
+    if (list.length < 20) break;
+    page += 1;
+    await sleep(80);
+  }
+  return out;
+}
+
+/** "09:30" + 60 → "10:30"（跨天按 24h 取模，课表不会跨天，够用） */
+function addMinutes(hhmm, minutes) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const total = (h * 60 + m + minutes) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+/* ─────────────────── Fox 舞蹈（admin.foxdance.com.cn）抓取 ─────────────────── */
+
+/**
+ * Fox 舞蹈厂牌（广州，自研 PHP/ThinkPHP 后端）小程序 wx1c9690589dff339b 逆向所得：
+ * - baseUrl 必须带 `/index.php` 入口：`https://admin.foxdance.com.cn/index.php/api`
+ *   直接打 `https://admin.foxdance.com.cn/api/...` 会被 nginx 302 到 /index.html（前端页），拿不到 JSON。
+ * - 全部接口是 POST + `application/x-www-form-urlencoded`，不是 JSON。
+ * - 门店：POST /index/store  id=<门店ID>  → data = { id, name, address, latitude, longitude }
+ *   **没有「门店列表」接口**：只能按 id 枚举（实测 1..40，其中 15/18/19/20 空缺，
+ *   有效 16 家，部分店已停业返回「获取门店失败」）。
+ * - 课表：POST /index/store_courses  id=<门店ID>&page=<页>&date=YYYY-MM-DD
+ *   免登录可用；date 省略＝当天，给值可抓未来任意一天。分页 per_page=5，靠 last_page 判停。
+ * - 课程字段：course.name（"Jazz精品课课程————汝汝"）、teacher.name、dance_name（舞种）、
+ *   level_name（难度）、start_time/end_time（"2026-09-28 11:30"）、status。
+ *   课名尾部「————老师名」是重复的，剥掉后单独用 teacher.name 展示。
+ */
+async function crawlWithFoxdance(config, date) {
+  const {
+    baseUrl = "https://admin.foxdance.com.cn/index.php/api",
+    shops,
+  } = config.foxdance || {};
+
+  const targets = Array.isArray(shops) && shops.length ? shops : [];
+  if (!targets.length) throw new Error("foxdance 模式缺少 shops 配置");
+
+  // 本地日期字符串（不能用 toISOString，会按 UTC 偏移一天）
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  const dateStr = `${y}-${m}-${d}`;
+
+  const postForm = async (pathname, params) => {
+    const resp = await fetch(`${baseUrl}${pathname}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(params).toString(),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) throw new Error(`foxdance 接口 HTTP ${resp.status}`);
+    return resp.json();
+  };
+
+  const out = [];
+  for (const shop of targets) {
+    let page = 1;
+    let lastPage = 1;
+    // 每店最多翻 8 页（per_page=5，即 40 节），足够覆盖单日课表
+    while (page <= lastPage && page <= 8) {
+      const body = await postForm("/index/store_courses", {
+        id: shop.id,
+        page,
+        date: dateStr,
+      });
+      // code 非 1 视为该店当天无课/已停业，不抛错，避免整条链断掉
+      if (body?.code !== 1) break;
+
+      const data = body?.data || {};
+      lastPage = Number(data.last_page || 1);
+
+      for (const c of data.data || []) {
+        const rawName = String(c?.course?.name || "").trim();
+        // 剥掉课名尾部的「————老师名」（平台自己把老师名拼进了课名）
+        const courseName = cleanCourseName(rawName.replace(/[—–\-]{2,}.*$/, ""));
+        if (!courseName) continue;
+
+        // ⚠ 字段格式不一致：不带 date 参数时返回 "2026-09-28 11:30"，带 date 时只有 "11:30"。
+        // 两种都取末 5 位即 "HH:mm"，避免 slice(11,16) 在短格式上截出空串。
+        const startTime = String(c.start_time || "").slice(-5);
+        const endTime = String(c.end_time || "").slice(-5);
+        const time = startTime && endTime ? `${startTime}-${endTime}` : "";
+
+        const max = c.maximum_reservation != null ? Number(c.maximum_reservation) : null;
+        const used = c.appointment_number != null ? Number(c.appointment_number) : null;
+        const capacity = max ? `${used != null ? max - used : ""}/${max}` : "";
+
+        out.push({
+          courseName,
+          coach: String(c?.teacher?.name || "").trim(),
+          time,
+          capacity,
+          status: max && used != null && used >= max ? "已满" : "可预约",
+          _studioName: (shop.name || config.studio?.name || "").trim(),
+          // 舞种 + 难度拼进备注，前端可按需展示
+          _remark: [c.dance_name, c.level_name].filter(Boolean).join("·"),
+        });
+      }
+      page += 1;
+      if (page <= lastPage) await sleep(120);
+    }
+  }
+  return out;
+}
+
 /* ───────────────────────── 爱舞功（aiwugong.cn）抓取 ───────────────────────── */
 
 /**
@@ -967,6 +1220,9 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "http") return crawlWithHttp(config, date);
   if (config.mode === "fityun") return crawlWithFityun(config, date);
   if (config.mode === "styd") return crawlWithStyd(config, date);
+  if (config.mode === "jiahe") return crawlWithJiahe(config, date);
+  if (config.mode === "gsteps") return crawlWithGsteps(config, date);
+  if (config.mode === "foxdance") return crawlWithFoxdance(config, date);
   if (config.mode === "aiwugong") return crawlWithAiwugong(config, date);
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);

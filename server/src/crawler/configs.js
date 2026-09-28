@@ -11,6 +11,9 @@ const AUTO_CONFIG_FILES = [
   "studios.rawgraphy.json",
   "studios.aiwugong.json",
   "studios.styd.json",
+  "studios.foxdance.json",
+  "studios.gsteps.json",
+  "studios.jiahe.json",
 ];
 
 /**
@@ -437,6 +440,9 @@ function mergeConfigs(manual, auto) {
     if (c.mode === "http" && c.http?.boxId != null) return `box:${c.http.boxId}`;
     if (c.mode === "fityun" && c.fityun?.orgId) return `org:${c.fityun.orgId}`;
     if (c.mode === "styd" && c.styd?.brandCode) return `brand:${c.styd.brandCode}`;
+    if (c.mode === "foxdance") return `fox:${c.id}`;
+    if (c.mode === "gsteps") return `gsteps:${c.id}`;
+    if (c.mode === "jiahe") return `jiahe:${c.id}`;
     return null;
   };
 
