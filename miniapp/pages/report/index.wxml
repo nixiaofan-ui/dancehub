@@ -1,4 +1,4 @@
-<nav-bar title="提报舞室" show-back="{{true}}" />
+<nav-bar title="提报舞室" show-back="{{true}}" bind:top="onNavTop" />
 
 <view class="body">
   <view class="intro">

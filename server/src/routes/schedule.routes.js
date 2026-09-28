@@ -20,7 +20,13 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     const { studioId, coachId, from, to } = req.query;
-    const rows = await listSchedules({ studioId, coachId, from, to });
+    const rows = await listSchedules({
+      studioId,
+      coachId,
+      from,
+      to,
+      userId: req.userId,
+    });
     ok(res, rows);
   }),
 );

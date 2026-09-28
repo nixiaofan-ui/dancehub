@@ -1,4 +1,7 @@
+const { onNavTop } = require("../../utils/scroll-top");
 Page({
+  onNavTop,
+
   data: {
     url: "",
   },

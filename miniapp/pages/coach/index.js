@@ -4,6 +4,7 @@ const { DIFF_LABEL } = require("../../utils/constants");
 const { toast } = require("../../utils/toast");
 const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 const { isBlocked, block, unblock } = require("../../utils/blocked");
+const { onNavTop } = require("../../utils/scroll-top");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
@@ -17,6 +18,8 @@ function dayLabel(key) {
 }
 
 Page({
+  onNavTop,
+
   data: {
     name: "",
     cityId: null,

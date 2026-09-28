@@ -1,4 +1,4 @@
-<nav-bar title="{{multiMode ? multiTitle : '课表'}}" show-back="{{true}}" />
+<nav-bar title="{{multiMode ? multiTitle : '课表'}}" show-back="{{true}}" bind:top="onNavTop" />
 
 <view class="body">
   <!-- 多店视图：门店 chips，可多选，下方课表实时跟着变 -->

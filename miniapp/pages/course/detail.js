@@ -7,6 +7,7 @@ const { requestSubscribe } = require("../../utils/subscribe");
 const { confirm } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
 const { parseKey } = require("../../utils/date");
+const { onNavTop } = require("../../utils/scroll-top");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 const LV_LABEL = {
@@ -24,6 +25,8 @@ function formatTime(t) {
 }
 
 Page({
+  onNavTop,
+
   data: {
     scheduleId: null,
     detail: null,

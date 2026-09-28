@@ -108,6 +108,9 @@ const apiBlock = (name) => req.post("/blocked", { name });
 const apiUnblock = (name) => req.delete("/blocked/" + encodeURIComponent(name));
 // 结构化逐条录入课表（用户手动补抓不到的店）
 const apiImportSchedule = (payload) => req.post("/imports/schedule", payload);
+// 我录过的课：录入是私有的，所以要能回看、能删
+const apiMyImports = () => req.get("/imports/mine");
+const apiDeleteImport = (id) => req.delete("/imports/schedule/" + id);
 // 缺失舞室提报
 const apiSubmitReport = (payload) => req.post("/reports", payload);
 // 定位 → 城市：解析放在服务端（城市中心点表 + 「哪些城市真有课」都在库里）
@@ -144,4 +147,6 @@ module.exports = {
   apiUnblock,
   apiSubmitReport,
   apiImportSchedule,
+  apiMyImports,
+  apiDeleteImport,
 };

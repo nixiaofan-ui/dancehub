@@ -109,3 +109,61 @@ page {
   text-decoration: underline;
   font-weight: 700;
 }
+
+/* 说明里强调的那句「只有你自己看得见」 */
+.intro .hl {
+  color: #ff6b35;
+  font-weight: 900;
+}
+
+/* 我录过的课 */
+.mine-block {
+  margin-top: 40rpx;
+  background: #16213e;
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx 8rpx;
+}
+
+.mine-title {
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #e8ecf8;
+  margin-bottom: 16rpx;
+}
+
+.mine-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+
+.mine-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.mine-course {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #e8ecf8;
+}
+
+.mine-sub {
+  font-size: 22rpx;
+  color: #a8adc2;
+  margin-top: 4rpx;
+}
+
+.mine-del {
+  flex-shrink: 0;
+  margin-left: 20rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #e5484d;
+  padding: 8rpx 20rpx;
+  border: 1rpx solid rgba(229, 72, 77, 0.4);
+  border-radius: 30rpx;
+}

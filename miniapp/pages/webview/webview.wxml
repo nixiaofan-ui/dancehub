@@ -1,4 +1,4 @@
-<nav-bar title="预约" show-back="{{true}}" />
+<nav-bar title="预约" show-back="{{true}}" bind:top="onNavTop" />
 
 <web-view wx:if="{{url}}" src="{{url}}"></web-view>
 <view wx:else class="empty">

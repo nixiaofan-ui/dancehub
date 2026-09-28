@@ -24,7 +24,7 @@ router.get(
     const followedStudioIds = new Set(follows.map((f) => f.studioId));
 
     const [schedules, bookings, reminders] = await Promise.all([
-      getCityDaySchedules(cityId, dateKey),
+      getCityDaySchedules(cityId, dateKey, req.userId),
       prisma.booking.findMany({
         where: { userId: req.userId, schedule: { scheduleDate: new Date(dateKey) } },
         select: { scheduleId: true, status: true },
@@ -38,11 +38,16 @@ router.get(
     const bookingMap = new Map(bookings.map((b) => [b.scheduleId, b.status]));
     const reminderSet = new Set(reminders.map((r) => r.scheduleId));
 
-    // 课表默认只给「已关注舞室」的课 —— 但我自己约过的课必须看得见。
-    // 否则会出现「我的-预约记录」里有、课表里却没有，用户以为数据没同步。
-    // 典型场景：从发现页/舞室页直接约了课，但并没关注那家舞室。
+    // 课表默认只给「已关注舞室」的课 —— 但有两类课必须例外：
+    // 1. 我自己约过的：否则「我的-预约记录」里有、课表里却没有，
+    //    用户会以为数据没同步。典型场景是从发现页直接约了课但没关注那家舞室。
+    // 2. 我自己录的：录入的店多半还没被抓取覆盖，要求先关注才能看见
+    //    等于让用户录完看不到自己的劳动成果。
     const items = schedules
-      .filter((s) => followedStudioIds.has(s.studio.id) || bookingMap.has(s.id))
+      .filter(
+        (s) =>
+          followedStudioIds.has(s.studio.id) || bookingMap.has(s.id) || s.mine
+      )
       .map((s) => ({
         ...s,
         // 短名在服务端算好：发现页、门店 chips、课程卡片三处必须一致，
@@ -90,7 +95,7 @@ router.get(
     const dateRange = { gte: new Date(fromKey), lte: new Date(toKey || fromKey) };
 
     const [schedules, studios, bookings, reminders] = await Promise.all([
-      getStudiosDaySchedules(studioIds, fromKey, toKey),
+      getStudiosDaySchedules(studioIds, fromKey, toKey, req.userId),
       prisma.studio.findMany({
         where: { id: { in: studioIds }, status: true },
         select: { id: true, name: true, cityId: true },

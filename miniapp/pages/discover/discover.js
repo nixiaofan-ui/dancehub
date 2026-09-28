@@ -2,6 +2,7 @@ const app = getApp();
 const api = require("../../services/api");
 const { toast } = require("../../utils/toast");
 const { API_HOST } = require("../../utils/config");
+const { onNavTop } = require("../../utils/scroll-top");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
@@ -51,6 +52,8 @@ function buildSections(studios) {
 }
 
 Page({
+  onNavTop,
+
   data: {
     region: "CN",
     cities: [],

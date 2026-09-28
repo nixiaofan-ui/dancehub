@@ -1,4 +1,5 @@
 const { ICP_NO, ENTITY_NAME, APP_VERSION, CONTACT_EMAIL } = require("../../utils/config");
+const { onNavTop } = require("../../utils/scroll-top");
 
 /**
  * 「关于」页
@@ -60,6 +61,8 @@ const PRIVACY_SECTIONS = [
 ];
 
 Page({
+  onNavTop,
+
   data: {
     tab: "about",
     icpNo: ICP_NO || "",

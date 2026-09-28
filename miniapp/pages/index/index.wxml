@@ -1,4 +1,4 @@
-<nav-bar title="DanceHub" show-avatar="{{true}}" bind:avatar="goProfile" accent />
+<nav-bar title="DanceHub" show-avatar="{{true}}" bind:avatar="goProfile" accent bind:top="onNavTop" />
 
 <view class="body">
   <!-- 地区切换 -->

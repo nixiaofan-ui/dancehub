@@ -4,7 +4,7 @@ import { requireAdmin } from "../middleware/admin.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
-import { toDateKey, parseDateKey } from "../services/schedule.service.js";
+import { toDateKey, parseDateKey, visibleScope } from "../services/schedule.service.js";
 import { pickStyles } from "../services/dance-style.service.js";
 import { sortStudiosByName } from "../services/studio-sort.service.js";
 import { splitBrandBranch } from "../lib/studio-name.js";
@@ -147,7 +147,11 @@ router.get(
 
     const dateKey = req.query.date || toDateKey(new Date());
     const schedules = await prisma.schedule.findMany({
-      where: { studioId, scheduleDate: parseDateKey(dateKey) },
+      where: {
+        studioId,
+        scheduleDate: parseDateKey(dateKey),
+        ...visibleScope(req.userId),
+      },
       include: { coach: true },
       orderBy: { startTime: "asc" },
     });

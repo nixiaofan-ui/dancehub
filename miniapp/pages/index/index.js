@@ -10,8 +10,11 @@ const { confirm } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
 const { locateCity, openSetting } = require("../../utils/locate");
 const { isBlocked } = require("../../utils/blocked");
+const { onNavTop } = require("../../utils/scroll-top");
 
 Page({
+  onNavTop,
+
   data: {
     region: "CN",
     cities: [],

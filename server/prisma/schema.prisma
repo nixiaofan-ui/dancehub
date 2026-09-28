@@ -74,6 +74,7 @@ model User {
   bookings   Booking[]
   reminders  Reminder[]
   blocks     CoachBlock[]
+  schedules  Schedule[]
 }
 
 /// 用户屏蔽的老师（产品文案叫「不想看」）。
@@ -146,12 +147,19 @@ model Schedule {
   remark       String?
   // 课程封面图（iWOD 的 pic 字段；菲体云暂无）
   coursePicUrl String?
+  // 录入人：null = 抓取来的公共课，所有人可见；有值 = 用户手录的课，仅本人可见。
+  // 用「null 表示公共」而不是单独建一张私课表，是因为课表的主查询
+  // （城市时间轴 / 多店合并 / 老师主页）都要同时吐两类课 ——
+  // 一张表只多一个 OR 条件，分表则每个接口都得 union 一遍。
+  ownerId      Int?
+  owner        User?      @relation(fields: [ownerId], references: [id])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   bookings     Booking[]
   reminders    Reminder[]
 
   @@index([studioId, scheduleDate])
+  @@index([ownerId])
 }
 
 model Booking {

@@ -1,9 +1,10 @@
-<nav-bar title="课表录入" show-back="{{true}}" />
+<nav-bar title="课表录入" show-back="{{true}}" bind:top="onNavTop" />
 
 <view class="body">
   <view class="intro">
-    抓不到的独立舞室可以自己录。录完会进公共课表，别人也搜得到 ——
-    所以请按真实课表填，别替我们发挥。
+    抓不到的独立舞室可以自己录。<text class="hl">录的课只有你自己看得见</text>，
+    不用怕填错影响别人 —— 但课表页上它会出现在你选的城市和日期里，
+    所以日期和时间还是照真实课表填。
   </view>
 
   <view class="form">
@@ -77,6 +78,20 @@
   <view wx:if="{{lastResult}}" class="done">
     ✅ 已录入：{{lastResult.studio}} · {{lastResult.date}} {{lastResult.time}} · {{lastResult.course}}
     <view class="done-sub">继续录下一节吧</view>
+  </view>
+
+  <!-- 我录过的课：能录就得能删，填错日期的人不该被一条错课永久纠缠 -->
+  <view class="mine-block" wx:if="{{mine.length}}">
+    <view class="mine-title">我录过的课（{{mine.length}}）</view>
+    <view class="mine-item" wx:for="{{mine}}" wx:key="id">
+      <view class="mine-main">
+        <view class="mine-course">{{item.courseName}}</view>
+        <view class="mine-sub">
+          {{item.studioName}} · {{item.date}} {{item.startTime}}-{{item.endTime}}<block wx:if="{{item.coachName}}"> · {{item.coachName}}</block>
+        </view>
+      </view>
+      <view class="mine-del" hover-class="press" data-id="{{item.id}}" bindtap="delMine">删除</view>
+    </view>
   </view>
 
   <view class="report-link" hover-class="press" bindtap="goReport">

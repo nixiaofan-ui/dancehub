@@ -1,4 +1,4 @@
-<nav-bar title="发现" />
+<nav-bar title="发现" bind:top="onNavTop" />
 
 <view class="body">
   <view class="region-row">

@@ -2,6 +2,8 @@ const app = getApp();
 const api = require("../../services/api");
 const { dateKey, addDays, todayKey } = require("../../utils/date");
 const { toast } = require("../../utils/toast");
+const { confirm } = require("../../utils/confirm");
+const { onNavTop } = require("../../utils/scroll-top");
 
 const DIFF_OPTIONS = ["不限", "入门", "进阶", "高阶"];
 const DIFF_VALUE = {
@@ -22,6 +24,8 @@ const DIFF_VALUE = {
  * —— 门店名自由输入，库里没有就顺手建出来。
  */
 Page({
+  onNavTop,
+
   data: {
     // 未来 14 天可选，避免录进历史日期
     dates: [],
@@ -41,6 +45,40 @@ Page({
     coachName: "",
     submitBusy: false,
     lastResult: null,
+    // 我录过的课（只有本人可见，所以列表也只列本人的）
+    mine: [],
+  },
+
+  async onShow() {
+    this.loadMine();
+  },
+
+  async loadMine() {
+    try {
+      await api.ensureReady();
+      const rows = await api.apiMyImports();
+      this.setData({ mine: rows || [] });
+    } catch (e) {
+      // 列表拉不到不影响录入，静默即可
+      console.error("[import] 载入我录的课失败:", e.message);
+    }
+  },
+
+  async delMine(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    const okDel = await confirm({
+      title: "删掉这节录入的课？",
+      content: "删了就找不回来了",
+      confirmText: "删除",
+    });
+    if (!okDel) return;
+    try {
+      await api.apiDeleteImport(id);
+      this.setData({ mine: this.data.mine.filter((x) => x.id !== id) });
+      toast(this, "已删除", "success");
+    } catch (err) {
+      toast(this, err.message);
+    }
   },
 
   onLoad() {
@@ -124,6 +162,7 @@ Page({
         coachName: "",
         submitBusy: false,
       });
+      this.loadMine();
     } catch (e) {
       toast(this, e.message);
       this.setData({ submitBusy: false });

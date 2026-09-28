@@ -42,7 +42,25 @@ const scheduleInclude = {
   coach: true,
 };
 
-function serializeTimeline(schedules) {
+/**
+ * 可见范围条件：公共课（ownerId 为空）+ 当前用户自己录入的课。
+ * 拿不到 userId（未登录 / 内部调用）时只看公共课。
+ *
+ * @param {number|null} userId
+ */
+export function visibleScope(userId) {
+  const uid = Number(userId);
+  if (!uid) return { ownerId: null };
+  return { OR: [{ ownerId: null }, { ownerId: uid }] };
+}
+
+/** 公共课与私课合并后要按时间重排一次，否则私课会全堆在末尾。 */
+function byStartTime(a, b) {
+  return String(a.startTime).localeCompare(String(b.startTime));
+}
+
+function serializeTimeline(schedules, userId) {
+  const uid = Number(userId) || null;
   return schedules.map((s) => ({
     id: s.id,
     courseName: s.courseName,
@@ -53,6 +71,8 @@ function serializeTimeline(schedules) {
     bookingUrl: s.bookingUrl,
     coursePicUrl: s.coursePicUrl,
     remark: s.remark,
+    // 自己录的课前端要标「我录的」并允许删除，光给 ownerId 前端没法比对
+    mine: uid ? Number(s.ownerId) === uid : false,
     coach: s.coach ? { id: s.coach.id, name: s.coach.name } : null,
     studio: {
       id: s.studio.id,
@@ -70,26 +90,55 @@ function serializeTimeline(schedules) {
   }));
 }
 
-export async function getCityDaySchedules(cityId, dateKey) {
+/**
+ * 某城市某天的课表。
+ *
+ * 缓存策略有个坑：key 只有「城市+日期」，如果把私课也塞进缓存，
+ * A 用户录的课会被 B 用户看到。所以缓存里只放**公共课**，
+ * 用户自己的课每次单独查再合并 —— 多一次小查询，换缓存仍能共用。
+ *
+ * @param {number} cityId
+ * @param {string} dateKey YYYY-MM-DD
+ * @param {number|null} userId
+ */
+export async function getCityDaySchedules(cityId, dateKey, userId) {
   const cacheKey = timelineCacheKey(cityId, dateKey);
 
   const cached = await redis.get(cacheKey).catch(() => null);
-  if (cached) return JSON.parse(cached);
+  let data = cached ? JSON.parse(cached) : null;
 
-  const schedules = await prisma.schedule.findMany({
+  if (!data) {
+    const schedules = await prisma.schedule.findMany({
+      where: {
+        scheduleDate: parseDateKey(dateKey),
+        studio: { cityId: Number(cityId), status: true },
+        ownerId: null,
+      },
+      include: scheduleInclude,
+      orderBy: { startTime: "asc" },
+    });
+
+    data = serializeTimeline(schedules, null);
+    await redis
+      .set(cacheKey, JSON.stringify(data), "EX", TIMELINE_TTL)
+      .catch(() => {});
+  }
+
+  const uid = Number(userId);
+  if (!uid) return data;
+
+  const mine = await prisma.schedule.findMany({
     where: {
       scheduleDate: parseDateKey(dateKey),
       studio: { cityId: Number(cityId), status: true },
+      ownerId: uid,
     },
     include: scheduleInclude,
     orderBy: { startTime: "asc" },
   });
+  if (!mine.length) return data;
 
-  const data = serializeTimeline(schedules);
-  await redis
-    .set(cacheKey, JSON.stringify(data), "EX", TIMELINE_TTL)
-    .catch(() => {});
-  return data;
+  return [...data, ...serializeTimeline(mine, uid)].sort(byStartTime);
 }
 
 /**
@@ -104,13 +153,14 @@ export async function getCityDaySchedules(cityId, dateKey) {
  * @param {string} dateKey YYYY-MM-DD（或区间起始日）
  * @param {string} [endKey] 给了就查 [dateKey, endKey] 区间，否则只查 dateKey 当天
  */
-export async function getStudiosDaySchedules(studioIds, dateKey, endKey) {
+export async function getStudiosDaySchedules(studioIds, dateKey, endKey, userId) {
   const ids = [...new Set(studioIds.map(Number))].filter(Boolean);
   if (!ids.length) return [];
 
   const where = {
     studioId: { in: ids },
     studio: { status: true },
+    ...visibleScope(userId),
   };
   where.scheduleDate = endKey
     ? { gte: parseDateKey(dateKey), lte: parseDateKey(endKey) }
@@ -125,7 +175,7 @@ export async function getStudiosDaySchedules(studioIds, dateKey, endKey) {
       : { startTime: "asc" },
   });
 
-  return serializeTimeline(schedules);
+  return serializeTimeline(schedules, userId);
 }
 
 /**
@@ -143,10 +193,11 @@ export async function getStudiosDaySchedules(studioIds, dateKey, endKey) {
  * @param {string} fromKey YYYY-MM-DD
  * @param {string} [toKey]
  */
-export async function getCoachSchedules(coachName, cityId, fromKey, toKey) {
+export async function getCoachSchedules(coachName, cityId, fromKey, toKey, userId) {
   const where = {
     coach: { name: coachName, studio: { cityId: Number(cityId) } },
     studio: { status: true },
+    ...visibleScope(userId),
     scheduleDate: toKey
       ? { gte: parseDateKey(fromKey), lte: parseDateKey(toKey) }
       : { gte: parseDateKey(fromKey) },
@@ -158,7 +209,7 @@ export async function getCoachSchedules(coachName, cityId, fromKey, toKey) {
     orderBy: [{ scheduleDate: "asc" }, { startTime: "asc" }],
   });
 
-  return serializeTimeline(schedules);
+  return serializeTimeline(schedules, userId);
 }
 
 export async function createSchedule(data) {
@@ -178,8 +229,8 @@ export async function deleteSchedule(id) {
   await invalidateTimelineCache();
 }
 
-export async function listSchedules({ studioId, coachId, from, to }) {
-  const where = {};
+export async function listSchedules({ studioId, coachId, from, to, userId }) {
+  const where = { ...visibleScope(userId) };
   if (studioId) where.studioId = Number(studioId);
   if (coachId) where.coachId = Number(coachId);
   if (from) where.scheduleDate = { gte: parseDateKey(from) };
@@ -192,7 +243,7 @@ export async function listSchedules({ studioId, coachId, from, to }) {
   });
 
   return rows.map((s) => ({
-    ...serializeTimeline([s])[0],
+    ...serializeTimeline([s], userId)[0],
     rawDate: s.scheduleDate,
     createdAt: s.createdAt,
     updatedAt: s.updatedAt,

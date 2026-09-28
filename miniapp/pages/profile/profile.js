@@ -4,8 +4,11 @@ const { BOOKING_STATUS_LABEL, PLATFORM_LABEL } = require("../../utils/constants"
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
 const { getBlocked, unblock } = require("../../utils/blocked");
+const { onNavTop } = require("../../utils/scroll-top");
 
 Page({
+  onNavTop,
+
   data: {
     region: "CN",
     tab: "follows",

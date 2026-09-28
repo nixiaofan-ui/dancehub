@@ -48,6 +48,21 @@ CREATE TABLE IF NOT EXISTS \`StudioReport\` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 `;
 
+/**
+ * Schedule.ownerId（用户手录的课标记归属）
+ * 对应 schema.prisma 的 model Schedule 里的 ownerId / owner 关系。
+ *
+ * 加列用「查 information_schema 再 ALTER」而不是裸 ALTER：
+ * MySQL 没有 ADD COLUMN IF NOT EXISTS，重复 ALTER 会抛 1060 把启动日志刷满。
+ */
+const SCHEDULE_OWNER_SQL = `
+ALTER TABLE \`Schedule\`
+  ADD COLUMN \`ownerId\` INT NULL,
+  ADD INDEX \`Schedule_ownerId_idx\` (\`ownerId\`),
+  ADD CONSTRAINT \`Schedule_ownerId_fkey\`
+    FOREIGN KEY (\`ownerId\`) REFERENCES \`User\`(\`id\`) ON DELETE SET NULL ON UPDATE CASCADE;
+`;
+
 async function run(label, sql) {
   try {
     await prisma.$executeRawUnsafe(sql);
@@ -57,7 +72,23 @@ async function run(label, sql) {
   }
 }
 
+async function columnExists(table, column) {
+  const rows = await prisma
+    .$queryRawUnsafe(
+      `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      table,
+      column
+    )
+    .catch(() => [{ c: 1 }]);
+  return Number(rows?.[0]?.c || 0) > 0;
+}
+
 export async function ensureSchema() {
   await run("CoachBlock", COACH_BLOCK_SQL);
   await run("StudioReport", STUDIO_REPORT_SQL);
+  // 存量库已经有 Schedule 表，只缺这一列
+  if (!(await columnExists("Schedule", "ownerId"))) {
+    await run("Schedule.ownerId", SCHEDULE_OWNER_SQL);
+  }
 }

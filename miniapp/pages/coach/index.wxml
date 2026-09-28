@@ -1,4 +1,4 @@
-<nav-bar title="教练" show-back="{{true}}" />
+<nav-bar title="教练" show-back="{{true}}" bind:top="onNavTop" />
 
 <view class="body">
   <view wx:if="{{loading}}" class="tip">正在整理这位老师的课…</view>

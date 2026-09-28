@@ -29,7 +29,7 @@ router.get(
     const to = addDays(today, days - 1);
 
     const [schedules, bookings] = await Promise.all([
-      getCoachSchedules(name, cityId, today, to),
+      getCoachSchedules(name, cityId, today, to, req.userId),
       prisma.booking.findMany({
         where: {
           userId: req.userId,

@@ -1318,5 +1318,61 @@
     "lat": 31.096637725830078,
     "lng": 121.50772094726562,
     "pic": "https://cdn2.iwod.cn//mp_img/wxe0a406d6ce0e8cfe/b_81_u_11225/1jus8rusj_ecvre.jpg"
+  },
+  {
+    "id": "iwod-8018-糖芭蕾",
+    "enabled": true,
+    "label": "糖芭蕾",
+    "auto": true,
+    "studio": {
+      "name": "糖芭蕾（海淀）",
+      "city": "北京",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx8a5bdd8521c98915",
+      "boxId": 8018,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "北京市海淀区长春桥路11号万柳亿城中心C2座1502,1505",
+    "district": "海淀",
+    "lat": 39.960358,
+    "lng": 116.30235
+  },
+  {
+    "id": "iwod-15299-D-DAY",
+    "enabled": true,
+    "label": "D-DAY 舞蹈",
+    "auto": true,
+    "studio": {
+      "name": "D-DAY 舞蹈（秦淮）",
+      "city": "南京",
+      "region": "CN"
+    },
+    "mode": "http",
+    "http": {
+      "baseUrl": "https://api2.iwod.cn",
+      "appId": "wx89a60be573cf47dd",
+      "boxId": 15299,
+      "allBoxes": false
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "江苏省南京市秦淮区太平南路nows新座102号3楼C-02",
+    "district": "秦淮",
+    "lat": 32.038506,
+    "lng": 118.793396
   }
 ]

@@ -1,8 +1,11 @@
 const app = getApp();
 const api = require("../../services/api");
 const { toast } = require("../../utils/toast");
+const { onNavTop } = require("../../utils/scroll-top");
 
 Page({
+  onNavTop,
+
   data: {
     name: "",
     city: "",

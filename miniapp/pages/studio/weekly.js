@@ -3,6 +3,7 @@ const api = require("../../services/api");
 const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
 const { toast } = require("../../utils/toast");
 const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
+const { onNavTop } = require("../../utils/scroll-top");
 
 const WEEK_LABEL = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -20,6 +21,8 @@ function formatTime(t) {
 }
 
 Page({
+  onNavTop,
+
   data: {
     studioId: null,
     studio: null,
