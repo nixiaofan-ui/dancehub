@@ -8,16 +8,36 @@
     </view>
   </view>
 
+  <!--
+    城市切换：100 来个城市塞进一条横滑条，找一个三线城要滑半天，
+    所以只常驻 8 个热门 + 一个「全部」入口，剩下的进城市面板（搜索/字母/定位）。
+    当前选中的城市即便不是热门也会被顶到第一位（pickHot 保证），
+    否则用户切完之后在 chip 条上看不到自己选的是谁。
+  -->
   <scroll-view scroll-x class="city-bar" enhanced show-scrollbar="{{false}}">
     <view
-      wx:for="{{filteredCities}}"
+      wx:for="{{hotCities}}"
       wx:key="id"
       class="chip {{cityId === item.id ? 'on' : ''}}"
       hover-class="press"
       data-id="{{item.id}}"
       bindtap="selectCity"
     >{{item.name}}</view>
+    <view class="chip chip-all" hover-class="press" bindtap="openCityPicker">
+      {{cityName || '全部城市'}} · 全部<text class="ca-caret">⌄</text>
+    </view>
   </scroll-view>
+
+  <city-picker
+    visible="{{cityPickerVisible}}"
+    cities="{{filteredCities}}"
+    cityId="{{cityId}}"
+    region="{{region}}"
+    locating="{{locating}}"
+    bind:close="closeCityPicker"
+    bind:select="onPickCity"
+    bind:locate="onPickLocate"
+  />
 
   <view class="search-box">
     <view class="search-ico">
@@ -135,7 +155,9 @@
               <text class="name">{{item.brand}}</text>
               <text wx:if="{{item.branch}}" class="branch">{{item.branch}}</text>
             </view>
-            <view wx:if="{{item.address}}" class="addr-line">{{item.address}}</view>
+            <!-- 品牌行第二行列分店；单店行显示地址。两者共用省略号样式 -->
+            <view wx:if="{{item.branchLine}}" class="addr-line">{{item.branchLine}}</view>
+            <view wx:elif="{{item.address}}" class="addr-line">{{item.address}}</view>
             <view wx:if="{{item.styles.length}}" class="tag-row">
               <view
                 wx:for="{{item.styles}}"
@@ -146,12 +168,15 @@
               <view wx:if="{{item.extraStyles}}" class="style-tag more">+{{item.extraStyles}}</view>
             </view>
           </view>
+          <!-- 品牌行没有单个门店可关注 → 换成进入箭头 -->
           <button
+            wx:if="{{!item.isBrand}}"
             class="follow {{item.followed ? 'followed' : ''}}"
             hover-class="press"
             data-id="{{item.id}}"
             catchtap="toggleFollow"
           >{{item.followed ? '已关注' : '关注'}}</button>
+          <view wx:else class="chev">›</view>
         </view>
       </view>
     </block>

@@ -9,20 +9,38 @@
     </view>
   </view>
 
-  <!-- 城市快捷选择 -->
+  <!--
+    城市切换：库里 100 来个城市全塞横滑条，找一个三线城要滑很久，
+    改成「定位 + 8 个热门 + 全部城市面板（搜索/字母索引）」。
+    当前选中的城市即便不热门也会被顶到第一位，否则切完看不到自己选的是谁。
+  -->
   <scroll-view scroll-x class="city-bar" enhanced show-scrollbar="{{false}}">
     <view class="chip chip-locate {{locating ? 'busy' : ''}}" hover-class="press" bindtap="tapLocate">
       {{locating ? '定位中…' : '📍 定位'}}
     </view>
     <view
-      wx:for="{{filteredCities}}"
+      wx:for="{{hotCities}}"
       wx:key="id"
       class="chip {{cityId === item.id ? 'on' : ''}}"
       hover-class="press"
       data-id="{{item.id}}"
       bindtap="selectCity"
     >{{item.name}}</view>
+    <view class="chip chip-all" hover-class="press" bindtap="openCityPicker">
+      {{cityName || '全部城市'}} · 全部<text class="ca-caret">⌄</text>
+    </view>
   </scroll-view>
+
+  <city-picker
+    visible="{{cityPickerVisible}}"
+    cities="{{filteredCities}}"
+    cityId="{{cityId}}"
+    region="{{region}}"
+    locating="{{locating}}"
+    bind:close="closeCityPicker"
+    bind:select="onPickCity"
+    bind:locate="onPickLocate"
+  />
 
   <!-- 悬浮提醒条 -->
   <view wx:if="{{pendingCount > 0}}" class="reminder-strip" hover-class="press" bindtap="goConfirm">

@@ -1296,5 +1296,563 @@
     "timeFormat": "HH:mm-HH:mm",
     "address": "北京市朝阳区国贸建外SOHO东区B座1802",
     "district": "朝阳"
+  },
+  {
+    "id": "fityun-11045354",
+    "enabled": true,
+    "label": "兰州Faustine舞蹈工作室",
+    "auto": false,
+    "studio": {
+      "name": "兰州Faustine舞蹈工作室",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11045354",
+      "branches": [
+        {
+          "id": "0",
+          "name": "兰州Faustine舞蹈工作室"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "兰州Faustine舞蹈工作室",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11047023",
+    "enabled": true,
+    "label": "DANCE IDOL舞蹈空间",
+    "auto": false,
+    "studio": {
+      "name": "DANCE IDOL舞蹈空间",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11047023",
+      "branches": [
+        {
+          "id": "0",
+          "name": "DANCE IDOL舞蹈空间"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "DANCE IDOL舞蹈空间",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11047417",
+    "enabled": true,
+    "label": "MME粉墨嘻哈街舞",
+    "auto": false,
+    "studio": {
+      "name": "MME粉墨嘻哈街舞",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11047417",
+      "branches": [
+        {
+          "id": "0",
+          "name": "MME粉墨嘻哈街舞"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "MME粉墨嘻哈街舞",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11047894",
+    "enabled": true,
+    "label": "丝路舞蹈",
+    "auto": false,
+    "studio": {
+      "name": "丝路舞蹈",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11047894",
+      "branches": [
+        {
+          "id": "0",
+          "name": "丝路舞蹈"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "丝路舞蹈",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11048019",
+    "enabled": true,
+    "label": "UT DANCE东部店",
+    "auto": false,
+    "studio": {
+      "name": "UT DANCE东部店",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11048019",
+      "branches": [
+        {
+          "id": "0",
+          "name": "UT DANCE东部店"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "UT DANCE东部店",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11049913",
+    "enabled": true,
+    "label": "兰州DR.G舞蹈工作室",
+    "auto": false,
+    "studio": {
+      "name": "兰州DR.G舞蹈工作室",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11049913",
+      "branches": [
+        {
+          "id": "0",
+          "name": "兰州DR.G舞蹈工作室"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "兰州DR.G舞蹈工作室",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11051747",
+    "enabled": true,
+    "label": "新梦想流行舞馆",
+    "auto": false,
+    "studio": {
+      "name": "新梦想流行舞馆",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11051747",
+      "branches": [
+        {
+          "id": "0",
+          "name": "新梦想流行舞馆"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "新梦想流行舞馆",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11052626",
+    "enabled": true,
+    "label": "兰州BLOOM星工厂",
+    "auto": false,
+    "studio": {
+      "name": "兰州BLOOM星工厂",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11052626",
+      "branches": [
+        {
+          "id": "0",
+          "name": "兰州BLOOM星工厂"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "兰州BLOOM星工厂",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11058687",
+    "enabled": true,
+    "label": "水灵子舞蹈（万辉店）",
+    "auto": false,
+    "studio": {
+      "name": "水灵子舞蹈（万辉店）",
+      "city": "兰州",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11058687",
+      "branches": [
+        {
+          "id": "0",
+          "name": "水灵子舞蹈（万辉店）"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "水灵子舞蹈（万辉店）",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11046611",
+    "enabled": true,
+    "label": "海南龙华思蕾舞蹈",
+    "auto": false,
+    "studio": {
+      "name": "海南龙华思蕾舞蹈",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11046611",
+      "branches": [
+        {
+          "id": "0",
+          "name": "海南龙华思蕾舞蹈"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "海南龙华思蕾舞蹈",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11047066",
+    "enabled": true,
+    "label": "海口黑客斯街舞",
+    "auto": false,
+    "studio": {
+      "name": "海口黑客斯街舞",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11047066",
+      "branches": [
+        {
+          "id": "0",
+          "name": "海口黑客斯街舞"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "海口黑客斯街舞",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11054497",
+    "enabled": true,
+    "label": "翎然街舞",
+    "auto": false,
+    "studio": {
+      "name": "翎然街舞",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11054497",
+      "branches": [
+        {
+          "id": "0",
+          "name": "翎然街舞"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "翎然街舞",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11056525",
+    "enabled": true,
+    "label": "海口LiLi舞蹈健身馆",
+    "auto": false,
+    "studio": {
+      "name": "海口LiLi舞蹈健身馆",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11056525",
+      "branches": [
+        {
+          "id": "0",
+          "name": "海口LiLi舞蹈健身馆"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "海口LiLi舞蹈健身馆",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11057057",
+    "enabled": true,
+    "label": "HD舞蹈工作室",
+    "auto": false,
+    "studio": {
+      "name": "HD舞蹈工作室",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11057057",
+      "branches": [
+        {
+          "id": "0",
+          "name": "HD舞蹈工作室"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "HD舞蹈工作室",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11057917",
+    "enabled": true,
+    "label": "王炸流行舞",
+    "auto": false,
+    "studio": {
+      "name": "王炸流行舞",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11057917",
+      "branches": [
+        {
+          "id": "0",
+          "name": "王炸流行舞"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "王炸流行舞",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11058004",
+    "enabled": true,
+    "label": "舞将街舞",
+    "auto": false,
+    "studio": {
+      "name": "舞将街舞",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11058004",
+      "branches": [
+        {
+          "id": "0",
+          "name": "舞将街舞"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "舞将街舞",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11058918",
+    "enabled": true,
+    "label": "FOCUS DANCE焦点街舞",
+    "auto": false,
+    "studio": {
+      "name": "FOCUS DANCE焦点街舞",
+      "city": "海口",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11058918",
+      "branches": [
+        {
+          "id": "0",
+          "name": "FOCUS DANCE焦点街舞"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "FOCUS DANCE焦点街舞",
+    "danceScore": 1.0,
+    "danceCourses": 1
+  },
+  {
+    "id": "fityun-11058870",
+    "enabled": true,
+    "label": "KR壹燃街舞",
+    "auto": false,
+    "studio": {
+      "name": "KR壹燃街舞",
+      "city": "琼海",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11058870",
+      "branches": [
+        {
+          "id": "0",
+          "name": "KR壹燃街舞"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "KR壹燃街舞",
+    "danceScore": 1.0,
+    "danceCourses": 1
   }
 ]

@@ -36,6 +36,32 @@ function cleanCourseName(raw) {
     .replace(/[\s.]+$/, "");
 }
 
+/**
+ * 剥离开头的门店前缀： 《旗舰店》JAZZ基础 → JAZZ基础、安宁店Jazz → Jazz
+ *
+ * 菲体云里多校区的机构通常只有一个 orgId，校区名是硬塞进课名里的，
+ * 直接展示的结果是列表里冒出一堆「前缀不同、内容相同」的课。
+ *
+ * 只在「开头」且「剥完还有内容」时才动手，避免把本身叫「午间基础班」的课洗坏；
+ * 「海甸店」这种 2 字 + 店 的组合要覆盖，所以下限设 2。
+ */
+function stripBranchPrefix(name) {
+  const raw = String(name || "");
+  // 前缀必须**以「店/校区/分校」结尾**才剥，有没有《》()【】包着都认。
+  // 「以店结尾」是判定的关键分寸：
+  //   《旗舰店》JAZZ基础 → JAZZ基础      ✔ 门店前缀
+  //   安宁店Jazz        → Jazz          ✔ 门店前缀
+  //   【Zero】Jazz      → 不动           ✘ Zero 是课程代号，剥了会和普通 Jazz 撞车、
+  //                                        幂等键错位后直接把课判重删掉
+  // 前缀长度上限也别放宽到 6 以上，否则「午间基础班南关店」会被整条吃掉。
+  const stripped = raw.replace(
+    /^\s*[《【(（]?\s*[\u4e00-\u9fa5A-Za-z]{1,6}(店|校区|分校)\s*[》】)）]?\s*/,
+    "",
+  );
+  // 剥完什么都不剩 = 误伤，保留原名（课丢了比名字难看严重得多）
+  return stripped.trim() ? stripped : raw;
+}
+
 /* ───────────────────────── iWOD HTTP 抓取 ───────────────────────── */
 
 /** 签名时排除的字段（与小程序端 app-service.js 逻辑一致） */
@@ -195,7 +221,7 @@ async function crawlWithFityun(config, date) {
     }
 
     for (const c of body.info || []) {
-      const courseName = cleanCourseName(c.projectname);
+      const courseName = cleanCourseName(stripBranchPrefix(c.projectname));
       if (!courseName) continue;
       const time = c.start_hour && c.end_hour ? `${c.start_hour}-${c.end_hour}` : "";
       // "剩余/容量" 形式，mapper.parseCapacity 会取容量分母
@@ -784,6 +810,134 @@ async function crawlWithFoxdance(config, date) {
     }
   }
   return out;
+}
+
+/* ───────────────────────── 飞兔 FitToo（feiyuntoo.cn）抓取 ───────────────────────── */
+
+/**
+ * 飞兔约课 / FitToo（api.feiyuntoo.cn）—— 第五套平台，广州 LightDance 在用。
+ *
+ * 逆向要点（2026-09-28 由 LightDance 小程序 wxapkg 解密 + 接口探测获得）：
+ * - **brandId 在小程序 ext 里**：app-config.json → ext.encryptedBrandId（5 位短码，如 o8ysd）。
+ *   这是每个场馆的唯一标识，也是「扫码进小程序」分发场馆的依据。
+ * - 免登录，但 brandId 必须放在 **HTTP header**（放 body 一律 70012「请扫场馆二维码进入小程序」）：
+ *     brandId: <encryptedBrandId>、appId: <小程序 appId>、appType: 2、
+ *     content-type: application/json（POST 才有）、xdversion: <小程序版本号>
+ *   ⚠ 接口是 Spring Boot，GET 传参会 500，一律用 POST + JSON body。
+ * - 门店清单：POST /api/common/shop/listAll
+ *     → data[] = [{ id, shopName, lng, lat, address, contactPhone }]
+ * - 课表：POST /api/classes/list-new
+ *     body { shopIds, startDate:"YYYY-MM-DD", currentPage:0, pageSize:20, env:"wx" }
+ *     → data.list[] = [{ classId, className, shopName, classroomName, difficult,
+ *          startTime:"19:00", endTime:"20:30", teacherName, startDate,
+ *          enrollNumber（已约）, holdNumber（上限）, lackNum, minBookNum, status }]
+ *     ⚠ currentPage 从 0 开始；date 参数名是 startDate（不是 date）。
+ * - difficult 是星数文案 "⭐⭐⭐"：1 星入门 / 2 星提高 / 3 星及以上高级。
+ * - 需要登录的接口（chooseBrand / getBrandList 等）一律 5000，我们不碰。
+ *
+ * @param {object} config 抓取配置（含 config.feiyuntoo）
+ * @param {Date} date 抓取起始日期
+ * @returns {Promise<Array>} 原始条目
+ */
+async function crawlWithFeiyuntoo(config, date) {
+  const {
+    baseUrl = "https://api.feiyuntoo.cn",
+    brandId,
+    appId,
+  } = config.feiyuntoo || {};
+  if (!brandId) throw new Error("feiyuntoo 配置缺少 brandId（ext.encryptedBrandId）");
+  if (!appId) throw new Error("feiyuntoo 配置缺少 appId（小程序 appId）");
+
+  const headers = {
+    brandId: String(brandId),
+    appId: String(appId),
+    appType: "2",
+    "content-type": "application/json",
+    Accept: "application/json",
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+  };
+  const post = async (path, payload) => {
+    const resp = await fetch(`${baseUrl}${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ env: "wx", ...payload }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) throw new Error(`飞兔接口 ${path} HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (!json || json.success === false || (json.code && String(json.code) !== "200")) {
+      throw new Error(`飞兔接口 ${path} 返回异常: ${json?.msg || json?.code || "unknown"}`);
+    }
+    return json.data;
+  };
+
+  // ── 门店档案：当天没课的分店也要留在库里（与嘉禾/csdsp 同策略）
+  const shops = await post("/api/common/shop/listAll", {});
+  const shopList = Array.isArray(shops) ? shops : [];
+  if (!shopList.length) throw new Error("飞兔门店列表为空，检查 brandId/appId 是否有效");
+
+  const out = [];
+  out.ensureStudios = shopList.map((s) => ({
+    name: String(s.shopName || "").trim(),
+    address: String(s.address || "").trim(),
+  }));
+
+  const span = Math.max(Number(config.feiyuntoo?.spanDays) || 7, 1);
+  for (let i = 0; i < span; i += 1) {
+    const day = new Date(date.getTime() + i * 86400000);
+    const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(
+      day.getDate()
+    ).padStart(2, "0")}`;
+
+    for (const shop of shopList) {
+      const shopId = String(shop.id ?? shop.shopId ?? "");
+      if (!shopId) continue;
+      let currentPage = 0;
+      let hasMore = true;
+      while (hasMore && currentPage < 10) {
+        const data = await post("/api/classes/list-new", {
+          shopIds: shopId,
+          startDate: dateStr,
+          currentPage,
+          pageSize: 50,
+        });
+        const list = Array.isArray(data?.list) ? data.list : [];
+        for (const c of list) {
+          const courseName = cleanCourseName(c.className);
+          if (!courseName) continue;
+          const limit = Number(c.holdNumber) || 0;
+          const used = Number(c.enrollNumber) || 0;
+          const full = limit > 0 && used >= limit;
+          out.push({
+            courseName,
+            coach: String(c.teacherName || "").trim(),
+            time: `${String(c.startTime || "").trim()}-${String(c.endTime || "").trim()}`,
+            capacity: limit ? `${Math.max(limit - used, 0)}/${limit}` : "",
+            status: full ? "已满" : "可预约",
+            _bookedNum: used,
+            _studioName: String(c.shopName || shop.shopName || "").trim(),
+            _roomName: String(c.classroomName || "").trim(),
+            _address: String(shop.address || "").trim(),
+            _difficulty: mapFeiyuntooDifficulty(c.difficult),
+            _scheduleDate: normalizeDate(c.startDate) || dateStr,
+          });
+        }
+        hasMore = Boolean(data?.hasMore) && list.length > 0;
+        currentPage += 1;
+        if (hasMore) await sleep(120);
+      }
+    }
+  }
+  return out;
+}
+
+/** 飞兔难度（星星文案）→ 统一枚举 */
+function mapFeiyuntooDifficulty(text) {
+  const stars = (String(text || "").match(/[⭐★]/g) || []).length;
+  if (!stars) return null;
+  if (stars <= 1) return "BEGINNER";
+  if (stars === 2) return "INTERMEDIATE";
+  return "ADVANCED";
 }
 
 /* ───────────────────────── 爱舞功（aiwugong.cn）抓取 ───────────────────────── */
@@ -1467,6 +1621,7 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "foxdance") return crawlWithFoxdance(config, date);
   if (config.mode === "aiwugong") return crawlWithAiwugong(config, date);
   if (config.mode === "csdsp") return crawlWithCsdsp(config, date);
+  if (config.mode === "feiyuntoo") return crawlWithFeiyuntoo(config, date);
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);
   if (config.mode === "justjerk") return crawlWithJustjerk(config, date);

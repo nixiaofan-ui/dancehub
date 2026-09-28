@@ -1,0 +1,214 @@
+/* 城市选择面板：底部半屏 sheet + 右侧字母索引条 */
+
+.cp-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.cp-panel {
+  background: #0f1629;
+  border-radius: 32rpx 32rpx 0 0;
+  height: 78vh;
+  display: flex;
+  flex-direction: column;
+  padding: 28rpx 28rpx 0;
+  animation: cp-up 0.22s ease-out;
+  position: relative;
+}
+
+@keyframes cp-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.cp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+  flex-shrink: 0;
+}
+.cp-title {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.cp-close {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 30rpx;
+  color: #8a8a9a;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cp-search {
+  display: flex;
+  align-items: center;
+  background: #16213e;
+  border-radius: 40rpx;
+  padding: 14rpx 24rpx;
+  margin-bottom: 18rpx;
+  flex-shrink: 0;
+}
+.cp-input {
+  flex: 1;
+  font-size: 27rpx;
+  color: #ffffff;
+  height: 40rpx;
+}
+.cp-ph {
+  color: #6b6b7d;
+  font-size: 26rpx;
+}
+.cp-clear {
+  width: 40rpx;
+  text-align: center;
+  color: #6b6b7d;
+  font-size: 26rpx;
+}
+
+.cp-locate {
+  align-self: flex-start;
+  padding: 10rpx 28rpx;
+  border-radius: 32rpx;
+  background: rgba(123, 47, 190, 0.16);
+  border: 1rpx solid rgba(155, 92, 255, 0.4);
+  color: #b98cff;
+  font-size: 25rpx;
+  font-weight: 700;
+  margin-bottom: 12rpx;
+  flex-shrink: 0;
+}
+
+.cp-sec-title {
+  font-size: 24rpx;
+  color: #7c7c8e;
+  font-weight: 700;
+  margin: 8rpx 0 14rpx;
+  flex-shrink: 0;
+}
+
+.cp-hot {
+  display: flex;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.cp-hot-cell {
+  width: 22%;
+  margin: 0 1.5% 14rpx;
+  padding: 16rpx 0;
+  text-align: center;
+  background: #16213e;
+  border-radius: 14rpx;
+  font-size: 25rpx;
+  font-weight: 700;
+  color: #cfcfdd;
+  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.cp-hot-cell.on {
+  background: linear-gradient(135deg, #7b2fbe, #9b5cff);
+  color: #ffffff;
+  border-color: #7b2fbe;
+}
+
+.cp-body {
+  flex: 1;
+  min-height: 0;
+  margin-top: 8rpx;
+}
+
+.cg-head {
+  font-size: 24rpx;
+  font-weight: 900;
+  color: #9b5cff;
+  padding: 18rpx 4rpx 10rpx;
+  background: #0f1629;
+}
+
+.cp-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 8rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.05);
+}
+.cp-name {
+  font-size: 29rpx;
+  color: #e8e8f0;
+  font-weight: 600;
+}
+.cp-count {
+  font-size: 23rpx;
+  color: #6b6b7d;
+}
+.cp-cell.on .cp-name {
+  color: #b98cff;
+  font-weight: 900;
+}
+
+.cp-empty {
+  text-align: center;
+  color: #6b6b7d;
+  font-size: 26rpx;
+  padding: 60rpx 0;
+}
+
+.cp-pad {
+  height: 40rpx;
+}
+
+/* 右侧字母索引条 */
+.ci-bar {
+  position: absolute;
+  right: 8rpx;
+  top: 320rpx;
+  bottom: 30rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 44rpx;
+  z-index: 2;
+}
+.ci-item {
+  font-size: 20rpx;
+  color: #7c7c8e;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.ci-item.on {
+  color: #b98cff;
+  font-size: 24rpx;
+}
+.ci-tip {
+  position: absolute;
+  right: 80rpx;
+  top: 45%;
+  width: 100rpx;
+  height: 100rpx;
+  line-height: 100rpx;
+  text-align: center;
+  border-radius: 20rpx;
+  background: rgba(123, 47, 190, 0.9);
+  color: #ffffff;
+  font-size: 44rpx;
+  font-weight: 900;
+}

@@ -15,6 +15,7 @@ const AUTO_CONFIG_FILES = [
   "studios.gsteps.json",
   "studios.jiahe.json",
   "studios.csdsp.json",
+  "studios.feiyuntoo.json",
 ];
 
 /**

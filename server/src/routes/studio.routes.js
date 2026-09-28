@@ -7,7 +7,7 @@ import { ok, fail } from "../utils/response.js";
 import { toDateKey, parseDateKey, visibleScope } from "../services/schedule.service.js";
 import { pickStyles } from "../services/dance-style.service.js";
 import { sortStudiosByName } from "../services/studio-sort.service.js";
-import { splitBrandBranch } from "../lib/studio-name.js";
+import { assignBrands, brandKey, cleanBrandLabel } from "../lib/studio-name.js";
 
 const router = Router();
 
@@ -96,23 +96,32 @@ router.get(
       select: { id: true, name: true },
     });
 
-    const map = new Map();
+    // 品牌归属统一交给 assignBrands：分隔符、连写、总店全名三条路合一。
+    // 之前分两轮（先拆分隔符、剩下的才聚类）会漏掉总店 —— 「猫宁舞蹈工作室」
+    // 自己没有分隔符也切不出分店后缀，永远进不了品牌，兄弟店就成了单店。
+    const assigned = assignBrands(studios);
+
+    // 按归一 key 聚合（去空格+小写），展示名取出现最多的写法，
+    // 免得「AB DANCE」和「Ab Dance」算成两个品牌
+    const map = new Map(); // normKey -> { label, labels: Map, stores: [] }
     for (const s of studios) {
-      // 品牌名统一走 splitBrandBranch：「·」和「（分店）」两种写法都认。
-      // 只认「·」时「MAX POWER STUDIO（汶水路店）」这类老数据会被当成单店，
-      // 同城三家分店聚不成品牌，发现页品牌条里就漏了它（2026-09-28 修）
-      const { brand, branch } = splitBrandBranch(s.name);
-      if (!brand) continue;
-      if (!map.has(brand)) map.set(brand, []);
-      map.get(brand).push({ id: s.id, name: s.name, branch });
+      const hit = assigned.get(s.id);
+      if (!hit) continue;
+      const key = brandKey(hit.brand);
+      if (!map.has(key)) map.set(key, { label: hit.brand, labels: new Map(), stores: [] });
+      const g = map.get(key);
+      g.labels.set(hit.brand, (g.labels.get(hit.brand) || 0) + 1);
+      g.stores.push({ id: s.id, name: s.name, branch: hit.branch });
+      // 展示名用出现次数最多的写法
+      g.label = cleanBrandLabel([...g.labels.entries()].sort((a, b) => b[1] - a[1])[0][0]);
     }
 
-    const brands = [...map.entries()]
-      .filter(([, stores]) => stores.length >= 2)
-      .map(([name, stores]) => ({
-        name,
-        storeCount: stores.length,
-        stores: stores.slice().sort((a, b) => a.branch.localeCompare(b.branch, "zh")),
+    const brands = [...map.values()]
+      .filter((g) => g.stores.length >= 2)
+      .map((g) => ({
+        name: g.label,
+        storeCount: g.stores.length,
+        stores: g.stores.slice().sort((a, b) => a.branch.localeCompare(b.branch, "zh")),
       }))
       .sort((a, b) => b.storeCount - a.storeCount || a.name.localeCompare(b.name, "zh"));
 

@@ -286,6 +286,13 @@
   padding: 6rpx 24rpx;
   font-weight: 900;
 }
+
+/* 已经全选时这个按钮变成「清除」：换个颜色，否则同一个青色按钮
+   在「全选」和「清除」之间来回变字，用户会以为点了没生效 */
+.multi-all.is-clear {
+  color: #ff7a8a;
+  border-color: #ff7a8a;
+}
 .store-bar {
   white-space: nowrap;
   padding: 0 24rpx;
@@ -385,6 +392,13 @@
   padding: 80rpx 0;
   font-size: 26rpx;
   font-weight: 700;
+}
+
+.empty-sub {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  font-weight: 400;
+  color: #6f7488;
 }
 
 /* 被屏蔽老师的折叠行：不彻底消失，留一行证明设置生效 + 给反悔入口 */

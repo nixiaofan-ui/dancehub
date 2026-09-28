@@ -21,7 +21,7 @@
 
     <view class="field">
       <view class="label">日期</view>
-      <picker mode="selector" range="{{dates}}" value="{{dateIndex}}" bindchange="onDate">
+      <picker mode="date" value="{{dateText}}" start="{{dateStart}}" end="{{dateEnd}}" bindchange="onDate">
         <view class="pick">{{dateText}}</view>
       </picker>
     </view>
@@ -29,14 +29,14 @@
     <view class="row2">
       <view class="field half">
         <view class="label">开始 <text class="req">*</text></view>
-        <picker mode="selector" range="{{starts}}" value="{{startIndex}}" bindchange="onStart">
-          <view class="pick {{startIndex < 0 ? 'ph-pick' : ''}}">{{startIndex < 0 ? '选择时间' : startText}}</view>
+        <picker mode="time" value="{{startText}}" bindchange="onStart">
+          <view class="pick">{{startText}}</view>
         </picker>
       </view>
       <view class="field half">
         <view class="label">结束</view>
-        <picker mode="selector" range="{{ends}}" value="{{endIndex}}" bindchange="onEnd">
-          <view class="pick {{endIndex < 0 ? 'ph-pick' : ''}}">{{endIndex < 0 ? '默认90分钟' : endText}}</view>
+        <picker mode="time" value="{{endText || endAuto}}" bindchange="onEnd">
+          <view class="pick {{endText ? '' : 'ph-pick'}}">{{endText ? endText : '默认 ' + endAuto}}</view>
         </picker>
       </view>
     </view>
@@ -65,9 +65,17 @@
 
     <view class="field">
       <view class="label">难度</view>
-      <picker mode="selector" range="{{diffs}}" value="{{diffIndex}}" bindchange="onDiff">
-        <view class="pick">{{diffs[diffIndex]}}</view>
-      </picker>
+      <!-- 四个选项就没必要开滚轮了，直接点反而更快 -->
+      <view class="diff-row">
+        <view
+          wx:for="{{diffs}}"
+          wx:key="*this"
+          class="diff-chip {{diffIndex === index ? 'on' : ''}}"
+          hover-class="press"
+          data-i="{{index}}"
+          bindtap="tapDiff"
+        >{{item}}</view>
+      </view>
     </view>
   </view>
 

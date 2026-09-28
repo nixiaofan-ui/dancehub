@@ -60,6 +60,19 @@
 .chip-locate.busy {
   opacity: 0.6;
 }
+/* 「全部城市」入口：虚线描边，区别于「选中城市」的实心 chip */
+.chip-all {
+  background: transparent;
+  border: 1rpx dashed rgba(155, 92, 255, 0.55);
+  color: #b98cff;
+  margin-right: 0;
+}
+.ca-caret {
+  margin-left: 6rpx;
+  font-size: 22rpx;
+  position: relative;
+  top: -2rpx;
+}
 
 /* 已关注门店筛选条 */
 .store-filter {

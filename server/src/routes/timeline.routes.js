@@ -5,7 +5,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import { getCityDaySchedules, getStudiosDaySchedules, toDateKey } from "../services/schedule.service.js";
 
-import { shortStudioLabel } from "../lib/studio-name.js";
+import { shortStudioLabel, assignBrands } from "../lib/studio-name.js";
 
 const router = Router();
 
@@ -119,6 +119,11 @@ router.get(
       reminded: reminderSet.has(s.id),
     }));
 
+    // 连写的「AB DANCE剧场店」没有分隔符，shortStudioLabel 切不出分店名，
+    // chip 上会顶着整个「AB DANCE 绍兴店」。这里拿本次进来的几家一起比对，
+    // 有公共前缀就能定出切分点（跟发现页品牌聚合同一套逻辑）
+    const clustered = assignBrands(studios);
+
     // 按传入顺序排门店，保证 chips 顺序稳定（用户勾选的顺序=他心里的优先级）
     const order = new Map(studioIds.map((id, i) => [id, i]));
     const studioList = studios
@@ -129,7 +134,7 @@ router.get(
         name: s.name,
         cityId: s.cityId,
         // 门店短名：多店视图里卡片只放得下一个短标签
-        short: shortStudioLabel(s.name),
+        short: (clustered.get(s.id) || {}).branch || shortStudioLabel(s.name),
         count: items.filter((i) => i.studio.id === s.id).length,
       }));
 

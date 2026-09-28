@@ -45,8 +45,9 @@ Page({
     multiMode: false,
     multiTitle: "",
     stores: [], // [{id, short, name, count, hasClass}]
-    activeStoreIds: [], // 当前勾选的门店，空数组语义=全不选（初始化时会置为全选）
+    activeStoreIds: [], // 当前勾选的门店，空数组语义=全不选
     allStoreIds: [],
+    allOn: false, // 是否已全选 —— 决定右侧按钮显示「全选」还是「清除」
     // 被屏蔽的老师：课不直接消失，折叠成一行（点了展开才把课放回列表）
     foldedRows: [],
   },
@@ -55,17 +56,23 @@ Page({
     this.weeksCache = {};
     this.weekMonday = null;
     this.bookedIds = new Set();
+    // 门店勾选只初始化一次，翻周不能把用户的勾选重置掉
+    this._storesInited = false;
 
     // 多店入口：/pages/studio/weekly?ids=1,2,3&title=品牌名
     // 单店入口：/pages/studio/weekly?id=1 —— 保持原逻辑不变
+    // first=1 表示「这些门店是品牌页自动带出来的，用户没表达过偏好」→ 默认只勾一家；
+    // 自选组合页不带这个参数（那几家是他亲手挑的，砍掉就是 bug）
     const ids = query.ids ? query.ids.split(",").map(Number).filter(Boolean) : null;
     if (ids && ids.length) {
       this.multiMode = true;
       this.allStoreIds = ids;
+      this.pickFirst = query.first === "1";
       this.setData({
         multiMode: true,
         multiTitle: decodeURIComponent(query.title || "多店课表"),
-        activeStoreIds: ids,
+        activeStoreIds: this.pickFirst ? [] : ids,
+        allOn: !this.pickFirst,
         selectedKey: todayKey(),
       });
       this.initWeek(new Date());
@@ -149,21 +156,7 @@ Page({
         let rows = res;
         // 多店接口把门店清单和课分开返回，先记住门店短名，
         // 卡片上要贴一枚「哪家店」的标签，但不该重复整个「品牌·分店」全名
-        if (this.multiMode) {
-          rows = (res && res.items) || [];
-          if (res && res.studios) {
-            // 首次进入默认全选：用户是从「这个品牌」点进来的，
-            // 他想看的就是全部门店，让他自己关掉比让他一家家打开更省事
-            const ids = this.data.activeStoreIds.length
-              ? this.data.activeStoreIds
-              : res.studios.map((s) => s.id);
-            const active = new Set(ids);
-            this.setData({
-              stores: res.studios.map((s) => ({ ...s, on: active.has(s.id) })),
-              activeStoreIds: ids,
-            });
-          }
-        }
+        if (this.multiMode) rows = (res && res.items) || [];
 
         const grouped = {};
         (rows || []).forEach((s) => {
@@ -197,6 +190,17 @@ Page({
               if (shortMap[i.studioId]) i.studioShort = shortMap[i.studioId];
             });
           });
+
+          // 必须先有 grouped 才能决定默认勾哪家（要按「今天有没有课」挑），
+          // 所以门店初始化放在建完 grouped 之后
+          if (!this._storesInited) {
+            this._storesInited = true;
+            const ids = this.pickDefaultStores(res.studios, grouped);
+            this.setStoresOn(res.studios, ids);
+          } else {
+            // 翻周：只刷新门店课数，别动用户已经勾好的
+            this.setStoresOn(res.studios, this.data.activeStoreIds);
+          }
         }
 
         this.weeksCache[from] = grouped;
@@ -210,23 +214,55 @@ Page({
   },
 
   /**
-   * 多店模式下的门店勾选。
-   * 至少保留一家 —— 全不选会得到一个空列表，用户会以为没课或接口坏了。
+   * 首次进入勾哪些门店。
+   * - 自选组合进来：他亲手挑的那几家，全勾（砍成一家等于无视他的选择）
+   * - 品牌页进来：默认只勾一家。十几家分店的课混在一屏根本看不过来，
+   *   而且默认全选时「全选」按钮点了没反应，用户不知道怎么收回去。
    */
+  pickDefaultStores(stores, grouped) {
+    if (!this.pickFirst) return (stores || []).map((s) => s.id);
+    if (!stores || !stores.length) return [];
+
+    // 优先第一家，但它今天没课就换一家今天有课的 ——
+    // 开局就是「当天暂无课程」，用户会以为这家品牌没排课
+    const todayCount = {};
+    (grouped[todayKey()] || []).forEach((i) => {
+      todayCount[i.studioId] = (todayCount[i.studioId] || 0) + 1;
+    });
+    const hasToday = (s) => (todayCount[s.id] || 0) > 0;
+    if (hasToday(stores[0])) return [stores[0].id];
+    const withClass = stores.find(hasToday);
+    if (withClass) return [withClass.id];
+
+    // 今天全都没课 → 退到本周课最多的那家（至少翻一翻能看到课）
+    return [stores.slice().sort((a, b) => (b.count || 0) - (a.count || 0))[0].id];
+  },
+
+  /** 写回门店 chip 的高亮状态 + 全选标记 */
+  setStoresOn(stores, activeIds) {
+    this.setData({
+      stores: stores.map((s) => ({ ...s, on: activeIds.indexOf(s.id) >= 0 })),
+      activeStoreIds: activeIds,
+      // 拿返回的门店数比，别用 allStoreIds —— 服务端会过滤掉停业的店，
+      // 两边长度不等时「全选」永远点不到，按钮就再也不会变成「清除」
+      allOn: activeIds.length > 0 && activeIds.length === stores.length,
+    });
+  },
+
   tapStore(e) {
     const id = Number(e.currentTarget.dataset.id);
     const active = new Set(this.data.activeStoreIds);
-    if (active.has(id)) {
-      if (active.size === 1) return toast(this, "至少保留一家门店");
-      active.delete(id);
-    } else {
-      active.add(id);
-    }
+    if (active.has(id)) active.delete(id);
+    else active.add(id);
     this.applyStoreFilter([...active]);
   },
 
+  /**
+   * 全选 / 清除 二合一。
+   * 全选状态下这个按钮就叫「清除」，点一下清空（配合空态提示引导他重新勾）
+   */
   tapAllStores() {
-    this.applyStoreFilter([...this.allStoreIds]);
+    this.applyStoreFilter(this.data.allOn ? [] : [...this.allStoreIds]);
   },
 
   /**
@@ -237,7 +273,11 @@ Page({
   applyStoreFilter(activeIds) {
     const active = new Set(activeIds);
     const stores = (this.data.stores || []).map((s) => ({ ...s, on: active.has(s.id) }));
-    this.setData({ activeStoreIds: activeIds, stores });
+    this.setData({
+      activeStoreIds: activeIds,
+      stores,
+      allOn: activeIds.length > 0 && activeIds.length === stores.length,
+    });
     this.applyWeekData();
   },
 

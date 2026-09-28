@@ -1,0 +1,410 @@
+{
+"上海": {
+"p": "shanghai",
+"i": "SH"
+},
+"首尔": {
+"p": "shouer",
+"i": "SE"
+},
+"杭州": {
+"p": "hangzhou",
+"i": "HZ"
+},
+"北京": {
+"p": "beijing",
+"i": "BJ"
+},
+"南宁": {
+"p": "nanning",
+"i": "NN"
+},
+"青岛": {
+"p": "qingdao",
+"i": "QD"
+},
+"广州": {
+"p": "guangzhou",
+"i": "GZ"
+},
+"成都": {
+"p": "chengdu",
+"i": "CD"
+},
+"南京": {
+"p": "nanjing",
+"i": "NJ"
+},
+"武汉": {
+"p": "wuhan",
+"i": "WH"
+},
+"合肥": {
+"p": "hefei",
+"i": "HF"
+},
+"深圳": {
+"p": "shenzhen",
+"i": "SZ"
+},
+"东京": {
+"p": "dongjing",
+"i": "DJ"
+},
+"大阪": {
+"p": "daban",
+"i": "DB"
+},
+"鞍山": {
+"p": "anshan",
+"i": "AS"
+},
+"长沙": {
+"p": "changsha",
+"i": "CS"
+},
+"琼海": {
+"p": "qionghai",
+"i": "QH"
+},
+"中山": {
+"p": "zhongshan",
+"i": "ZS"
+},
+"泰州": {
+"p": "taizhou",
+"i": "TZ"
+},
+"温州": {
+"p": "wenzhou",
+"i": "WZ"
+},
+"苏州": {
+"p": "suzhou",
+"i": "SZ"
+},
+"西安": {
+"p": "xian",
+"i": "XA"
+},
+"台州": {
+"p": "taizhou",
+"i": "TZ"
+},
+"滁州": {
+"p": "chuzhou",
+"i": "CZ"
+},
+"郑州": {
+"p": "zhengzhou",
+"i": "ZZ"
+},
+"福州": {
+"p": "fuzhou",
+"i": "FZ"
+},
+"儋州": {
+"p": "danzhou",
+"i": "DZ"
+},
+"兰州": {
+"p": "lanzhou",
+"i": "LZ"
+},
+"邵阳": {
+"p": "shaoyang",
+"i": "SY"
+},
+"徐州": {
+"p": "xuzhou",
+"i": "XZ"
+},
+"重庆": {
+"p": "chongqing",
+"i": "CQ"
+},
+"沈阳": {
+"p": "shenyang",
+"i": "SY"
+},
+"太原": {
+"p": "taiyuan",
+"i": "TY"
+},
+"平凉": {
+"p": "pingliang",
+"i": "PL"
+},
+"临沂": {
+"p": "linyi",
+"i": "LY"
+},
+"衡阳": {
+"p": "hengyang",
+"i": "HY"
+},
+"南通": {
+"p": "nantong",
+"i": "NT"
+},
+"郴州": {
+"p": "chenzhou",
+"i": "CZ"
+},
+"厦门": {
+"p": "xiamen",
+"i": "XM"
+},
+"东莞": {
+"p": "dongguan",
+"i": "DG"
+},
+"恩施": {
+"p": "enshi",
+"i": "ES"
+},
+"西宁": {
+"p": "xining",
+"i": "XN"
+},
+"潍坊": {
+"p": "weifang",
+"i": "WF"
+},
+"娄底": {
+"p": "loudi",
+"i": "LD"
+},
+"镇江": {
+"p": "zhenjiang",
+"i": "ZJ"
+},
+"汕尾": {
+"p": "shanwei",
+"i": "SW"
+},
+"玉溪": {
+"p": "yuxi",
+"i": "YX"
+},
+"无锡": {
+"p": "wuxi",
+"i": "WX"
+},
+"惠州": {
+"p": "huizhou",
+"i": "HZ"
+},
+"洛阳": {
+"p": "luoyang",
+"i": "LY"
+},
+"金华": {
+"p": "jinhua",
+"i": "JH"
+},
+"德宏": {
+"p": "dehong",
+"i": "DH"
+},
+"常州": {
+"p": "changzhou",
+"i": "CZ"
+},
+"海口": {
+"p": "haikou",
+"i": "HK"
+},
+"玉林": {
+"p": "yulin",
+"i": "YL"
+},
+"资阳": {
+"p": "ziyang",
+"i": "ZY"
+},
+"蚌埠": {
+"p": "bengbu",
+"i": "BB"
+},
+"保定": {
+"p": "baoding",
+"i": "BD"
+},
+"珠海": {
+"p": "zhuhai",
+"i": "ZH"
+},
+"南昌": {
+"p": "nanchang",
+"i": "NC"
+},
+"广安": {
+"p": "guangan",
+"i": "GA"
+},
+"聊城": {
+"p": "liaocheng",
+"i": "LC"
+},
+"忻州": {
+"p": "xinzhou",
+"i": "XZ"
+},
+"凉山": {
+"p": "liangshan",
+"i": "LS"
+},
+"潮州": {
+"p": "chaozhou",
+"i": "CZ"
+},
+"唐山": {
+"p": "tangshan",
+"i": "TS"
+},
+"佛山": {
+"p": "foshan",
+"i": "FS"
+},
+"嘉兴": {
+"p": "jiaxing",
+"i": "JX"
+},
+"廊坊": {
+"p": "langfang",
+"i": "LF"
+},
+"宝鸡": {
+"p": "baoji",
+"i": "BJ"
+},
+"天津": {
+"p": "tianjin",
+"i": "TJ"
+},
+"石家庄": {
+"p": "shijiazhuang",
+"i": "SJZ"
+},
+"赣州": {
+"p": "ganzhou",
+"i": "GZ"
+},
+"北海": {
+"p": "beihai",
+"i": "BH"
+},
+"银川": {
+"p": "yinchuan",
+"i": "YC"
+},
+"阜新": {
+"p": "fuxin",
+"i": "FX"
+},
+"宁波": {
+"p": "ningbo",
+"i": "NB"
+},
+"菏泽": {
+"p": "heze",
+"i": "HZ"
+},
+"大连": {
+"p": "dalian",
+"i": "DL"
+},
+"河源": {
+"p": "heyuan",
+"i": "HY"
+},
+"清远": {
+"p": "qingyuan",
+"i": "QY"
+},
+"西双版纳": {
+"p": "xishuangbanna",
+"i": "XSBN"
+},
+"莆田": {
+"p": "putian",
+"i": "PT"
+},
+"武威": {
+"p": "wuwei",
+"i": "WW"
+},
+"烟台": {
+"p": "yantai",
+"i": "YT"
+},
+"绍兴": {
+"p": "shaoxing",
+"i": "SX"
+},
+"锦州": {
+"p": "jinzhou",
+"i": "JZ"
+},
+"宿州": {
+"p": "suzhou",
+"i": "SZ"
+},
+"驻马店": {
+"p": "zhumadian",
+"i": "ZMD"
+},
+"宜宾": {
+"p": "yibin",
+"i": "YB"
+},
+"阜阳": {
+"p": "fuyang",
+"i": "FY"
+},
+"贵阳": {
+"p": "guiyang",
+"i": "GY"
+},
+"长春": {
+"p": "changchun",
+"i": "CC"
+},
+"湖州": {
+"p": "huzhou",
+"i": "HZ"
+},
+"济南": {
+"p": "jinan",
+"i": "JN"
+},
+"襄阳": {
+"p": "xiangyang",
+"i": "XY"
+},
+"亳州": {
+"p": "bozhou",
+"i": "BZ"
+},
+"桂林": {
+"p": "guilin",
+"i": "GL"
+},
+"运城": {
+"p": "yuncheng",
+"i": "YC"
+},
+"江门": {
+"p": "jiangmen",
+"i": "JM"
+},
+"常德": {
+"p": "changde",
+"i": "CD"
+},
+"邯郸": {
+"p": "handan",
+"i": "HD"
+}
+}

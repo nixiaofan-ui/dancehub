@@ -10,6 +10,7 @@ const router = Router();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CENTERS_FILE = path.resolve(__dirname, "../data/city-centers.json");
+const PINYIN_FILE = path.resolve(__dirname, "../data/city-pinyin.json");
 
 /** 城市中心点（[lng, lat]，GCJ-02），用于「定位 → 城市」的兜底反查 */
 let centersCache = null;
@@ -22,6 +23,26 @@ function cityCenters() {
     }
   }
   return centersCache;
+}
+
+/**
+ * 城市拼音表：{ "北京": { p: "beijing", i: "BJ" } }
+ *
+ * 由 scripts/gen-city-pinyin.py 离线生成后固化在仓库里，运行时零依赖。
+ * 前端拿它做两件事：按首字母分组（城市多了必须能跳着找）+ 拼音搜索
+ * （键盘上敲 bj 就能定位北京，不用先切输入法）。
+ * 表里查不到的城市（新抓取来的）降级到「#」分组，只是不好找，不影响使用。
+ */
+let pinyinCache = null;
+function cityPinyin(name) {
+  if (!pinyinCache) {
+    try {
+      pinyinCache = JSON.parse(fs.readFileSync(PINYIN_FILE, "utf8"));
+    } catch {
+      pinyinCache = {};
+    }
+  }
+  return pinyinCache[name] || null;
 }
 
 /** 球面距离（km） */
@@ -153,12 +174,21 @@ router.get(
     ok(
       res,
       cities
-        .map((c) => ({
-          id: c.id,
-          region: c.region,
-          name: c.name,
-          studioCount: c._count.studios,
-        }))
+        .map((c) => {
+          const py = cityPinyin(c.name);
+          return {
+            id: c.id,
+            region: c.region,
+            name: c.name,
+            studioCount: c._count.studios,
+            // pinyin 全拼 + initial 首字母，前端的城市选择面板直接用；
+            // 表里没有的城市给空串，前端会归到「#」组
+            pinyin: py ? py.p : "",
+            // abbr = 每个字的首字母缩写（北京→BJ），键盘敲缩写也能搜到
+            abbr: py ? py.i : "",
+            initial: py ? py.p.charAt(0).toUpperCase() : "",
+          };
+        })
         .filter((c) => c.studioCount > 0)
         // 横滑 chip 条上百来个城市，按门店数排，热门城市才不会被埋在最后
         .sort((a, b) => b.studioCount - a.studioCount),

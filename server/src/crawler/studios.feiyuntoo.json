@@ -1,0 +1,34 @@
+[
+  {
+    "id": "feiyuntoo-o8ysd-LightDance",
+    "enabled": true,
+    "label": "LightDance",
+    "auto": true,
+    "studio": {
+      "name": "LightDance",
+      "city": "广州",
+      "region": "CN",
+      "platform": "WECHAT",
+      "officialUrl": null
+    },
+    "mode": "feiyuntoo",
+    "feiyuntoo": {
+      "baseUrl": "https://api.feiyuntoo.cn",
+      "brandId": "o8ysd",
+      "appId": "wxa5558d30189b4ad8",
+      "spanDays": 7
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "广州市番禺区南桂路汇南广场东区B座401",
+    "_meta": {
+      "platformName": "FEIYUNTOO",
+      "shopId": 579,
+      "note": "飞兔约课 FitToo；brandId 取自小程序 app-config.json 的 ext.encryptedBrandId"
+    }
+  }
+]

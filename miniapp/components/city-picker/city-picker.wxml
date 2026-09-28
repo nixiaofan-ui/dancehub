@@ -1,0 +1,92 @@
+<!--
+  城市选择面板：从底部弹出的半屏 sheet。
+  外层 catchtouchmove 是为了在面板上滑动时不带动下面的页面一起滚。
+-->
+<view wx:if="{{visible}}" class="cp-mask" bindtap="close" catchtouchmove="noop">
+  <view class="cp-panel" catchtap="noop" catchtouchmove="noop">
+    <view class="cp-head">
+      <view class="cp-title">选择城市</view>
+      <view class="cp-close" hover-class="press" bindtap="close">✕</view>
+    </view>
+
+    <view class="cp-search">
+      <input
+        class="cp-input"
+        placeholder="输入城市名 / 拼音，如 北京、beijing、bj"
+        placeholder-class="cp-ph"
+        confirm-type="search"
+        value="{{keyword}}"
+        bindinput="onInput"
+      />
+      <view wx:if="{{keyword}}" class="cp-clear" hover-class="press" bindtap="clearKeyword">✕</view>
+    </view>
+
+    <view class="cp-locate" hover-class="press" bindtap="tapLocate">
+      {{locating ? '定位中…' : '📍 用当前位置'}}
+    </view>
+
+    <!-- 搜索态：直接铺结果，不给分组和字母条添乱 -->
+    <scroll-view wx:if="{{result !== null}}" scroll-y class="cp-body">
+      <view wx:if="{{noHit}}" class="cp-empty">没这个城市，换个拼音试试</view>
+      <view
+        wx:for="{{result}}"
+        wx:key="id"
+        class="cp-cell {{cityId === item.id ? 'on' : ''}}"
+        hover-class="press"
+        data-id="{{item.id}}"
+        bindtap="pick"
+      >
+        <text class="cp-name">{{item.name}}</text>
+        <text class="cp-count">{{item.studioCount}} 家</text>
+      </view>
+    </scroll-view>
+
+    <block wx:else>
+      <view class="cp-sec-title">热门城市</view>
+      <view class="cp-hot">
+        <view
+          wx:for="{{hot}}"
+          wx:key="id"
+          class="cp-hot-cell {{cityId === item.id ? 'on' : ''}}"
+          hover-class="press"
+          data-id="{{item.id}}"
+          bindtap="pick"
+        >{{item.name}}</view>
+      </view>
+
+      <scroll-view scroll-y scroll-into-view="{{scrollInto}}" class="cp-body" scroll-with-animation>
+        <block wx:for="{{groups}}" wx:key="letter" wx:for-item="g">
+          <view class="cg-head" id="cg-{{g.letter === '#' ? 'SHARP' : g.letter}}">{{g.letter}}</view>
+          <view
+            wx:for="{{g.cities}}"
+            wx:key="id"
+            wx:for-item="c"
+            class="cp-cell {{cityId === c.id ? 'on' : ''}}"
+            hover-class="press"
+            data-id="{{c.id}}"
+            bindtap="pick"
+          >
+            <text class="cp-name">{{c.name}}</text>
+            <text class="cp-count">{{c.studioCount}} 家</text>
+          </view>
+        </block>
+        <view class="cp-pad"></view>
+      </scroll-view>
+
+      <view
+        class="ci-bar"
+        catchtouchstart="onIndexStart"
+        catchtouchmove="onIndexMove"
+        catchtouchend="onIndexEnd"
+        catchtouchcancel="onIndexEnd"
+      >
+        <view
+          wx:for="{{letters}}"
+          wx:key="*this"
+          class="ci-item {{activeLetter === item ? 'on' : ''}}"
+        >{{item}}</view>
+      </view>
+      <view wx:if="{{indexTip}}" class="ci-tip">{{activeLetter}}</view>
+    </block>
+  </view>
+</view>

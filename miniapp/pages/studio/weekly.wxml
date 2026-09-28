@@ -5,7 +5,9 @@
   <view wx:if="{{multiMode}}" class="multi-head">
     <view class="multi-row">
       <view class="multi-sub">勾选门店，同屏对比它们当天的课</view>
-      <view class="multi-all" hover-class="press" bindtap="tapAllStores">全选</view>
+      <view class="multi-all {{allOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllStores">
+        {{allOn ? '清除' : '全选'}}
+      </view>
     </view>
     <scroll-view scroll-x class="store-bar" enhanced show-scrollbar="{{false}}">
       <view
@@ -78,6 +80,11 @@
   <view class="day-list">
     <view wx:if="{{!loading && bookedCount > 0}}" class="booked-hint">✅ 带「已约」标记的是你预约过的课，点进去可以取消</view>
     <view wx:if="{{loading}}" class="empty-tip">课表加载中…</view>
+    <!-- 全不选：列表必然是空的，得说清楚是「没勾门店」而不是「没课」，否则会以为接口坏了 -->
+    <view wx:elif="{{multiMode && activeStoreIds.length === 0}}" class="empty-tip">
+      未勾选门店
+      <view class="empty-sub">点上方「全选」，或直接点想看的门店</view>
+    </view>
     <view wx:elif="{{dayItems.length === 0}}" class="empty-tip">当天暂无课程</view>
     <view
       wx:for="{{dayItems}}"

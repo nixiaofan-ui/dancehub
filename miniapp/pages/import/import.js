@@ -27,16 +27,16 @@ Page({
   onNavTop,
 
   data: {
-    // 未来 14 天可选，避免录进历史日期
-    dates: [],
-    dateIndex: 0,
+    // 日期/时间一律走系统原生滚轮（mode="date" / mode="time"）。
+    // 早先是 mode="selector" + 自建选项数组，真机上弹出来一片空白且划不动：
+    // 开始/结束用 -1 当「未选择」的哨兵，value 越界后滚轮算不出初始位置就渲染空了。
+    // 原生滚轮没这个坑，还能选到任意分钟，比 28 项的半小时列表更好用。
     dateText: "",
-    starts: [],
-    startIndex: -1,
-    startText: "",
-    ends: [],
-    endIndex: -1,
-    endText: "",
+    dateStart: "",
+    dateEnd: "", // 未来 14 天可选，避免录进历史日期
+    startText: "19:00",
+    endText: "", // 空 = 没选，提交时按 90 分钟补
+    endAuto: "20:30",
     diffIndex: 0,
     diffs: DIFF_OPTIONS,
 
@@ -82,23 +82,12 @@ Page({
   },
 
   onLoad() {
-    const dates = [];
-    for (let i = 0; i < 14; i++) {
-      const k = addDays(todayKey(), i);
-      dates.push(k);
-    }
-    const starts = [];
-    for (let h = 9; h <= 22; h++) {
-      starts.push(String(h).padStart(2, "0") + ":00");
-      starts.push(String(h).padStart(2, "0") + ":30");
-    }
-    const ends = starts.slice();
-
+    const today = todayKey();
     this.setData({
-      dates: dates,
-      dateText: dates[0],
-      starts: starts,
-      ends: ends,
+      dateText: today,
+      dateStart: today,
+      dateEnd: addDays(today, 13),
+      endAuto: addMinutes(this.data.startText, 90),
     });
   },
 
@@ -113,26 +102,28 @@ Page({
   },
 
   onDate(e) {
-    const i = Number(e.detail.value);
-    this.setData({ dateIndex: i, dateText: this.data.dates[i] });
+    this.setData({ dateText: e.detail.value });
   },
   onStart(e) {
-    const i = Number(e.detail.value);
-    this.setData({ startIndex: i, startText: this.data.starts[i] });
+    const startText = e.detail.value;
+    // 没手动选过结束时间就一直跟着开始时间走，省一次点击
+    this.setData({
+      startText,
+      endAuto: addMinutes(startText, 90),
+      endText: this.data.endText ? this.data.endText : "",
+    });
   },
   onEnd(e) {
-    const i = Number(e.detail.value);
-    this.setData({ endIndex: i, endText: this.data.ends[i] });
+    this.setData({ endText: e.detail.value });
   },
-  onDiff(e) {
-    this.setData({ diffIndex: Number(e.detail.value) });
+  tapDiff(e) {
+    this.setData({ diffIndex: Number(e.currentTarget.dataset.i) });
   },
 
   async submit() {
     const s = this.data;
     if (!s.studioName.trim()) return toast(this, "先填门店名");
     if (!s.courseName.trim()) return toast(this, "先填课程名");
-    if (s.startIndex < 0) return toast(this, "选一下开始时间");
     if (s.submitBusy) return;
 
     this.setData({ submitBusy: true });
@@ -143,7 +134,7 @@ Page({
         cityId: app.globalData.cityId,
         date: s.dateText,
         startTime: s.startText,
-        endTime: s.endIndex >= 0 ? s.endText : addMinutes(s.startText, 90),
+        endTime: s.endText || s.endAuto,
         courseName: s.courseName.trim(),
         coachName: s.coachName.trim(),
         difficulty: DIFF_VALUE[s.diffs[s.diffIndex]],

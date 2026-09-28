@@ -49,6 +49,23 @@
   font-weight: 900;
 }
 
+/*
+  「全部城市」入口：虚线描边而不是实心块，一眼能看出它和左边的城市 chip
+  不是同一种东西——它是「打开列表」，不是「选中某个城市」。
+*/
+.chip-all {
+  background: transparent;
+  border: 1rpx dashed rgba(155, 92, 255, 0.55);
+  color: #b98cff;
+  margin-right: 0;
+}
+.ca-caret {
+  margin-left: 6rpx;
+  font-size: 22rpx;
+  position: relative;
+  top: -2rpx;
+}
+
 /* 搜索框 */
 .search-box {
   display: flex;
@@ -360,6 +377,17 @@
   color: #79819c;
   background: transparent;
   border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* 品牌行（多店合并成一行）右侧的进入箭头，与关注按钮同宽同高，行高不会跳 */
+.chev {
+  flex-shrink: 0;
+  width: 62rpx;
+  text-align: center;
+  font-size: 36rpx;
+  font-weight: 400;
+  line-height: 1;
+  color: #5d5f7a;
 }
 
 /* ───────────────── 首字母分组 ───────────────── */

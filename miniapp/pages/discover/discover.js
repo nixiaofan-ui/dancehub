@@ -3,6 +3,7 @@ const api = require("../../services/api");
 const { toast } = require("../../utils/toast");
 const { API_HOST } = require("../../utils/config");
 const { onNavTop } = require("../../utils/scroll-top");
+const CP = require("../../utils/city-picker-mixin");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
@@ -51,10 +52,80 @@ function buildSections(studios) {
   return { letters, sections: letters.map((letter) => ({ letter, studios: bucket.get(letter) })) };
 }
 
-Page({
+/**
+ * 把「同城多店品牌」在列表里收成一行。
+ *
+ * 之前列表是纯门店粒度：AB DANCE 绍兴店 / 剧场店 / 国际店 各占一行，同一个品牌
+ * 连着刷屏，用户反馈「还是以分店的形式列出来」。品牌归属交给服务端
+ * `/studios/brands`（连写名字、总店全名、行政区尾巴这些坑都在那边处理），
+ * 前端只负责「用品牌行替换掉它的成员门店」。
+ *
+ * ⚠ 只在本次结果里命中 ≥2 家时才收：搜「绍兴」只命中 AB DANCE 绍兴店一家，
+ * 不该把没命中的另外两家也拉进来充数。
+ */
+function mergeBrandRows(studios, brands) {
+  const inResult = new Set(studios.map((s) => s.id));
+  const ownerOf = new Map(); // studioId -> 品牌行
+  for (const b of brands || []) {
+    const stores = (b.stores || []).filter((s) => inResult.has(s.id));
+    if (stores.length < 2) continue;
+    const row = { brandName: b.name, stores, storeCount: stores.length };
+    for (const s of stores) ownerOf.set(s.id, row);
+  }
+  if (!ownerOf.size) return studios;
+
+  const rows = [];
+  const done = new Set();
+  for (const s of studios) {
+    const owner = ownerOf.get(s.id);
+    if (!owner) {
+      rows.push(s);
+      continue;
+    }
+    if (done.has(owner)) continue; // 品牌行只在其首店出现的位置插一次
+    done.add(owner);
+    rows.push(composeBrandRow(owner, s));
+  }
+  return rows;
+}
+
+/**
+ * 分店名收尾清理：原始数据里带装饰性 emoji 和多余空格
+ * （「临平店  🔽」），串成一行时特别扎眼。
+ * 清完为空就退回原值 —— 宁可留个怪符号，也别把分店名擦没了。
+ */
+function tidyBranch(s) {
+  const raw = String(s || "").trim();
+  const t = raw.replace(/\s+/g, " ").replace(/[^\u4e00-\u9fa5A-Za-z0-9)）]+$/, "").trim();
+  return t || raw;
+}
+
+/** 品牌行要保持门店行的字段形状，视图就不用为它单开一套模板 */
+function composeBrandRow(owner, first) {
+  return {
+    id: "brand:" + owner.brandName,
+    isBrand: true,
+    brand: owner.brandName,
+    // 「3 家分店」走 branch 的位置（虚色小字），和门店行排版一致
+    branch: owner.storeCount + " 家分店",
+    // 分店名串成一行，复用地址那行的省略号样式
+    branchLine: owner.stores.map((s) => tidyBranch(s.branch || s.name)).join(" · "),
+    avatarText: owner.brandName.charAt(0),
+    // 分组字母沿用首店：服务端按拼音算好的，中文品牌名不会掉进「#」
+    groupLetter: first.groupLetter,
+    followed: false,
+    storeIds: owner.stores.map((s) => s.id).join(","),
+    // 舞种取首店：品牌各店舞种本来就不一样，合并反而糊
+    styles: first.styles || [],
+    extraStyles: first.extraStyles || 0,
+  };
+}
+
+Page(
+  Object.assign({}, CP.methods, {
   onNavTop,
 
-  data: {
+  data: Object.assign({}, CP.data, {
     region: "CN",
     cities: [],
     filteredCities: [],
@@ -68,22 +139,19 @@ Page({
     followedIds: [],
     loading: false,
     brands: [],
-  },
+  }),
 
   async onLoad() {
     const g = app.globalData;
     // 吸顶的分组标题要避开状态栏（自定义导航栏下顶部是系统状态栏）
     const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
     this._winH = info.windowHeight;
-    const cities = g.cities || [];
-    const filteredCities = cities.filter(c => c.region === g.region);
-    this.setData({
-      region: g.region,
-      cityId: g.cityId,
-      cities: cities,
-      filteredCities: filteredCities,
-      statusBarHeight: info.statusBarHeight || 20,
-    });
+    this.setData(
+      Object.assign(
+        { statusBarHeight: info.statusBarHeight || 20 },
+        this.syncCityView(g.region, g.cityId, g.cities || []),
+      ),
+    );
     this.load();
   },
 
@@ -95,9 +163,7 @@ Page({
     }
     const g = app.globalData;
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
-      const cities = g.cities || [];
-      const filteredCities = cities.filter(c => c.region === g.region);
-      this.setData({ region: g.region, cityId: g.cityId, cities: cities, filteredCities: filteredCities });
+      this.setData(this.syncCityView(g.region, g.cityId, g.cities || []));
       this.load();
     }
   },
@@ -107,14 +173,16 @@ Page({
     // 先置 loading，避免首次进入时闪一下空状态
     this.setData({ loading: true });
     await api.ensureReady();
-    this.loadBrands();
     try {
       const params = { cityId: this.data.cityId };
       if (this.data.keyword) params.keyword = this.data.keyword;
-      const [rawStudios, follows] = await Promise.all([
+      // 品牌接口失败不该挡住发现页 → 兜底空数组，最差退化成纯门店列表
+      const [rawStudios, follows, brands] = await Promise.all([
         api.apiStudios(params),
         api.apiFollows(),
+        api.apiBrands(this.data.cityId).catch(() => []),
       ]);
+      const brandList = brands || [];
       const followedIds = follows.map((f) => f.studio.id);
       const studios = rawStudios.map((s) => {
         const { brand, branch } = splitStudioName(s.name);
@@ -131,10 +199,12 @@ Page({
           extraStyles: Math.max(0, allStyles.length - MAX_TAGS),
         };
       });
-      const { letters, sections } = buildSections(studios);
+      // 多店品牌收成一行（顶部那条横滑品牌栏另有入口，这里只是别让同品牌刷屏）
+      const rows = mergeBrandRows(studios, brandList);
+      const { letters, sections } = buildSections(rows);
       // 扁平列表只留在实例上（关注状态回写用），视图只吃 sections，避免同一份数据被传两遍
-      this._studios = studios;
-      this.setData({ sections, letters, followedIds, loading: false }, () => {
+      this._rows = rows;
+      this.setData({ brands: brandList, sections, letters, followedIds, loading: false }, () => {
         // 视图渲染完再量索引条，否则拿到的位置是旧的
         this.measureIndexBar();
       });
@@ -164,16 +234,25 @@ Page({
       return;
     }
     const city = filteredCities[0];
-    app.setCity(region, city.id);
-    this.setData({ region, cityId: city.id, filteredCities });
+    app.setCity(region, city.id, "manual");
+    this.setData(this.syncCityView(region, city.id, app.globalData.cities || []));
     this.load();
   },
 
   selectCity(e) {
     const cityId = e.currentTarget.dataset.id;
     if (cityId === this.data.cityId) return;
-    app.setCity(this.data.region, cityId);
-    this.setData({ cityId });
+    app.setCity(this.data.region, cityId, "manual");
+    this.applyCity(cityId);
+  },
+
+  /**
+   * 城市被选中的统一出口：chip 和城市面板都走这里。
+   * 必须同步 setData 的 cityId/hotCities，否则从面板选了个冷门城市，
+   * chip 条上既不高亮也不出现，看着像没生效。
+   */
+  applyCity(cityId) {
+    this.setData(this.syncCityView(this.data.region, cityId, this.data.cities));
     this.load();
   },
 
@@ -184,17 +263,10 @@ Page({
   /**
    * 同城多店品牌 —— 这些品牌开了好几家分店，会员通常是通卡，
    * 所以单独给一条横滑入口，点进去直接看全部门店的合并课表。
-   * 失败就静默：品牌是加分项，不该因为它报错挡住整个发现页。
+   *
+   * 数据已并入 load()：品牌既要撑起这条横滑栏，又要决定下面列表里哪些门店
+   * 该收成一行，分两次请求会出现「横栏已经是新的、列表还是门店粒度」的中间态。
    */
-  async loadBrands() {
-    try {
-      const brands = await api.apiBrands(this.data.cityId);
-      this.setData({ brands: brands || [] });
-    } catch (e) {
-      this.setData({ brands: [] });
-    }
-  },
-
   goReport() {
     wx.navigateTo({ url: "/pages/report/index" });
   },
@@ -214,7 +286,9 @@ Page({
         "/pages/studio/weekly?ids=" +
         ids +
         "&title=" +
-        encodeURIComponent(b.name),
+        encodeURIComponent(b.name) +
+        // 品牌的分店是系统列出来的、不是他挑的 → 进去只勾一家，别一上来铺满全屏
+        "&first=1",
     });
   },
 
@@ -229,6 +303,19 @@ Page({
 
   goWeekly(e) {
     const id = e.currentTarget.dataset.id;
+    const row = (this._rows || []).find((r) => String(r.id) === String(id));
+    if (row && row.isBrand) {
+      // 品牌行 → 连同全部分店进课表；分店是系统列出来的，进去只勾一家（first=1）
+      wx.navigateTo({
+        url:
+          "/pages/studio/weekly?ids=" +
+          row.storeIds +
+          "&title=" +
+          encodeURIComponent(row.brand) +
+          "&first=1",
+      });
+      return;
+    }
     wx.navigateTo({
       url: "/pages/studio/weekly?id=" + id,
     });
@@ -246,11 +333,11 @@ Page({
       const followedIds = isFollowed
         ? this.data.followedIds.filter((x) => x !== id)
         : this.data.followedIds.concat(id);
-      const studios = (this._studios || []).map((s) =>
-        s.id === id ? { ...s, followed: !isFollowed } : s,
+      const rows = (this._rows || []).map((s) =>
+        !s.isBrand && s.id === id ? { ...s, followed: !isFollowed } : s,
       );
-      this._studios = studios;
-      const { sections } = buildSections(studios);
+      this._rows = rows;
+      const { sections } = buildSections(rows);
       this.setData({ followedIds, sections }, () => this.measureIndexBar());
       toast(this, isFollowed ? "已取消关注" : "已关注", "success");
     } catch (err) {
@@ -394,4 +481,4 @@ Page({
       this.setData({ activeLetter: "", indexTip: false });
     }
   },
-});
+}));

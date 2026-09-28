@@ -14,11 +14,18 @@ const { isFav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
 // 跳老师主页统一走这里：详情页/周课表页也是同一个实现，行为保持一致
 const { onTapCoach } = require("../../utils/coach-nav");
+const CP = require("../../utils/city-picker-mixin");
 
-Page({
+/**
+ * 首页和发现页共用一套城市选择逻辑（热门 chip + 全量面板）。
+ * mixin 放前面、页面自己的定义放后面：index 页有 tapLocate（带授权引导的完整版），
+ * 要盖掉 mixin 里的简版，所以顺序不能反。
+ */
+Page(
+  Object.assign({}, CP.methods, {
   onNavTop,
 
-  data: {
+  data: Object.assign({}, CP.data, {
     region: "CN",
     cities: [],
     filteredCities: [],
@@ -43,21 +50,14 @@ Page({
     showBlocked: false,
 
     panel: { visible: false, item: null },
-  },
+  }),
 
   async onLoad() {
     this.currentDate = new Date();
     // 全局「预约/关注/提醒」写操作计数，用来判断课表数据是否被弄脏
     this.seenDirty = app.globalData.dirty || 0;
     const g = app.globalData;
-    const cities = g.cities || [];
-    const filteredCities = cities.filter((c) => c.region === g.region);
-    this.setData({
-      region: g.region,
-      cityId: g.cityId,
-      cities: cities,
-      filteredCities: filteredCities,
-    });
+    this.setData(this.syncCityView(g.region, g.cityId, g.cities || []));
     this.rebuildDates(this.currentDate);
     this.load();
   },
@@ -74,13 +74,7 @@ Page({
     const located = g.locatedCity;
     if (located && located.id !== this.data.cityId) {
       g.locatedCity = null;
-      const cities = g.cities || [];
-      this.setData({
-        region: located.region,
-        cityId: located.id,
-        cities,
-        filteredCities: cities.filter((c) => c.region === located.region),
-      });
+      this.setData(this.syncCityView(located.region, located.id, g.cities || []));
       toast(this, `已定位到${located.name}`);
       this.load();
       return;
@@ -90,9 +84,7 @@ Page({
       // 用户在别处（或本页）手动选了城市，以他选的为准；
       // 系统自动切过来的（定位/跟随预约）不关掉跟随。
       this.cityFollowOff = !!g.cityManual;
-      const cities = g.cities || [];
-      const filteredCities = cities.filter((c) => c.region === g.region);
-      this.setData({ region: g.region, cityId: g.cityId, cities: cities, filteredCities: filteredCities });
+      this.setData(this.syncCityView(g.region, g.cityId, g.cities || []));
       this.load();
       return;
     }
@@ -164,12 +156,7 @@ Page({
     if (!city || city.id === this.data.cityId) return false;
 
     app.setCity(city.region, city.id);
-    this.setData({
-      region: city.region,
-      cityId: city.id,
-      cities: cities,
-      filteredCities: cities.filter((c) => c.region === city.region),
-    });
+    this.setData(this.syncCityView(city.region, city.id, cities));
     toast(this, `已切到${city.name}：你有 ${n} 节预约`);
     await this.load();
     return true;
@@ -387,17 +374,14 @@ Page({
     const city = filteredCities[0];
     app.setCity(region, city.id, "manual");
     this.cityFollowOff = true; // 自己选的城市，别再被预约拽走
-    this.setData({ region, cityId: city.id, cities, filteredCities });
+    this.setData(this.syncCityView(region, city.id, cities));
     this.load();
   },
 
   selectCity(e) {
     const cityId = e.currentTarget.dataset.id;
     if (cityId === this.data.cityId) return;
-    app.setCity(this.data.region, cityId, "manual");
-    this.cityFollowOff = true; // 同上
-    this.setData({ cityId });
-    this.load();
+    this.applyCity(cityId);
   },
 
   /**
@@ -458,13 +442,20 @@ Page({
   applyLocated(city) {
     const cities = app.globalData.cities || [];
     app.setCity(city.region, city.id, "locate");
-    this.setData({
-      region: city.region,
-      cityId: city.id,
-      cities,
-      filteredCities: cities.filter((c) => c.region === city.region),
-    });
+    this.setData(this.syncCityView(city.region, city.id, cities));
     toast(this, `已定位到${city.name}`);
+    this.load();
+  },
+
+  /**
+   * 城市被选中的统一出口：chip、城市面板、定位都收敛到这里。
+   * 用 mixin 的 syncCityView 统一算 chip/热门/当前名，避免三处各写一遍
+   * setData 之后状态不同步（典型症状：面板里选中了拉萨，回到页面 chip 条还停在热门上）。
+   */
+  applyCity(cityId) {
+    app.setCity(this.data.region, cityId, "manual");
+    this.cityFollowOff = true; // 自己选的城市，别再被预约拽走
+    this.setData(this.syncCityView(this.data.region, cityId, this.data.cities));
     this.load();
   },
 
@@ -608,4 +599,4 @@ Page({
   goProfile() {
     wx.switchTab({ url: "/pages/profile/profile" });
   },
-});
+}));
