@@ -1,0 +1,71 @@
+[
+  {
+    "id": "styd-herenow",
+    "enabled": true,
+    "label": "HERE&NOW 街舞工作室",
+    "studio": { "name": "Here&Now街舞工作室", "city": "北京", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "a2DGxRkY0ya",
+      "brandId": "2032877982777391",
+      "shops": [
+        { "id": "2032842515747202", "name": "Here&Now·国贸店（朝阳）" },
+        { "id": "2853495657599464", "name": "Here&Now·五道口店（海淀）" }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  },
+  {
+    "id": "styd-ti",
+    "enabled": true,
+    "label": "TI 舞蹈工作室",
+    "studio": { "name": "TI舞蹈工作室", "city": "北京", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "lRyLQeaXaxp",
+      "brandId": "1875232466534452",
+      "shops": [
+        { "id": "1874029842138850", "name": "TI舞蹈工作室·全国总店（朝阳）" },
+        { "id": "1876778621142563", "name": "TI舞蹈工作室·六道口店（海淀）" }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  },
+  {
+    "id": "styd-superdance",
+    "enabled": true,
+    "label": "SUPER 舞蹈室",
+    "studio": { "name": "SUPER 舞蹈室", "city": "深圳", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "nKAeaWz1WpA",
+      "brandId": "901065801859144",
+      "shops": [
+        { "id": "900906317657333", "name": "SUPER舞蹈室·科兴店（南山）" },
+        { "id": "2324443481916183", "name": "SUPER舞蹈室·车公庙店（福田）" },
+        { "id": "2647658158697081", "name": "SUPER舞蹈室·前海湾店（南山）" },
+        { "id": "2803270024855746", "name": "SUPER舞蹈室·桃园店（南山）" },
+        { "id": "3437869511904002", "name": "SUPER舞蹈室·洪浪北店（宝安）" }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

@@ -10,6 +10,7 @@ const AUTO_CONFIG_FILES = [
   "studios.topcities.json",
   "studios.rawgraphy.json",
   "studios.aiwugong.json",
+  "studios.styd.json",
 ];
 
 /**
@@ -435,6 +436,7 @@ function mergeConfigs(manual, auto) {
   const targetKey = (c) => {
     if (c.mode === "http" && c.http?.boxId != null) return `box:${c.http.boxId}`;
     if (c.mode === "fityun" && c.fityun?.orgId) return `org:${c.fityun.orgId}`;
+    if (c.mode === "styd" && c.styd?.brandCode) return `brand:${c.styd.brandCode}`;
     return null;
   };
 

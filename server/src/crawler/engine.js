@@ -205,6 +205,92 @@ async function crawlWithFityun(config, date) {
   return out;
 }
 
+/* ───────────────────────── styd.cn（第四套平台）抓取 ───────────────────────── */
+
+/**
+ * styd.cn（杭州/上海，API 域 stmember.styd.cn）—— 继 iWOD、菲体云、爱舞功之后的
+ * **第四套**舞蹈/健身 SaaS。HERE&NOW 街舞、TI 舞蹈、SUPER 舞蹈室等在用。
+ *
+ * 逆向要点（2026-09-28 由 Mac 微信缓存的小程序包解密 + 接口探测获得）：
+ * - 免登录课表接口 GET /v1/appointment/team_course_list
+ *     查询参数 brand_id / shop_id / date=YYYY-MM-DD / course_type=team_course
+ * - **请求头是钥匙**，缺一个就报错：
+ *     app-id: mina        （固定值，只接受 mina / h5）
+ *     brand-code: <品牌码> 12 位随机串，例 a2DGxRkY0ya；从小程序包里硬编码取得
+ *     shop-id: <门店ID>   16 位雪花 ID
+ * - 门店清单 GET /v1/shop/shop_by_city?brand_code=<品牌码>（免登录）
+ *     → data.other_shop[] = [{ id, shop_name, province_name, city_name, district_name, address }]
+ *     注意：/v2/platform/nearby_shop_list 按坐标只返回 3 家且**不含未开「附近展示」的门店**
+ *     （HERE&NOW 就不在里面），所以必须用 shop_by_city 拿品牌自己的门店。
+ * - 课程字段：course_name 课名 / coach_name 教练 / start_time "19:00" + end_time "20:00" /
+ *     reserve_max 容量 / reserved_num 已约 / category_name 分类（多为难度/门槛说明）
+ *
+ * @param {object} config 抓取配置（含 config.styd）
+ * @param {Date} date 要抓取的日期
+ * @returns {Promise<Array>} 原始条目（含 _studioName 门店名）
+ */
+async function crawlWithStyd(config, date) {
+  const {
+    baseUrl = "https://stmember.styd.cn",
+    brandCode,
+    brandId,
+    shops,
+  } = config.styd || {};
+  if (!brandCode) throw new Error("styd 模式缺少 brandCode 配置");
+  if (!brandId) throw new Error("styd 模式缺少 brandId 配置");
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const targets =
+    Array.isArray(shops) && shops.length
+      ? shops
+      : [{ id: "", name: config.studio?.name || "" }];
+
+  const out = [];
+  for (const shop of targets) {
+    if (!shop.id) continue;
+    const headers = {
+      "app-id": "mina",
+      "brand-code": String(brandCode),
+      "shop-id": String(shop.id),
+      "Content-Type": "application/json",
+      "User-Agent":
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+    };
+    const url =
+      `${baseUrl}/v1/appointment/team_course_list` +
+      `?brand_id=${encodeURIComponent(brandId)}` +
+      `&shop_id=${encodeURIComponent(shop.id)}` +
+      `&date=${dateStr}&course_type=team_course`;
+
+    const resp = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+    if (!resp.ok) throw new Error(`styd 接口 HTTP ${resp.status}`);
+
+    const body = await resp.json();
+    // code 非 0 视为该店当天无课/未配置，不抛错（避免整条链断掉）
+    if (body?.code !== 0) continue;
+
+    for (const c of body?.data?.course_list || []) {
+      const courseName = cleanCourseName(c.course_name);
+      if (!courseName) continue;
+      const time = c.start_time && c.end_hour ? `${c.start_time}-${c.end_hour}` : c.start_time && c.end_time ? `${c.start_time}-${c.end_time}` : "";
+      const max = c.reserve_max != null ? Number(c.reserve_max) : null;
+      const used = c.reserved_num != null ? Number(c.reserved_num) : null;
+      const capacity = max ? `${used != null ? max - used : ""}/${max}` : "";
+      out.push({
+        courseName,
+        coach: String(c.coach_name || "").trim(),
+        time,
+        capacity,
+        status: max && used != null && used >= max ? "已满" : "可预约",
+        _studioName: (shop.name || config.studio?.name || "").trim(),
+        // category_name 多为「舞龄50节课起」这类门槛说明，透传进 remark
+        _remark: String(c.category_name || "").trim(),
+      });
+    }
+  }
+  return out;
+}
+
 /* ───────────────────────── 爱舞功（aiwugong.cn）抓取 ───────────────────────── */
 
 /**
@@ -880,6 +966,7 @@ export async function crawl(config, date = new Date()) {
   if (!config) throw new Error("缺少抓取配置");
   if (config.mode === "http") return crawlWithHttp(config, date);
   if (config.mode === "fityun") return crawlWithFityun(config, date);
+  if (config.mode === "styd") return crawlWithStyd(config, date);
   if (config.mode === "aiwugong") return crawlWithAiwugong(config, date);
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);
