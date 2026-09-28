@@ -5,6 +5,7 @@ import { startReminderJob } from "./jobs/reminder.job.js";
 import { startCrawlScheduler, probeOutbound } from "./crawler/index.js";
 import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
+import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
 
 // ── 容器/云托管适配 ──
 // 云托管要求监听 80 / 8080；本地开发仍可走 3000。
@@ -29,9 +30,15 @@ app.listen(port, "0.0.0.0", () => {
 
   // 补齐新增表（幂等 DDL）。容器不像本地那样跑 prisma migrate deploy，
   // 没有它线上就会一直缺表。失败只 warn，不让整个服务起不来。
-  ensureSchema().catch((err) =>
-    console.warn(`[dancehub] ensure-schema 失败: ${err.message}`)
-  );
+  ensureSchema()
+    .catch((err) => console.warn(`[dancehub] ensure-schema 失败: ${err.message}`))
+    // G-STEPS 分店城市校准（幂等）：早期把上海分店挂到了北京名下。
+    // 挂在启动流程里是因为云端库没法从本机改，为了跑一次校准去开云库公网不划算。
+    .then(() =>
+      calibrateGstepsCity({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] G-STEPS 城市校准失败: ${err.message}`)
+      )
+    );
 
   // 出口连通性自检（异步，只打日志）：云端抓取能不能跑，全看容器能否出公网。
   // 三种模式都跑 —— 排查「为什么云上没抓到数据」时，这条日志是唯一决定性证据。

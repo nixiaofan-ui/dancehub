@@ -376,7 +376,47 @@ function guessCityFromAddress(addr) {
  *   start_time（"2026-09-29 09:30:00"）/ duration（分钟）/ classroom / studio_name /
  *   max_member / reserved_count。start_time 未带日期过滤时是 Go 零值 "0001-01-01 00:00:00"。
  * - 门店档案：GET v2/studio/list（免登录，40 家，含 address/latitude/longitude）。
+ *
+ * ⚠ 门店的**真实城市必须取自门店档案的 city 字段**，不能用 config.studio.city。
+ *   G-STEPS 一次请求返回的是全国课表（北京 38 家 + 上海 2 家），若照抄配置里的
+ *   城市，上海新天地店、北外滩来福士店会被挂到北京名下——在北京界面出现上海分店。
  */
+
+/** studio_name → 真实城市，6 小时缓存（门店档案不常变，别每轮每店都拉一次） */
+let gstepsCityCache = { at: 0, map: new Map() };
+const GSTEPS_CITY_TTL_MS = 6 * 60 * 60 * 1000;
+
+/** "北京市"/"上海市" → "北京"/"上海"（库里 City.name 不带行政后缀） */
+function normalizeCityName(raw) {
+  return String(raw || "").trim().replace(/(特别行政区|自治州|地区|市|县)$/, "");
+}
+
+async function loadGstepsCityMap(baseUrl) {
+  const now = Date.now();
+  if (gstepsCityCache.map.size && now - gstepsCityCache.at < GSTEPS_CITY_TTL_MS) {
+    return gstepsCityCache.map;
+  }
+  try {
+    const resp = await fetch(`${baseUrl}/studio/list`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!resp.ok) throw new Error(`gsteps 门店档案 HTTP ${resp.status}`);
+    const body = await resp.json();
+    const list = Array.isArray(body?.res) ? body.res : [];
+    const map = new Map();
+    for (const s of list) {
+      const name = String(s.name || "").trim();
+      if (!name) continue;
+      map.set(name, normalizeCityName(s.city || s.province || ""));
+    }
+    if (map.size) gstepsCityCache = { at: now, map };
+    return map;
+  } catch (e) {
+    // 拉不到就用旧缓存（首次为空 → 回退到配置城市），不让整轮抓取失败
+    return gstepsCityCache.map;
+  }
+}
+
 async function crawlWithGsteps(config, date) {
   const { baseUrl = "https://api.gsteps.cn/v2" } = config.gsteps || {};
 
@@ -386,7 +426,8 @@ async function crawlWithGsteps(config, date) {
   const dateStr = `${y}-${m}-${d}`;
 
   const brand = (config.studio?.name || "G-STEPS").trim();
-  const city = config.studio?.city || "";
+  const fallbackCity = config.studio?.city || "";
+  const cityMap = await loadGstepsCityMap(baseUrl);
 
   const out = [];
   let page = 1;
@@ -426,13 +467,19 @@ async function crawlWithGsteps(config, date) {
       const max = c.max_member != null ? Number(c.max_member) : null;
       const used = c.reserved_count != null ? Number(c.reserved_count) : null;
 
+      const studioName = String(c.studio_name || "").trim();
+      // 真实城市优先取门店档案；拿不到才回退到配置城市
+      const realCity = cityMap.get(studioName) || fallbackCity;
+
       out.push({
         courseName,
         coach: String(c.teacher_name || "").trim(),
         time: end ? `${start}-${end}` : start,
         capacity: max ? `${used != null ? Math.max(max - used, 0) : ""}/${max}` : "",
         status: max && used != null && used >= max ? "已满" : "可预约",
-        _studioName: `${brand}·${String(c.studio_name || "").trim()}${city ? `（${city}）` : ""}`,
+        _studioName: `${brand}·${studioName}${realCity ? `（${realCity}）` : ""}`,
+        // 行级覆盖城市：不传的话上海分店会全部落进北京
+        ...(realCity ? { _city: realCity } : {}),
         _remark: [c.course_kind_name, c.course_level_name].filter(Boolean).join("·"),
       });
     }

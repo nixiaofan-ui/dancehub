@@ -30,6 +30,24 @@ CREATE TABLE IF NOT EXISTS \`CoachBlock\` (
 `;
 
 /**
+ * CoachFollow（用户标记「常看的老师」）
+ * 对应 schema.prisma 的 model CoachFollow
+ */
+const COACH_FOLLOW_SQL = `
+CREATE TABLE IF NOT EXISTS \`CoachFollow\` (
+  \`id\` INT NOT NULL AUTO_INCREMENT,
+  \`userId\` INT NOT NULL,
+  \`coachName\` VARCHAR(191) NOT NULL,
+  \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (\`id\`),
+  UNIQUE INDEX \`CoachFollow_userId_coachName_key\` (\`userId\`, \`coachName\`),
+  INDEX \`CoachFollow_userId_idx\` (\`userId\`),
+  CONSTRAINT \`CoachFollow_userId_fkey\`
+    FOREIGN KEY (\`userId\`) REFERENCES \`User\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+`;
+
+/**
  * StudioReport（用户提报缺失的舞室）
  * 对应 schema.prisma 的 model StudioReport
  */
@@ -86,6 +104,7 @@ async function columnExists(table, column) {
 
 export async function ensureSchema() {
   await run("CoachBlock", COACH_BLOCK_SQL);
+  await run("CoachFollow", COACH_FOLLOW_SQL);
   await run("StudioReport", STUDIO_REPORT_SQL);
   // 存量库已经有 Schedule 表，只缺这一列
   if (!(await columnExists("Schedule", "ownerId"))) {

@@ -4,6 +4,7 @@ const { BOOKING_STATUS_LABEL, PLATFORM_LABEL } = require("../../utils/constants"
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
 const { getBlocked, unblock } = require("../../utils/blocked");
+const { getFavCoaches, unfav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
 
 Page({
@@ -17,6 +18,7 @@ Page({
     reminders: [],
     loading: false,
     blocked: [],
+    favs: [],
   },
 
   async onLoad() {
@@ -30,8 +32,9 @@ Page({
       tb.setData({ selected: 2 });
       tb.refreshBadge();
     }
-    // 屏蔽名单可能刚在老师页改过，每次进页面都重读一次本地
+    // 屏蔽/常看名单可能刚在老师页改过，每次进页面都重读一次本地
     this.loadBlocked();
+    this.loadFavs();
     this.loadAll();
   },
 
@@ -63,6 +66,33 @@ Page({
       console.error("[dancehub] 取消屏蔽同步失败:", err);
     }
     toast(this, `已恢复「${name}」的课`, "success");
+  },
+
+  /** 常看的老师：与屏蔽名单同一套读法，本地优先、云端补并集 */
+  loadFavs() {
+    const local = getFavCoaches();
+    this.setData({ favs: local });
+    api
+      .ensureReady()
+      .then(() => api.apiFavCoaches())
+      .then((remote) => {
+        const merged = [...new Set(local.concat(remote || []))];
+        this.setData({ favs: merged });
+      })
+      .catch(() => {});
+  },
+
+  async unfavCoach(e) {
+    const name = e.currentTarget.dataset.name;
+    if (!name) return;
+    unfav(name);
+    this.loadFavs();
+    try {
+      await api.apiUnfavCoach(name);
+    } catch (err) {
+      console.error("[dancehub] 取消常看同步失败:", err);
+    }
+    toast(this, `已把「${name}」移出常看`, "success");
   },
 
   async loadAll() {

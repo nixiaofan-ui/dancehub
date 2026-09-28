@@ -4,6 +4,7 @@ const { DIFF_LABEL } = require("../../utils/constants");
 const { toast } = require("../../utils/toast");
 const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 const { isBlocked, block, unblock } = require("../../utils/blocked");
+const { isFav, fav, unfav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -28,6 +29,7 @@ Page({
     days: [],
     total: 0,
     blocked: false,
+    fav: false,
   },
 
   onLoad(query) {
@@ -40,6 +42,28 @@ Page({
       loading: true,
     });
     this.load();
+  },
+
+  /**
+   * 每次显示都重读一次本地名单：可能在「我的」页刚取消过关注，
+   * 也可能云端同步回来了一批新名字。
+   */
+  onShow() {
+    if (!this.name) return;
+    this.setData({
+      fav: isFav(this.name),
+      blocked: isBlocked(this.name),
+    });
+    api
+      .ensureReady()
+      .then(() => Promise.all([api.apiFavCoaches(), api.apiBlocked()]))
+      .then(([favs, blocks]) => {
+        this.setData({
+          fav: (favs || []).indexOf(this.name) >= 0 || isFav(this.name),
+          blocked: blocks ? blocks.indexOf(this.name) >= 0 : this.data.blocked,
+        });
+      })
+      .catch(() => {});
   },
 
   async load() {
@@ -107,5 +131,22 @@ Page({
       console.error("[dancehub] 屏蔽同步失败:", e);
     }
     toast(this, next ? `不再显示「${name}」的课` : `已恢复「${name}」的课`, "success");
+  },
+
+  /** 标记 / 取消「常看」（爱师）。同样是本地先改、云端兜底同步。 */
+  async toggleFav() {
+    const name = this.data.name;
+    if (!name) return;
+    const next = !this.data.fav;
+    this.setData({ fav: next });
+    if (next) fav(name);
+    else unfav(name);
+    try {
+      if (next) await api.apiFavCoach(name);
+      else await api.apiUnfavCoach(name);
+    } catch (e) {
+      console.error("[dancehub] 常看老师同步失败:", e);
+    }
+    toast(this, next ? `已把「${name}」设为常看` : `已移出常看`, "success");
   },
 });

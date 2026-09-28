@@ -74,6 +74,7 @@ model User {
   bookings   Booking[]
   reminders  Reminder[]
   blocks     CoachBlock[]
+  favCoaches CoachFollow[]
   schedules  Schedule[]
 }
 
@@ -82,6 +83,21 @@ model User {
 /// 按 id 屏蔽只能屏蔽掉其中一家店的课，等于没屏蔽。
 /// 代价是同名会被一起屏蔽 —— 对「不想再上到雷老师的课」这个诉求来说可以接受。
 model CoachBlock {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  coachName String   @db.VarChar(191)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, coachName])
+  @@index([userId])
+}
+
+/// 用户标记「常看的老师」（产品文案：爱师）。
+/// 与 CoachBlock 是一对反向偏好：那边是「别让我看见」，这边是「有他的课先给我看」。
+/// 同样按 coachName 而不是 coachId —— 老师在不同门店是两条 Coach 记录，
+/// 按 id 关注只能关注到其中一家店的课。
+model CoachFollow {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])

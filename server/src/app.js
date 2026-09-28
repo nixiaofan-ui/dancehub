@@ -11,6 +11,7 @@ import bookingRoutes from "./routes/booking.routes.js";
 import reminderRoutes from "./routes/reminder.routes.js";
 import timelineRoutes from "./routes/timeline.routes.js";
 import blockedRoutes from "./routes/blocked.routes.js";
+import coachFollowRoutes from "./routes/coach-follow.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import importRoutes from "./routes/import.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -35,6 +36,7 @@ export function createApp() {
   app.use("/api/reminders", reminderRoutes);
   app.use("/api/timeline", timelineRoutes);
   app.use("/api/blocked", blockedRoutes);
+  app.use("/api/coach-follows", coachFollowRoutes);
   app.use("/api/reports", reportRoutes);
   app.use("/api/imports", importRoutes);
   app.use("/api/admin", adminRoutes);

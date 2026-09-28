@@ -88,16 +88,19 @@
 }
 
 .tabs {
-  display: flex;
   background: #1a1a2e;
   border-radius: 16rpx;
   margin: 20rpx 0;
   padding: 8rpx;
 }
+.tabs-inner {
+  display: flex;
+}
 .tab {
-  flex: 1;
+  flex-shrink: 0;
+  white-space: nowrap;
   text-align: center;
-  padding: 16rpx 0;
+  padding: 16rpx 22rpx;
   font-size: 28rpx;
   color: #a8adc2;
   border-radius: 12rpx;

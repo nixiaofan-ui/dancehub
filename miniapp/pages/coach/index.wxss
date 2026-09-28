@@ -17,10 +17,33 @@
   padding: 24rpx;
   margin-bottom: 18rpx;
 }
+.ch-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .ch-name {
   font-size: 44rpx;
   font-weight: 900;
   letter-spacing: 1rpx;
+}
+/* 常看的老师（爱师）：未标记时是描边态，标记后填充成高亮色 */
+.fav-btn {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 24rpx;
+  font-size: 24rpx;
+  line-height: 2;
+  font-weight: 900;
+  color: #b18cff;
+  background: transparent;
+  border: 2rpx solid rgba(177, 140, 255, 0.5);
+  border-radius: 40rpx;
+}
+.fav-btn.on {
+  color: #1a1a2e;
+  background: #b18cff;
+  border-color: #b18cff;
 }
 .ch-meta {
   font-size: 24rpx;

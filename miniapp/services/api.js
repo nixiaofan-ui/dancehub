@@ -117,6 +117,11 @@ const apiCoachTimeline = (name, cityId, days) =>
 const apiBlocked = () => req.get("/blocked");
 const apiBlock = (name) => req.post("/blocked", { name });
 const apiUnblock = (name) => req.delete("/blocked/" + encodeURIComponent(name));
+// 常看的老师（爱师）：与「不想看」是一对反向偏好，同样本地即时生效 + 云端同步
+const apiFavCoaches = () => req.get("/coach-follows");
+const apiFavCoach = (name) => req.post("/coach-follows", { name });
+const apiUnfavCoach = (name) =>
+  req.delete("/coach-follows/" + encodeURIComponent(name));
 // 结构化逐条录入课表（用户手动补抓不到的店）
 const apiImportSchedule = (payload) => req.post("/imports/schedule", payload);
 // 我录过的课：录入是私有的，所以要能回看、能删
@@ -156,6 +161,9 @@ module.exports = {
   apiBlocked,
   apiBlock,
   apiUnblock,
+  apiFavCoaches,
+  apiFavCoach,
+  apiUnfavCoach,
   apiSubmitReport,
   apiImportSchedule,
   apiMyImports,

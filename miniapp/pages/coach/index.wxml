@@ -5,7 +5,13 @@
 
   <block wx:else>
     <view class="coach-head">
-      <view class="ch-name">{{name}}</view>
+      <view class="ch-top">
+        <view class="ch-name">{{name}}</view>
+        <!-- 常看的老师（爱师）：与页尾的「不想看」是一对反向偏好 -->
+        <button class="fav-btn {{fav ? 'on' : ''}}" hover-class="press" bindtap="toggleFav">
+          {{fav ? '★ 常看中' : '☆ 设为常看'}}
+        </button>
+      </view>
       <view class="ch-meta" wx:if="{{studios.length}}">
         在 {{studios.length}} 家舞室任教 · 未来两周 {{total}} 节课
       </view>

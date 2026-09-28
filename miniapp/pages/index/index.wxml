@@ -114,7 +114,7 @@
           {{item.courseName}}
           <text class="diff">{{item.diffLabel}}</text>
         </view>
-        <view class="coach" hover-class="press" data-name="{{item.coachName}}" bindtap="goCoach">教练：{{item.coachName}}</view>
+        <view class="coach {{item.fav ? 'fav' : ''}}" hover-class="press" data-name="{{item.coachName}}" bindtap="goCoach">教练：{{item.coachName}}<text wx:if="{{item.fav}}" class="fav-mark">★</text></view>
         <view class="card-foot">
           <view wx:if="{{item.slotText}}" class="slot {{item.slotClass}}">{{item.slotText}}</view>
           <view class="btn-row">

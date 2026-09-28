@@ -10,6 +10,7 @@ const { confirm } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
 const { locateCity, openSetting } = require("../../utils/locate");
 const { isBlocked } = require("../../utils/blocked");
+const { isFav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
 
 Page({
@@ -231,6 +232,8 @@ Page({
           isPast,
           diffLabel: DIFF_LABEL[item.difficulty] || item.difficulty,
           coachName: item.coach ? item.coach.name : "待定",
+          // 常看的老师：课表里给个星标，让「标了爱师」这件事真的看得见
+          fav: isFav(item.coach ? item.coach.name : ""),
           edgeClass: "edge-" + (item.difficulty || "ALL_LEVELS").toLowerCase(),
           slotClass,
           slotText,

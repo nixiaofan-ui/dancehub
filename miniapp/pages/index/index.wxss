@@ -305,6 +305,15 @@
   margin-top: 6rpx;
   font-weight: 700;
 }
+/* 常看的老师：整行提亮 + 星标，扫课表时一眼能挑出来 */
+.coach.fav {
+  color: #b18cff;
+}
+.fav-mark {
+  margin-left: 6rpx;
+  font-size: 24rpx;
+  color: #b18cff;
+}
 .card-foot {
   display: flex;
   align-items: center;
