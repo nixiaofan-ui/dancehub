@@ -12,6 +12,8 @@ const { locateCity, openSetting } = require("../../utils/locate");
 const { isBlocked } = require("../../utils/blocked");
 const { isFav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
+// 跳老师主页统一走这里：详情页/周课表页也是同一个实现，行为保持一致
+const { onTapCoach } = require("../../utils/coach-nav");
 
 Page({
   onNavTop,
@@ -334,17 +336,8 @@ Page({
     });
   },
 
-  goCoach(e) {
-    const name = e.currentTarget.dataset.name;
-    if (!name || name === "待定") return;
-    wx.navigateTo({
-      url:
-        "/pages/coach/index?name=" +
-        encodeURIComponent(name) +
-        "&cityId=" +
-        this.data.cityId,
-    });
-  },
+  // 点教练名 → 老师主页（与详情页、周课表页共用 utils/coach-nav）
+  goCoach: onTapCoach,
 
   tapStoreChip(e) {
     const id = Number(e.currentTarget.dataset.id);

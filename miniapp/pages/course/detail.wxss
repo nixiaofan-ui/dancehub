@@ -97,6 +97,13 @@
   font-weight: 900;
   margin-top: 6rpx;
 }
+/* 教练名可点 → 老师主页，箭头提示可跳转 */
+.coach-arrow {
+  display: inline-block;
+  margin-left: 8rpx;
+  color: #7b7f99;
+  font-weight: 400;
+}
 .info-sub {
   font-size: 24rpx;
   color: #a8adc2;

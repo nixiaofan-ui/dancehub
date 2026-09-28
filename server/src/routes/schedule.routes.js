@@ -104,6 +104,9 @@ router.get(
         officialUrl: schedule.studio.officialUrl,
         contact: schedule.studio.contact,
         city: schedule.studio.city?.name,
+        // 老师主页按「同城同名老师」聚合，跳过去要带城市；只给城市名的话
+        // 前端还得再查一次城市表，这里直接带 id
+        cityId: schedule.studio.cityId,
       },
       bookingStatus: booking ? booking.status : null,
       reminded: Boolean(reminder),

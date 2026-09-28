@@ -94,7 +94,13 @@
           <view wx:if="{{item.booked}}" class="c-booked">✅ 已约</view>
         </view>
         <view class="c-meta-row">
-          <view class="c-coach">教练：{{item.coachName}}</view>
+          <view
+            class="c-coach {{item.coachName && item.coachName !== '待定' ? 'link' : ''}}"
+            hover-class="press"
+            data-name="{{item.coachName}}"
+            data-city-id="{{studio.cityId}}"
+            bindtap="goCoach"
+          >教练：{{item.coachName}}</view>
           <view wx:if="{{multiMode}}" class="c-store-tag">{{item.studioShort}}</view>
         </view>
       </view>

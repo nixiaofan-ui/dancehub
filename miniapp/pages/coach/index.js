@@ -6,6 +6,8 @@ const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 const { isBlocked, block, unblock } = require("../../utils/blocked");
 const { isFav, fav, unfav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
+// URL 里没带 cityId 时（比如旧链接、外部跳转），退回当前城市，别拿 NaN 去查
+const { resolveCityId } = require("../../utils/coach-nav");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
@@ -34,7 +36,7 @@ Page({
 
   onLoad(query) {
     this.name = decodeURIComponent(query.name || "");
-    this.cityId = Number(query.cityId);
+    this.cityId = resolveCityId(query.cityId);
     this.setData({
       name: this.name,
       cityId: this.cityId,

@@ -6,9 +6,13 @@ const { confirm } = require("../../utils/confirm");
 const { getBlocked, unblock } = require("../../utils/blocked");
 const { getFavCoaches, unfav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
+const { onTapCoach } = require("../../utils/coach-nav");
 
 Page({
   onNavTop,
+
+  // 名单里的老师名可点 → 老师主页（没带 cityId，走当前城市兜底）
+  goCoach: onTapCoach,
 
   data: {
     region: "CN",

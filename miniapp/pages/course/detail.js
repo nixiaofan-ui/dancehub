@@ -8,6 +8,7 @@ const { confirm } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
 const { parseKey } = require("../../utils/date");
 const { onNavTop } = require("../../utils/scroll-top");
+const { onTapCoach } = require("../../utils/coach-nav");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 const LV_LABEL = {
@@ -32,6 +33,8 @@ Page({
     detail: null,
     coachName: "",
     coachInitial: "",
+    // 跳老师主页要带城市（老师主页按「同城同名老师」聚合）
+    cityId: 0,
     diffClass: "all_levels",
     levelLabel: "",
     diffLabel: "",
@@ -87,6 +90,7 @@ Page({
         detail: d,
         coachName,
         coachInitial,
+        cityId: d.studio.cityId || 0,
         diffClass: (d.difficulty || "ALL_LEVELS").toLowerCase(),
         levelLabel: LV_LABEL[d.difficulty] || "LV?",
         diffLabel: DIFF_LABEL[d.difficulty] || d.difficulty,
@@ -112,6 +116,9 @@ Page({
     const d = parseKey(key);
     return d.getMonth() + 1 + "月" + d.getDate() + "日 · " + WEEK_CN[d.getDay()];
   },
+
+  // 点教练名 → 老师主页（教练为「待定」时内部直接忽略）
+  goCoach: onTapCoach,
 
   async goBook() {
     const d = this.data.detail;

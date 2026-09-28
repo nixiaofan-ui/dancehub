@@ -45,7 +45,7 @@
       <view class="empty-sub">在课表里点教练名，把本命老师标成常看</view>
     </view>
     <view wx:for="{{favs}}" wx:key="*this" class="record-card">
-      <view class="record-head">
+      <view class="record-head" hover-class="press" data-name="{{item}}" bindtap="goCoach">
         <text class="record-course">★ {{item}}</text>
       </view>
       <view class="record-meta">课表里会优先看到这位老师</view>

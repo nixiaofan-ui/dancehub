@@ -326,6 +326,12 @@
   margin-top: 0;
   font-weight: 700;
 }
+/* 有教练名时可点 → 老师主页，用颜色区分于「待定」 */
+.c-coach.link {
+  color: #cfd3e6;
+  text-decoration: underline;
+  text-decoration-color: rgba(207, 211, 230, 0.35);
+}
 .c-store-tag {
   flex-shrink: 0;
   font-size: 20rpx;
