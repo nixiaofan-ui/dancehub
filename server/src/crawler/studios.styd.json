@@ -67,5 +67,80 @@
     "refreshHours": 6,
     "cron": null,
     "timeFormat": "HH:mm-HH:mm"
+  },
+  {
+    "id": "styd-adz",
+    "enabled": true,
+    "label": "ADZ 舞蹈工作室",
+    "studio": { "name": "ADZ舞蹈工作室", "city": "深圳", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "dkmP2Q1GlZQ",
+      "brandId": "2658108132884493",
+      "shops": [
+        { "id": "2657828909785467", "name": "ADZ舞蹈工作室·宝安店（宝安）" },
+        { "id": "3028976965097455", "name": "ADZ舞蹈工作室·南山店（南山）" },
+        { "id": "3029282931274912", "name": "ADZ舞蹈工作室·福田店（福田）" }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  },
+  {
+    "id": "styd-woulp",
+    "enabled": true,
+    "label": "WOULP 舞蹈室",
+    "studio": { "name": "WOULP舞蹈室", "city": "成都", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "3Z3kAkpxNZD",
+      "brandId": "2292314274332712",
+      "shops": [
+        { "id": "2289973081043435", "name": "WOULP舞蹈室·苏宁店（武侯）" },
+        { "id": "2292600594370021", "name": "WOULP舞蹈室·ICD店（锦江）" },
+        { "id": "2292634903712592", "name": "WOULP舞蹈室·商馆店（武侯）" },
+        { "id": "2549047303439486", "name": "WOULP舞蹈室·上城天街店（金牛）" },
+        { "id": "3326421334905606", "name": "WOULP舞蹈室·仁恒店（锦江）" },
+        { "id": "3510381293738335", "name": "WOULP舞蹈室·湾悦城店（双流）" },
+        { "id": "3856778106874903", "name": "WOULP舞蹈室·东郊记忆店（成华）" }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  },
+  {
+    "id": "styd-jiutiaojie",
+    "enabled": true,
+    "label": "九條街 舞蹈室",
+    "studio": { "name": "九條街舞蹈室", "city": "深圳", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "gXPB5mlVp0X",
+      "brandId": "2566659655729272",
+      "shops": [
+        { "id": "2566653313877130", "name": "九條街舞蹈室·福田KKone店（福田）" },
+        { "id": "2568108083177702", "name": "九條街舞蹈室·南山来福士店（南山）" },
+        { "id": "2568108099939298", "name": "九條街舞蹈室·龙华红山6979店（龙华）" },
+        { "id": "2569655093461424", "name": "九條街舞蹈室·福田iN城市广场店（福田）" },
+        { "id": "2783799713378137", "name": "九條街舞蹈室·罗湖天河城店（罗湖）" }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
   }
 ]
