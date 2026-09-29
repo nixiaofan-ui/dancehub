@@ -1,0 +1,139 @@
+.body {
+  padding: 24rpx;
+  padding-bottom: 170rpx;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16rpx;
+}
+.h-name {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.h-sub {
+  font-size: 24rpx;
+  color: #a8adc2;
+  font-weight: 700;
+  margin-top: 6rpx;
+}
+.h-num {
+  color: #00f5d4;
+}
+/* 全关注 / 全取消二合一，取消态用中性色（原来的高亮梗色表示"取消"太积极） */
+.h-all {
+  flex: none;
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #00f5d4;
+  padding: 12rpx 24rpx;
+  border-radius: 30rpx;
+  border: 2rpx solid rgba(0, 245, 212, 0.5);
+  background: rgba(0, 245, 212, 0.1);
+}
+.h-all.is-clear {
+  color: #a8adc2;
+  border-color: rgba(168, 173, 194, 0.5);
+  background: rgba(168, 173, 194, 0.1);
+}
+
+.hint {
+  font-size: 24rpx;
+  color: #a8adc2;
+  font-weight: 700;
+  line-height: 1.6;
+  margin-bottom: 16rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 24rpx;
+  margin-top: 12rpx;
+  border-radius: 16rpx;
+  background: rgba(168, 173, 194, 0.08);
+  border: 2rpx solid transparent;
+}
+.row.on {
+  border-color: rgba(0, 245, 212, 0.45);
+  background: rgba(0, 245, 212, 0.1);
+}
+.row-main {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+}
+.row-top {
+  display: flex;
+  align-items: baseline;
+}
+.row-name {
+  font-size: 28rpx;
+  font-weight: 800;
+  color: #ffffff;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.row-count {
+  flex: none;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #00f5d4;
+  padding-left: 12rpx;
+}
+.row-sub {
+  font-size: 22rpx;
+  color: #a8adc2;
+  margin-top: 6rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* 关注按钮必须在行内 catchtap：外层 row 的 bindtap 是「进课表」 */
+.row-follow {
+  flex: none;
+  font-size: 24rpx;
+  font-weight: 900;
+  color: #a8adc2;
+  padding: 0 20rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  border-radius: 28rpx;
+  border: 2rpx solid rgba(168, 173, 194, 0.55);
+}
+.row-follow.on {
+  color: #1a1a2e;
+  background: #00f5d4;
+  border-color: #00f5d4;
+}
+
+.tip {
+  text-align: center;
+  color: #a8adc2;
+  font-size: 26rpx;
+  padding: 60rpx 0;
+}
+
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: #1a1a2e;
+}
+.all-btn {
+  background: linear-gradient(90deg, #00f5d4, #ff6b35);
+  color: #1a1a2e;
+  font-size: 30rpx;
+  font-weight: 900;
+  border-radius: 40rpx;
+  line-height: 2.4;
+}

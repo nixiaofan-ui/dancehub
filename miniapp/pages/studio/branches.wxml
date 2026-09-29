@@ -1,0 +1,53 @@
+<nav-bar title="{{name}}" show-back="{{true}}" bind:top="onNavTop" />
+
+<view class="body">
+  <view class="head">
+    <view class="h-left">
+      <view class="h-name">{{name}}</view>
+      <view class="h-sub">
+        {{subtitle || '加载中…'}}<text wx:if="{{followedCount}}" class="h-num"> · 已关注 {{followedCount}} 家</text>
+      </view>
+    </view>
+    <view
+      class="h-all {{allFollowed ? 'is-clear' : ''}}"
+      hover-class="press"
+      bindtap="toggleAll"
+    >{{allFollowed ? '全部取消' : '全部关注'}}</view>
+  </view>
+
+  <view class="hint">按分店单独关注；从下面进多店课表时，默认只勾已关注的分店。</view>
+
+  <view wx:if="{{loading}}" class="tip">正在加载分店…</view>
+  <view wx:elif="{{stores.length === 0}}" class="tip">没有分店数据</view>
+
+  <view
+    wx:for="{{stores}}"
+    wx:key="id"
+    class="row {{item.followed ? 'on' : ''}}"
+    hover-class="press"
+    data-id="{{item.id}}"
+    bindtap="goStore"
+  >
+    <view class="row-main">
+      <view class="row-top">
+        <text class="row-name">{{item.short}}</text>
+        <text wx:if="{{item.today}}" class="row-count">今日 {{item.today}} 节</text>
+      </view>
+      <view class="row-sub">{{item.cityName}}{{item.cityName && item.address ? ' · ' : ''}}{{item.address}}</view>
+    </view>
+    <view
+      class="row-follow {{item.followed ? 'on' : ''}}"
+      hover-class="press"
+      data-id="{{item.id}}"
+      catchtap="toggleFollow"
+    >{{item.followed ? '已关注' : '关注'}}</view>
+  </view>
+
+  <view class="footer">
+    <button class="all-btn" hover-class="press" bindtap="goAll">
+      查看 {{name}} 全部{{stores.length}} 家课表
+    </button>
+  </view>
+</view>
+
+<toast id="toast" />

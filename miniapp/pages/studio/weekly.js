@@ -69,16 +69,24 @@ Page({
     // 单店入口：/pages/studio/weekly?id=1 —— 保持原逻辑不变
     // first=1 表示「这些门店是品牌页自动带出来的，用户没表达过偏好」→ 默认只勾一家；
     // 自选组合页不带这个参数（那几家是他亲手挑的，砍掉就是 bug）
+    // on=1,2 显式指定进入时勾哪几家（品牌分店页用它把用户已关注的分店带进来）
     const ids = query.ids ? query.ids.split(",").map(Number).filter(Boolean) : null;
+    const presetOn = query.on ? query.on.split(",").map(Number).filter(Boolean) : null;
     if (ids && ids.length) {
       this.multiMode = true;
       this.allStoreIds = ids;
       this.pickFirst = query.first === "1";
+      const initial =
+        presetOn && presetOn.length
+          ? presetOn.filter((id) => ids.indexOf(id) >= 0)
+          : this.pickFirst
+            ? []
+            : ids;
       this.setData({
         multiMode: true,
         multiTitle: decodeURIComponent(query.title || "多店课表"),
-        activeStoreIds: this.pickFirst ? [] : ids,
-        allOn: !this.pickFirst,
+        activeStoreIds: initial,
+        allOn: initial.length === ids.length,
         selectedKey: todayKey(),
       });
       this.initWeek(new Date());
@@ -254,6 +262,21 @@ Page({
       // 拿返回的门店数比，别用 allStoreIds —— 服务端会过滤掉停业的店，
       // 两边长度不等时「全选」永远点不到，按钮就再也不会变成「清除」
       allOn: activeIds.length > 0 && activeIds.length === stores.length,
+    });
+  },
+
+  /**
+   * 「关注分店」→ 品牌分店列表。
+   * 多店课表页只有「看哪家店」的勾选，没有关注入口；这里把手上的门店清单交出去，
+   * 让用户在那里逐店关注（下次从 profile 进这部分关心的店就不会混成一锅）。
+   */
+  goBranches() {
+    wx.navigateTo({
+      url:
+        "/pages/studio/branches?ids=" +
+        this.allStoreIds.join(",") +
+        "&name=" +
+        encodeURIComponent(this.data.multiTitle || "多店"),
     });
   },
 

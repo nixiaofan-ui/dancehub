@@ -179,9 +179,27 @@ function buildBrandGroups(studios) {
   return out;
 }
 
+/**
+ * 展示用：把「MAX POWER STUDIO（苏河湾店）」拆成主名 + 分店名。
+ *
+ * 为什么拆：整串名字用 32rpx/900 一股脑塞一行时，品牌名和「（苏河湾店）」一样重，
+ * 长名还会把右侧按钮顶出卡片。拆成两级后主名吃掉视觉重量，分店名降级成辅助信息。
+ *
+ * ⚠ 只用于**前端排版**，与上面那套品牌归属算法（要和服务端保持一致的那份）无关：
+ * 这里的正则只认「末尾的括号」，不作任何品牌判定。
+ * 「（某某）」这种括号前没有主名的角落情况不拆，原样返回。
+ */
+function splitStudioName(name) {
+  const raw = String(name || "").trim();
+  const m = raw.match(/^(.*?)\s*[（(]\s*([^）)]+?)\s*[)）]\s*$/);
+  if (!m || !m[1]) return { brand: raw, branch: "" };
+  return { brand: m[1].trim(), branch: m[2].trim() };
+}
+
 module.exports = {
   buildBrandGroups: buildBrandGroups,
   splitBrandBranch: splitBrandBranch,
+  splitStudioName: splitStudioName,
   stripDistrictTag: stripDistrictTag,
   cleanBrandLabel: cleanBrandLabel,
 };

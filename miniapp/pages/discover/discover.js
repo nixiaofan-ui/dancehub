@@ -4,7 +4,7 @@ const { toast } = require("../../utils/toast");
 const { API_HOST } = require("../../utils/config");
 const { onNavTop } = require("../../utils/scroll-top");
 const CP = require("../../utils/city-picker-mixin");
-const { buildBrandGroups } = require("../../utils/brand");
+const { buildBrandGroups, splitStudioName } = require("../../utils/brand");
 const { locateCity } = require("../../utils/locate");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
@@ -12,23 +12,6 @@ const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
 
 /** 卡片上最多平铺几个舞种标签，多出来的收成「+N」 */
 const MAX_TAGS = 3;
-
-/**
- * 把「MAX POWER STUDIO（苏河湾店）」拆成主名 + 分店名。
- *
- * 为什么要拆：原来的排版把整串名字用 32rpx/900 的字重一股脑塞在一行，
- * 品牌名和「（苏河湾店）」一样重，加上全大写的英文品牌名，
- * 视觉上就是一块砖头，而且长名会撑破卡片把「关注」按钮顶出去。
- * 拆成两级后主名吃掉视觉重量，分店名降级成辅助信息，还能各自截断。
- *
- * 中英文括号都兼容；「（某某）」这种主名为空的角落情况不拆，原样返回。
- */
-function splitStudioName(name) {
-  const raw = (name || "").trim();
-  const m = raw.match(/^(.*?)\s*[（(]\s*([^）)]+?)\s*[)）]\s*$/);
-  if (!m || !m[1]) return { brand: raw, branch: "" };
-  return { brand: m[1].trim(), branch: m[2].trim() };
-}
 
 /** 字母排序：「#」垫底，其余 A-Z */
 function compareLetter(a, b) {
@@ -395,6 +378,29 @@ Page(
     // 关键词没了，城市收窄也该一起解掉 —— 否则回到列表态还盯着某个城市
     this.setData({ keyword: "", searchCityId: null, cityCounts: [], hitTotal: 0 });
     this.load();
+  },
+
+  /**
+   * 品牌行箭头 → 分店列表。
+   * 品牌行把同城多店收成了一行，单店关注按钮随之消失；这里把它的成员门店
+   * 交出去，由 branches 页摊平并提供逐店关注。
+   *
+   * 门店对象直接从 this._rows 拿（发现页本来就拉过全城列表），
+   * 顺手塞进 globalData 让目标页少一次接口往返。
+   */
+  goBranches(e) {
+    const id = e.currentTarget.dataset.id;
+    const row = (this._rows || []).find((r) => String(r.id) === String(id));
+    if (!row || !row.storeIds) return;
+    const stores = row.stores || [];
+    app.globalData.brandStores = stores;
+    wx.navigateTo({
+      url:
+        "/pages/studio/branches?ids=" +
+        row.storeIds +
+        "&name=" +
+        encodeURIComponent(row.brand || row.id.replace("brand:", "")),
+    });
   },
 
   goWeekly(e) {

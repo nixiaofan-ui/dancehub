@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "分店",
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/nav-bar",
+    "toast": "/components/toast/index"
+  }
+}

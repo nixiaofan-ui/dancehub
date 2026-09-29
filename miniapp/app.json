@@ -7,6 +7,7 @@
     "pages/webview/webview",
     "pages/studio/weekly",
     "pages/studio/pick",
+    "pages/studio/branches",
     "pages/coach/index",
     "pages/course/detail",
     "pages/about/about",

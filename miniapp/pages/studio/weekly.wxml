@@ -5,8 +5,12 @@
   <view wx:if="{{multiMode}}" class="multi-head">
     <view class="multi-row">
       <view class="multi-sub">勾选门店，同屏对比它们当天的课</view>
-      <view class="multi-all {{allOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllStores">
-        {{allOn ? '清除' : '全选'}}
+      <view class="multi-acts">
+        <!-- 多店页只有「看课」，没有单独的关注入口 → 想长期只看某家分店时无处下手 -->
+        <view class="multi-act" hover-class="press" bindtap="goBranches">关注分店</view>
+        <view class="multi-all {{allOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllStores">
+          {{allOn ? '清除' : '全选'}}
+        </view>
       </view>
     </view>
     <scroll-view scroll-x class="store-bar" enhanced show-scrollbar="{{false}}">

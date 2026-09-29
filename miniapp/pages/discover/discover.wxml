@@ -196,7 +196,7 @@
               <view wx:if="{{item.extraStyles}}" class="style-tag more">+{{item.extraStyles}}</view>
             </view>
           </view>
-          <!-- 品牌行没有单个门店可关注 → 换成进入箭头 -->
+          <!-- 品牌行本身没有可关注的对象 → 箭头单点进「分店列表」，在那里逐店关注 -->
           <button
             wx:if="{{!item.isBrand}}"
             class="follow {{item.followed ? 'followed' : ''}}"
@@ -204,7 +204,13 @@
             data-id="{{item.id}}"
             catchtap="toggleFollow"
           >{{item.followed ? '已关注' : '关注'}}</button>
-          <view wx:else class="chev">›</view>
+          <view
+            wx:else
+            class="chev"
+            hover-class="press"
+            data-id="{{item.id}}"
+            catchtap="goBranches"
+          >›</view>
         </view>
       </view>
     </block>
