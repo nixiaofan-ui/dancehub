@@ -9,6 +9,28 @@ export function subscribeConfigured() {
   );
 }
 
+/** 开课提醒提前量：课前 2 小时。 */
+export const REMIND_LEAD_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * 由课程算出提醒时间。
+ *
+ * 抽出来是因为手动开提醒（POST /reminders）和补录时自动开提醒（「想上」）
+ * 是两处独立的调用点 —— 各算一遍的话，哪天改提前量就会只改一处，
+ * 结果自动设的提醒和手动设的差两小时，还没人能解释为什么。
+ *
+ * ⚠ 别顺手把这行「修」成 UTC 口径（直接拿 scheduleDate 的 getTime 加毫秒）。
+ *   scheduleDate 存的是 UTC 午夜，单纯加毫秒得到的是 UTC 的 HH:mm；
+ *   而这里 setHours 是本地时区口径，两者在东八区相差整 8 小时 ——
+ *   改了之后所有已有提醒会集体偏移，且和用户看到的课程时间对不上。
+ */
+export function computeRemindAt(schedule) {
+  const scheduleAt = new Date(schedule.scheduleDate);
+  const [h, m] = schedule.startTime.toTimeString().slice(0, 5).split(":").map(Number);
+  scheduleAt.setHours(h, m, 0, 0);
+  return new Date(scheduleAt.getTime() - REMIND_LEAD_MS);
+}
+
 /**
  * 微信订阅消息的字段长度按「字符数」算：一个汉字算 2，ASCII 算 1，上限 20。
  * 直接 slice(0, 20) 会把 20 个汉字算成 40 字符而超长被拒（errcode 47003）。

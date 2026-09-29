@@ -4,10 +4,10 @@ import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import {
-  createSchedule,
   parseDateKey,
   invalidateTimelineCache,
 } from "../services/schedule.service.js";
+import { computeRemindAt } from "../services/reminder.service.js";
 
 const router = Router();
 
@@ -130,27 +130,90 @@ router.post(
       coachId = coach.id;
     }
 
-    const schedule = await createSchedule({
-      studioId: studio.id,
-      coachId,
-      courseName,
-      difficulty: body.difficulty || "ALL_LEVELS",
-      scheduleDate: parseDateKey(dateKey),
-      startTime: new Date(`1970-01-01T${startTime}:00`),
-      endTime: new Date(`1970-01-01T${endTimeFinal}:00`),
-      remark: body.remark || "用户录入",
-      ownerId: req.userId,
+    // 补录实际上是两件事：加一节课 + 记一下我打算怎么处理它。
+    //
+    // 旧实现只做第一件，于是补录完还得回课表再点一次「预约」，
+    // 「我录过的课」在预约记录里永远查不到 —— 而专程跑来补录一节课的人
+    // 本来就是打算去上它，让他多点一次按钮纯粹是把自己的绕路当成用户的流程。
+    //
+    // 三选一（前端单选组）：
+    //   CONFIRMED = 已约（在店里已经约好了）
+    //   PENDING   = 想上（先记着，顺手开课前提醒）
+    //   其他/空   = 只记录，不约也不提醒
+    const book = String(body.book || "").toUpperCase();
+    const wantBooking = book === "CONFIRMED" || book === "PENDING";
+
+    // 课程、预约、提醒必须一起成功或一起不算 —— 中间断一次会留下一条
+    // 用户以为约好了、实际只有个空壳的课。
+    const made = await prisma.$transaction(async (tx) => {
+      const schedule = await tx.schedule.create({
+        data: {
+          studioId: studio.id,
+          coachId,
+          courseName,
+          difficulty: body.difficulty || "ALL_LEVELS",
+          scheduleDate: parseDateKey(dateKey),
+          startTime: new Date(`1970-01-01T${startTime}:00`),
+          endTime: new Date(`1970-01-01T${endTimeFinal}:00`),
+          remark: body.remark || "用户录入",
+          ownerId: req.userId,
+        },
+      });
+
+      let booking = null;
+      if (wantBooking) {
+        booking = await tx.booking.create({
+          data: {
+            userId: req.userId,
+            scheduleId: schedule.id,
+            status: book === "CONFIRMED" ? "CONFIRMED" : "PENDING",
+            method: "MANUAL",
+          },
+        });
+      }
+
+      // 「想上」顺手开一条本地提醒。不建订阅消息是刻意的：
+      // 订阅必须用户当场点同意，服务端没法替他授权，偷塞一条只会发不出去。
+      let reminder = null;
+      if (book === "PENDING") {
+        reminder = await tx.reminder.create({
+          data: {
+            userId: req.userId,
+            scheduleId: schedule.id,
+            remindAt: computeRemindAt(schedule),
+            status: "PENDING",
+            subscribeTplId: null,
+            type: "LOCAL",
+          },
+        });
+      }
+      return { schedule, booking, reminder };
     });
 
-    const msg = studioCreated
-      ? `已录入，并新建了门店「${studioName}」`
-      : city.created
-        ? `已录入，并新建了城市「${city.name}」`
-        : "已录入";
+    await invalidateTimelineCache();
+
+    let msg =
+      book === "CONFIRMED"
+        ? "已录入，并标记为已约"
+        : book === "PENDING"
+          ? "已录入，想上的课已开好提醒"
+          : "已录入";
+    if (studioCreated) msg += `，新建了门店「${studioName}」`;
+    else if (city.created) msg += `，新建了城市「${city.name}」`;
+
     ok(
       res,
-      { id: schedule.id, studioId: studio.id, studioCreated, cityId, cityCreated: !!city.created },
-      msg
+      {
+        id: made.schedule.id,
+        studioId: studio.id,
+        studioCreated,
+        cityId,
+        cityCreated: !!city.created,
+        bookingId: made.booking ? made.booking.id : null,
+        bookingStatus: made.booking ? made.booking.status : null,
+        reminderId: made.reminder ? made.reminder.id : null,
+      },
+      msg,
     );
   }),
 );
@@ -164,11 +227,17 @@ router.get(
   "/mine",
   requireAuth,
   asyncHandler(async (req, res) => {
+    const uid = req.userId;
     const rows = await prisma.schedule.findMany({
-      where: { ownerId: req.userId },
+      where: { ownerId: uid },
       include: {
         studio: { include: { city: true } },
         coach: true,
+        // 预约状态跟着一起回：前端要在一行里同时显示「我录的」和「已约 / 想上 / 只记录」，
+        // 再让用户自己去两个列表里比对显然不合理。
+        // 带 userId 条件是因为别人的预约不该出现在我这儿。
+        bookings: { where: { userId: uid } },
+        reminders: { where: { userId: uid } },
       },
       orderBy: [{ scheduleDate: "asc" }, { startTime: "asc" }],
     });
@@ -186,6 +255,9 @@ router.get(
         cityId: s.studio.city ? s.studio.city.id : null,
         cityName: s.studio.city ? s.studio.city.name : "",
         difficulty: s.difficulty,
+        bookingStatus: s.bookings.length ? s.bookings[0].status : null,
+        bookingId: s.bookings.length ? s.bookings[0].id : null,
+        hasReminder: s.reminders.length > 0,
       }))
     );
   }),
@@ -236,20 +308,46 @@ router.get(
 
 /**
  * 删除自己录的课：DELETE /api/imports/schedule/:id
- * 只允许删 ownerId 是自己那条 —— 用 where 带 ownerId 而不是先查后判，
- * 避免「查到 → 判断」之间的空档被打穿。
+ *
+ * ⚠ 必须先把引用它的记录删干净。Booking / Reminder 对 Schedule 都是必填外键，
+ *   而 schema 没配 onDelete: Cascade（Prisma 默认 Restrict）——
+ *   以前这里直接 deleteMany Schedule，于是「删一节已经约过的录入课」必定被外键拦下来，
+ *   界面只丢出一句莫名其妙的失败。
+ *   不去改 schema 加级联有两个理由：云库跑 DDL 要额外走一次迁移；
+ *   而应用层显式删能把「删了什么」如实告诉用户。
+ *
+ * 顺带照顾第二种诉求：用户取消完预约，往往也想把这条自己录的课从课表里抹掉，
+ *   所以这里的删除必须包含预约与提醒，而不是只动课程本身。
  */
 router.delete(
   "/schedule/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const r = await prisma.schedule.deleteMany({
+    if (!Number.isFinite(id)) return fail(res, 400, "id 非法");
+
+    // 先按 ownerId 确认归属：不是自己录的课，连动的资格都没有
+    const owned = await prisma.schedule.findFirst({
       where: { id, ownerId: req.userId },
+      select: { id: true },
     });
-    if (!r.count) return fail(res, 404, "没找到这条记录，或它不是你录的");
+    if (!owned) return fail(res, 404, "没找到这条记录，或它不是你录的");
+
+    const removed = await prisma.$transaction(async (tx) => {
+      // 这里按 scheduleId 全量删（不限 userId）：一条私有课理论上只可能被本人预约，
+      // 但万一存在历史脏数据，留一条指向不存在课程的预约会让 /bookings 整个接口炸掉。
+      const b = await tx.booking.deleteMany({ where: { scheduleId: id } });
+      const r = await tx.reminder.deleteMany({ where: { scheduleId: id } });
+      const s = await tx.schedule.deleteMany({ where: { id, ownerId: req.userId } });
+      return { bookings: b.count, reminders: r.count, schedules: s.count };
+    });
+
     await invalidateTimelineCache();
-    ok(res, { id }, "已删除");
+    ok(
+      res,
+      { id, ...removed },
+      removed.bookings || removed.reminders ? "已删除，相关预约和提醒也一并清掉了" : "已删除",
+    );
   }),
 );
 

@@ -64,6 +64,8 @@
       </swiper-item>
     </swiper>
     <view class="arrow" hover-class="press" bindtap="nextDay">›</view>
+    <!-- 补录：就地补一节没被抓到的课，城市和上面选中的日期会自动带过去 -->
+    <view class="add-day" hover-class="press" bindtap="goImport">＋</view>
   </view>
 
   <!-- 已关注门店筛选：多家店同时看时，用它决定时间轴里出现谁 -->
@@ -108,6 +110,8 @@
       <view class="empty-title">今日暂无课程</view>
       <view class="empty-sub">去「发现」页搜索并关注舞室吧</view>
       <button class="btn-pri empty-btn" hover-class="press" bindtap="goDiscover">去发现</button>
+      <!-- 空列表恰恰是最该出现补录入口的时刻：这天没课，多半是这家店没被抓到 -->
+      <view class="empty-alt" hover-class="press" bindtap="goImport">＋ 这天有课没抓到？补录一节</view>
     </view>
 
     <view

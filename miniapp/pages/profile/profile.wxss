@@ -331,3 +331,81 @@
   line-height: 1.6;
   font-weight: 700;
 }
+
+/* ── 我的课表 ──
+   一行里要同时说清三件事：这课哪来的（我录的 / 抓取的）、现在什么状态
+   （已约 / 待确认 / 只记录）、还能做什么操作。 */
+
+/* 状态比原来预约记录的 ok/pending 多出一档「只记录」（录了但没约），
+   所以单独开一组 class，不去复写 .status */
+.sk {
+  font-size: 22rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.sk-ok {
+  color: #00f5d4;
+  background: rgba(0, 245, 212, 0.15);
+}
+.sk-warn {
+  color: #ff6b35;
+  background: rgba(255, 107, 53, 0.15);
+}
+.sk-dim {
+  color: #a8adc2;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 来源标签：不标出来的话，用户删不掉「我录的」也看不出哪些是大家都能约的 */
+.chip-src {
+  display: inline-block;
+  font-size: 20rpx;
+  color: #a8adc2;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 16rpx;
+  padding: 2rpx 12rpx;
+  margin-right: 10rpx;
+  font-weight: 700;
+}
+.chip-src.src-mine {
+  color: #ffd166;
+  background: rgba(255, 209, 102, 0.14);
+}
+
+.row-acts {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 14rpx;
+}
+.act {
+  font-size: 24rpx;
+  color: #a8adc2;
+  background: #1a1a2e;
+  border: 2rpx solid #2b3050;
+  border-radius: 24rpx;
+  padding: 8rpx 24rpx;
+  line-height: 1.6;
+  font-weight: 700;
+}
+.act-book {
+  color: #0e0e1c;
+  background: #00f5d4;
+  border-color: #00f5d4;
+}
+.act-cancel {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.45);
+}
+.act-del {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.45);
+  margin-left: auto;
+}
+.act-past {
+  font-size: 20rpx;
+  color: #6b7089;
+  font-weight: 700;
+}

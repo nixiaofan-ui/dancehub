@@ -5,9 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import { toDateKey } from "../services/schedule.service.js";
-import { sendDueReminders } from "../services/reminder.service.js";
-
-const REMIND_LEAD_MS = 2 * 60 * 60 * 1000;
+import { sendDueReminders, computeRemindAt } from "../services/reminder.service.js";
 
 const router = Router();
 
@@ -55,10 +53,9 @@ router.post(
     const schedule = await prisma.schedule.findUnique({ where: { id: Number(scheduleId) } });
     if (!schedule) return fail(res, 404, "课程不存在");
 
-    const scheduleAt = new Date(schedule.scheduleDate);
-    const [h, m] = schedule.startTime.toTimeString().slice(0, 5).split(":").map(Number);
-    scheduleAt.setHours(h, m, 0, 0);
-    const remindAt = new Date(scheduleAt.getTime() - REMIND_LEAD_MS);
+    // 提醒时间统一由 computeRemindAt 算（补录自动开提醒也用同一个函数）；
+    // 订阅消息的模板 ID 只在用户已授权且服务端配了模板时才带上，没授权就退化成本地提醒
+    const remindAt = computeRemindAt(schedule);
 
     // 仅当用户授权订阅且已配置模板时，才走订阅消息推送
     const subscribeTplId =

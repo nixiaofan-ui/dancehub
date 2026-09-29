@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DanceHub 补录改造方案 · 图片识别课表 + 补录/预约语义重构</title>
+<style>
+:root{
+  --ink:#1b1f24; --ink2:#5a6773; --ink3:#8b98a5;
+  --line:#e3e8ee; --bg:#f6f8fa; --card:#ffffff;
+  --teal:#0f6e56; --teal-bg:#e6f5f0;
+  --blue:#185fa5; --blue-bg:#eaf2fb;
+  --amber:#854f0b; --amber-bg:#fdf3e2;
+  --red:#a32d2d; --red-bg:#fdecec;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;}
+.wrap{max-width:880px;margin:0 auto;padding:48px 28px 96px}
+h1{font-size:27px;line-height:1.35;margin:0 0 10px;letter-spacing:-.2px}
+h2{font-size:20px;margin:52px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--ink);letter-spacing:-.2px}
+h3{font-size:16px;margin:32px 0 10px;color:var(--teal)}
+h4{font-size:14.5px;margin:22px 0 8px}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:22px}
+li{margin:5px 0}
+code{font-family:var(--mono);font-size:12.5px;background:#eef2f6;padding:1.5px 5px;border-radius:4px;color:#2b3440}
+pre{font-family:var(--mono);font-size:12.5px;line-height:1.65;background:#1e242c;color:#dbe4ee;
+  padding:16px 18px;border-radius:10px;overflow-x:auto;margin:14px 0}
+pre .c{color:#8ba3bd}
+pre .k{color:#7fd1c0}
+.lead{font-size:16px;color:var(--ink2);margin:0 0 28px}
+.meta{font-size:13px;color:var(--ink3);border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;background:var(--card);
+  border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th{background:#f0f3f6;text-align:left;font-weight:500;font-size:13px;color:var(--ink2);
+  padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.tag{display:inline-block;font-size:11.5px;line-height:1.6;padding:1px 8px;border-radius:20px;white-space:nowrap}
+.t-ok{background:var(--teal-bg);color:var(--teal)}
+.t-fix{background:var(--amber-bg);color:var(--amber)}
+.t-bug{background:var(--red-bg);color:var(--red)}
+.t-new{background:var(--blue-bg);color:var(--blue)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:16px 0}
+.card.warn{border-left:3px solid #d85a30;background:#fffaf7}
+.card.bug{border-left:3px solid #a32d2d;background:#fff9f9}
+.card h4{margin-top:0}
+.tldr{background:#0f6e56;color:#fff;border-radius:12px;padding:22px 26px;margin:0 0 8px}
+.tldr h3{color:#fff;margin:0 0 12px;font-size:15px;letter-spacing:.4px}
+.tldr .row{display:flex;gap:16px;padding:9px 0;border-top:1px solid rgba(255,255,255,.18);font-size:14px;line-height:1.7}
+.tldr .n{flex:0 0 84px;font-weight:500;opacity:.85}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:16px 0}
+.step{flex:1 1 116px;min-width:116px;background:var(--card);border:1px solid var(--line);
+  border-radius:10px;padding:12px 12px 13px}
+.step b{display:block;font-size:13.5px;font-weight:500;margin-bottom:3px}
+.step span{font-size:12px;color:var(--ink3);line-height:1.5}
+.step .n{font-size:11px;color:var(--teal);letter-spacing:.5px;margin-bottom:6px;font-family:var(--mono)}
+.pick{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 20px 16px;margin:14px 0}
+.opt{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.opt:last-child{border-bottom:none}
+.radio{flex:0 0 17px;height:17px;border-radius:50%;border:2px solid var(--ink3);margin-top:4px}
+.radio.on{border-color:var(--teal);box-shadow:inset 0 0 0 4px var(--teal)}
+.opt b{font-size:14.5px;font-weight:500;display:block;margin-bottom:2px}
+.opt span{font-size:13px;color:var(--ink2);line-height:1.6}
+.opt em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--teal);background:var(--teal-bg);
+  padding:1px 6px;border-radius:4px}
+.kv{font-size:13.5px}
+.kv b{font-weight:500}
+.ask{background:#fff;border:2px solid var(--teal);border-radius:12px;padding:4px 22px 18px;margin:14px 0}
+.ask .q{padding:16px 0;border-bottom:1px solid var(--line)}
+.ask .q:last-child{border-bottom:none}
+.ask .q b{display:block;font-size:14.5px;font-weight:500;margin-bottom:6px}
+.ask .q span{font-size:13.5px;color:var(--ink2);line-height:1.7}
+hr{border:none;border-top:1px solid var(--line);margin:34px 0}
+.small{font-size:12.5px;color:var(--ink3)}
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>补录功能改造方案</h1>
+<div class="lead">① 截图/图片识别课表　② 补录 ↔ 预约 的语义重构</div>
+<div class="meta">DanceHub · 2026-09-29 · 待拍板后实施</div>
+
+<div class="tldr">
+  <h3>先说结论</h3>
+  <div class="row"><div class="n">需求 1</div><div><b>可行</b>，但不能让机器直接入库。走「视觉大模型识别 → 生成可编辑的确认页 → 用户核对后批量录入」，单张成本约 <b>1.5 分钱</b>。你给的那张 Dance Plus 三亚图有 4 个坑，方案里逐个解决。</div></div>
+  <div class="row"><div class="n">需求 2</div><div>你感到的「一堆 bug」确认是<b>设计缺陷</b>（3 处，见下），另外顺带查出 <b>1 个真 bug</b>（删除已预约的录入课会直接报错）。核心修法：补录时选状态 + 「预约记录」升级为「我的课表」+ 取消预约时二段确认。</div></div>
+</div>
+
+<h2>一、需求 1：截图 → 课程数据</h2>
+
+<h3>1.1 你那张图里藏着 4 个坑</h3>
+<p>先把图读一遍：Dance Plus（三亚，天涯区金鸡岭街），7 列（周一~周日）× 5 行时间段，行首是「时间 + 班别」，格子里是「舞种 + 老师」，底部还有难度图例和地址。</p>
+
+<table>
+  <tr><th style="width:150px">坑</th><th>为什么难</th><th style="width:190px">对策</th></tr>
+  <tr>
+    <td><b>只有星期，没有日期</b></td>
+    <td>整张图是「周一~周日」的周视图，没有具体日期。机器没法知道这是哪一周 —— 猜错就整批录到错误日期上。</td>
+    <td>流程里<b>强制加一步</b>「这是哪一周」，默认最近一个周一，支持一次展开 4 周</td>
+  </tr>
+  <tr>
+    <td><b>三行时间完全相同</b></td>
+    <td>20:00-21:30 出现三次（基础班 / 常规班），即同一时段<b>并行开班</b>。按时间去重会误删，按时间排序会错位。</td>
+    <td>识别时保留「班别」字段一起入库；去重键用「时间 + 课名 + 老师」而不是时间</td>
+  </tr>
+  <tr>
+    <td><b>艺术字 + 白字压黑底</b></td>
+    <td>舞种是蓝色夸张字体圆圈（DANCE / Jazz / Hiphop），老师名是白字叠在人像上。通用 OCR 和「表格识别」都会被判为无结构图像。</td>
+    <td>必须用<b>视觉大模型</b>（理解版式语义），不用传统 OCR / 表格识别接口</td>
+  </tr>
+  <tr>
+    <td><b>难度靠图例暗示</b></td>
+    <td>图里的难度用 ○ ◯ ◎ ◉ 符号，含义写在底部图例里，字面上看不出来。</td>
+    <td>把图例一起喂给模型，让它直接输出枚举（入门/基础/进阶/高阶）</td>
+  </tr>
+</table>
+
+<h3>1.2 整体流程</h3>
+<div class="flow">
+  <div class="step"><div class="n">01 小程序</div><b>选图</b><span>从相册选 1~9 张，本地压缩到 1600px</span></div>
+  <div class="step"><div class="n">02 服务端</div><b>调视觉模型</b><span>密钥只留服务端，带城市/门店名做提示</span></div>
+  <div class="step"><div class="n">03 服务端</div><b>校验与规整</b><span>时间合法性、星期→日期换算、去重</span></div>
+  <div class="step"><div class="n">04 小程序</div><b>确认页</b><span>逐条可改可删，<b>人核对是唯一防线</b></span></div>
+  <div class="step"><div class="n">05 服务端</div><b>批量入库</b><span>一次写入，可整批撤销</span></div>
+</div>
+
+<div class="card warn">
+<h4>原则：识别结果永远不自动入库</h4>
+<p style="margin:0">这正是你在录课页注释里写过的原则 ——「解析错一条不会报错、也不会有人发现，用户只会觉得这软件数据不准」。所以图片识别只负责<b>把 90% 的体力活干掉</b>，最后那一眼必须由人来看。宁可多一次点击，也不能让一条错课静默进库。</p>
+</div>
+
+<h3>1.3 关键交互 1：周次选择（不可省）</h3>
+<p>识别完成后，确认页顶部固定一条：</p>
+<pre><span class="c">// 识别到「周一~周日」，请确认这是哪一周</span>
+← 2026-09-21 ~ 09-27 →     [ 重复 4 周 ]</pre>
+<p>默认取「最近一个已开始的周一」；点箭头前后翻周；勾「重复 4 周」则把这张周课表展开成 4 周（月课表常见）。<b>日期换算放在服务端做</b>（前端时区不可靠，项目里已有这个教训）。</p>
+
+<h3>1.4 关键交互 2：确认页</h3>
+<div class="card">
+<h4>已识别 12 节课，请核对（可改可删）</h4>
+<table style="margin:8px 0 0;border:none;background:transparent">
+  <tr><td style="border:none;padding:6px 0;width:98px"><b>周一 09-21</b></td><td style="border:none;padding:6px 0">16:30-18:00　基础班　DANCE　<span class="small">老师待定</span></td><td style="border:none;padding:6px 0;width:32px"><span class="small">✕</span></td></tr>
+  <tr><td style="border:none;padding:6px 0"><b>周三 09-23</b></td><td style="border:none;padding:6px 0">20:00-21:30　常规班　Jazz　Bala</td><td style="border:none;padding:6px 0"><span class="small">✕</span></td></tr>
+  <tr><td style="border:none;padding:6px 0"><b>周六 09-26</b></td><td style="border:none;padding:6px 0">18:30-20:00　入门A班　Choreography　Kris</td><td style="border:none;padding:6px 0"><span class="small">✕</span></td></tr>
+</table>
+<p class="small" style="margin:12px 0 0">每行点任意字段即可修改；行尾 ✕ 删除；底部「全部录入（12 节）」/「转手动录入」。</p>
+</div>
+<p>识别不准的典型表现是<b>老师名字认错字</b>（Yeye / Ss / Kris 这类短名、艺术字体、白字压人像），所以老师字段要允许留空 —— 模型不确定就该交白卷，不能编。</p>
+
+<h3>1.5 识别引擎选型</h3>
+<table>
+  <tr><th style="width:210px">方案</th><th style="width:130px">单价（估算/张）</th><th>评价</th></tr>
+  <tr>
+    <td><b>腾讯混元视觉</b><br><span class="small">HY Vision / TurboS Vision</span></td>
+    <td>≈ <b>¥0.015</b><br><span class="small">官方 ¥3/百万输入<br>¥9/百万输出</span></td>
+    <td><span class="tag t-ok">推荐</span> 与云托管同厂，出网稳定、账单统一；新账号多模态共享 100 万 token 免费包，够测 300+ 张。按每张图约 1500 输入 + 1200 输出 token 估算。</td>
+  </tr>
+  <tr>
+    <td><b>阿里 Qwen3-VL</b></td>
+    <td>≈ ¥0.03</td>
+    <td>中文版式理解口碑好，可做备选/对拍。多一个平台的账号与账单。</td>
+  </tr>
+  <tr>
+    <td>OCR 专用模型<br><span class="small">如 qwen-vl-ocr</span></td>
+    <td>≈ ¥0.001</td>
+    <td><b>不合适</b>。它只吐文字，把「哪个格子属于星期几」这层版式信息丢掉了，还得我们再写一套规则去还原网格 —— 便宜但脆弱。</td>
+  </tr>
+  <tr>
+    <td>传统 OCR / 表格识别<br><span class="small">Tesseract、票据表格识别</span></td>
+    <td>≈ 0</td>
+    <td><b>不可用</b>。这张图不是线条表格，是头像拼贴 + 艺术字，识别出来是一堆无序文字。</td>
+  </tr>
+</table>
+<p class="small">价格取自官方公开定价页，实际以开通后的账单为准。按 100 张/天算，一个月约 <b>¥45</b>；再给每个用户加每日 20 张的上限做护栏，成本可控。</p>
+<p><b>需要你提供</b>：选定平台的 API Key（或告诉我用哪个平台，我把调用代码写好、key 走云托管环境变量，绝不写进代码或小程序）。</p>
+
+<h3>1.6 接口设计</h3>
+<pre>POST /api/imports/parse-image        <span class="c">// 识别</span>
+{
+  images: ["<span class="k">data:image/jpeg;base64,...</span>"],   <span class="c">// 1~9 张</span>
+  cityId: 12, cityName: "三亚",          <span class="c">// 帮模型定位地址栏</span>
+  studioName: "Dance Plus",             <span class="c">// 可选，提示品牌名怎么写</span>
+  weekStart: "2026-09-21"               <span class="c">// 可选，首次识别不传</span>
+}
+→ { items: [{ weekday: 1, startTime: "16:30", endTime: "18:00",
+              courseName: "DANCE", className: "基础班",
+              coachName: "Yeye", difficulty: "BEGINNER" }],
+    studioName: "Dance Plus", cityName: "三亚",
+    address: "海南省三亚市天涯区金鸡岭街398号天成广场3楼",
+    warnings: ["第 2 行老师名不清晰，已留空"] }
+
+POST /api/imports/schedule/batch      <span class="c">// 确认后批量入库</span>
+{
+  studioName, cityId|customCityName,
+  weekStart: "2026-09-21", repeatWeeks: 4,   <span class="c">// 展开成 4 周</span>
+  items: [...],                              <span class="c">// 用户核对/修改后的最终数据</span>
+  book: "CONFIRMED"                          <span class="c">// 见需求 2 改动 A</span>
+}
+→ { created: 48, skipped: 2, skippedDetail: [...], batchId: "..." }</pre>
+
+<div class="card warn">
+<h4>两个必须提前知道的实现坑</h4>
+<p><b>① 图片不能用 <code>wx.uploadFile</code>。</b>小程序走的是 <code>wx.cloud.callContainer</code>（免备案那条路），它只吃 JSON body —— 所以图片要以 base64 塞进请求体。压缩到 1600px / quality 80 后单张约 300~600KB，1~9 张完全在限额内。</p>
+<p style="margin-bottom:0"><b>② 现有请求封装的 10 秒超时会把识别打死。</b><code>request.js</code> 里 <code>REQUEST_TIMEOUT_MS = 10000</code>，而视觉模型出一份 12 节课的 JSON 通常要 8~25 秒。这个接口必须单独放宽到 60 秒，前端配「识别中…（大约 10 秒）」的进度态，避免用户以为卡死。</p>
+</div>
+
+<h3>1.7 服务端后处理（这层不能省）</h3>
+<ol>
+  <li><b>JSON 解析失败</b> → 降温度重试一次；仍失败则回「识别失败，请手动录入」，不能把半截数据丢给前端。</li>
+  <li><b>时间校验</b>：<code>HH:MM</code> 格式、结束晚于开始、时长在 30~180 分钟之间，越界丢弃并记 warning。</li>
+  <li><b>星期 → 日期</b>：在服务端按 <code>weekStart</code> 换算，避免前端时区问题。</li>
+  <li><b>难度归一化</b>：模型给的自由文本映射到库里的枚举（入门/基础/进阶/高阶/不限）。</li>
+  <li><b>去重</b>：同一门店同一天「开始时间 + 课名 + 老师」已存在则标 skipped（并行班靠课名区分，不会误杀）。</li>
+  <li><b>门店复用</b>：沿用现有逻辑按「同城同名」找店，找不到才建，避免同一家店出现两半课表。</li>
+</ol>
+
+<h3>1.8 风险与对策</h3>
+<table>
+  <tr><th style="width:170px">风险</th><th style="width:70px">程度</th><th>对策</th></tr>
+  <tr><td>模型编造不存在的课</td><td><span class="tag t-fix">中</span></td><td>确认页人眼兜底；prompt 明确「不确定就留空」；给「这不是课表网格？」的失败识别专门返回错误</td></tr>
+  <tr><td>老师名认错字</td><td><span class="tag t-fix">中</span></td><td>允许留空；老师名只做展示、不参与去重键</td></tr>
+  <tr><td>耗时超时</td><td><span class="tag t-ok">低</span></td><td>单独放宽超时 + 进度态 + 失败可重试</td></tr>
+  <tr><td>成本失控</td><td><span class="tag t-ok">低</span></td><td>每人每日 20 张上限、单张 ≤5MB；月成本先按百张/天量级</td></tr>
+  <tr><td>图不是网格课表（纯海报/纯文字）</td><td><span class="tag t-fix">中</span></td><td>识别为空时不做「零结果」的死路，直接引导去手动录入</td></tr>
+</table>
+
+<h2>二、需求 2：补录 ↔ 预约 的语义重构</h2>
+
+<h3>2.1 现状的三个现象，都不是偶发故障</h3>
+<table>
+  <tr><th style="width:220px">你看到的</th><th>根因</th><th style="width:110px">性质</th></tr>
+  <tr>
+    <td>补录完，预约记录里没有它</td>
+    <td>「补录」只创建了<b>课程数据</b>（Schedule），没有创建<b>预约记录</b>（Booking）。两者是两张表，补录压根不碰 Booking。</td>
+    <td><span class="tag t-fix">设计缺陷</span></td>
+  </tr>
+  <tr>
+    <td>之前录过的课查不到</td>
+    <td>「我录的课」这份列表<b>只做在录课页里</b>，而录课页入口藏在「我的」的一条小字上，回看很难。真正该放的位置（预约记录 tab）里没有。</td>
+    <td><span class="tag t-fix">功能缺失</span></td>
+  </tr>
+  <tr>
+    <td>补录→预约→取消，课还在课表里</td>
+    <td>取消预约只删 Booking（而且是物理删除）。而补录产生的那条课程属于你（<code>ownerId = 我</code>），课表页本来就会把它查出来显示，跟有没有预约无关。</td>
+    <td><span class="tag t-fix">语义混淆</span></td>
+  </tr>
+</table>
+
+<p><b>一句话总结</b>：一个「补录」按钮同时被理解成两件事 —— 用户觉得是「记录我要上的课」，系统做的是「往库里加一条课程数据」。这两件事在数据库里分属两张表，于是走成了两条互不相识的链路。</p>
+
+<h3>2.2 改动 A：补录时直接选状态（你原话要的）</h3>
+<p>表单底部加一组单选，替换掉现在「录完就结束」的裸提交：</p>
+<div class="pick">
+  <div class="opt"><div class="radio on"></div><div><b>已约（我在店里已经约好了）<span class="small"> · 默认</span></b><span>录完同时标记为已约，会出现在「我的课表」和预约记录里。<em>Schedule + Booking(CONFIRMED)</em></span></div></div>
+  <div class="opt"><div class="radio"></div><div><b>想上（先记下来，开课前提醒我）</b><span>状态为待确认，并自动设一条开课前提醒。<em>Schedule + Booking(PENDING) + Reminder</em></span></div></div>
+  <div class="opt"><div class="radio"></div><div><b>只记录（不约也不提醒）</b><span>就是现在这个行为，只把课记进我的课表。<em>Schedule</em></span></div></div>
+</div>
+<p>这样「补录」这个动作的语义就明确了：它不再是往库里投数据，而是<b>加一节课到我的行程里</b>。</p>
+
+<h3>2.3 改动 B：「预约记录」升级成「我的课表」</h3>
+<p>不新增 tab（你刚把 5 个合并成 4 个，别再拆），而是把现有「预约记录」这一栏扩成统一视图，一行看清所有我相关的课：</p>
+<ul>
+  <li>来源标签：<span class="tag t-new">我录的</span> / <span class="tag t-ok">已抓取</span></li>
+  <li>状态标签：已约 / 想上 / 只记录</li>
+  <li>行内操作：没约的 → 「预约」；已约的 → 「取消预约」；我录的 → 「删除」</li>
+  <li>排序：今天及以后在前，过期折叠起来</li>
+</ul>
+<p>这里同时解决了「之前录过的课查不到」—— 那批数据一直都在 <code>/api/imports/mine</code> 里，只是没有一个正经入口。</p>
+
+<h3>2.4 改动 C：取消预约时二段确认</h3>
+<pre>if (这节课是抓取来的公共课)
+    → 只取消预约（保持现状）
+
+if (这节课是我自己录的)
+    → 「这节课是你自己录的，要一起删掉吗？」
+        [ 只取消预约 ]   [ 连课一起删 ]</pre>
+<p>「连课一起删」就顺手删掉那条私有课（含它的提醒），这样课表里也不会再留着一条你早就不打算上的课 —— 正是你现在看到的现象。</p>
+
+<h3>2.5 改动 D：补录入口搬到「课表」页（可选，但建议做）</h3>
+<p>现在补录入口在「我的」的一条小字上，用户是「想到要去补录」才会去；而真实场景是<b>在课表里发现某天缺课，就地想补上</b>。</p>
+<ul>
+  <li>课表页日期条右侧加「＋」，进入补录页时自动带上<b>当前城市 + 当前选中日期</b>（不用再选一次）</li>
+  <li>某天空状态加一句「这家店没抓到？帮我补一节课」</li>
+  <li>「我的」页入口保留，文案不变</li>
+</ul>
+
+<div class="card bug">
+<h4>顺带查出 1 个真 bug（现在就会报错）</h4>
+<p>删除自己录入的课，如果这节课<b>已经被预约过</b>，会直接失败：<code>DELETE /api/imports/schedule/:id</code> 只删 Schedule，而 Booking / Reminder 对它还有外键引用，数据库会拒绝这次删除，前端只看到一句莫名其妙的报错。</p>
+<p>你现在之所以没撞上，是因为你的操作顺序恰好是先取消预约、再删课。<b>只要有人直接删一节已约的课，就一定踩到。</b></p>
+<p style="margin-bottom:0"><b>修法</b>：在事务里先删 Booking、Reminder，再删 Schedule（应用层显式删除，<b>不改表结构</b> —— 云库跑 DDL 的成本和风险都比这高得多）。</p>
+</div>
+
+<h3>2.6 服务端改动清单</h3>
+<table>
+  <tr><th style="width:280px">接口</th><th>改动</th></tr>
+  <tr><td><code>POST /api/imports/schedule</code></td><td>加 <code>book</code> 参数（CONFIRMED / PENDING / null），创建课程后按需建 Booking（+ Reminder），返回 <code>bookingId</code></td></tr>
+  <tr><td><code>POST /api/imports/schedule/batch</code> <span class="tag t-new">新增</span></td><td>批量入库（图片识别用），支持 <code>repeatWeeks</code> 展开多周，返回 created / skipped 明细</td></tr>
+  <tr><td><code>POST /api/imports/parse-image</code> <span class="tag t-new">新增</span></td><td>转视觉大模型 + 后处理校验，只返回结构化结果，不写库</td></tr>
+  <tr><td><code>GET /api/imports/mine</code></td><td>返回里补 <code>bookingStatus</code> / <code>hasReminder</code>，让前端能一行显示状态与操作</td></tr>
+  <tr><td><code>DELETE /api/imports/schedule/:id</code></td><td><span class="tag t-bug">修 bug</span> 事务内级联删 Booking / Reminder（不改 schema）</td></tr>
+</table>
+
+<h3>2.7 小程序改动清单</h3>
+<ul>
+  <li><code>pages/import/</code>：加「传课表图片」入口、状态三选一、识别确认页（新增 <code>pages/import/confirm</code> 或页内弹层）</li>
+  <li><code>pages/profile/</code>：「预约记录」→「我的课表」，合并显示我录的课 + 预约状态 + 行内操作</li>
+  <li><code>pages/index/</code>：日期条加「＋」跳补录（带城市与日期）；取消预约时对我录的课弹二段确认</li>
+  <li><code>utils/request.js</code>：给识别接口单独放宽超时</li>
+  <li>跑 <code>npm run check:register</code>（新增页面/模块后必跑）</li>
+</ul>
+
+<h2>三、分期建议</h2>
+<table>
+  <tr><th style="width:60px">期</th><th style="width:230px">内容</th><th>说明</th></tr>
+  <tr>
+    <td><b>P0</b></td>
+    <td>需求 2 全部（A+B+C+改 bug）</td>
+    <td>纯逻辑修复，不依赖任何外部服务，一次部署 + 一个体验版就能验收。你反馈的体验问题绝大多数在这一期消失。</td>
+  </tr>
+  <tr>
+    <td><b>P0</b></td>
+    <td>需求 1 的单张图识别 + 确认页 + 批量入库</td>
+    <td>需要先定识别平台、拿到 key。识别引擎的对接是独立的一小块，做完直接可视。</td>
+  </tr>
+  <tr>
+    <td><b>P1</b></td>
+    <td>多张图 / 重复 4 周 / 与已有课的去重覆盖提示</td>
+    <td>等 P0 跑通、看过真实识别率之后再做，避免提前优化。</td>
+  </tr>
+  <tr>
+    <td><b>P2</b></td>
+    <td>识别质量反馈闭环（记录用户改了哪些字段，用来调 prompt）</td>
+    <td>真正能把识别率从「能用」推到「好用」的一步，但要有数据之后才有意义。</td>
+  </tr>
+</table>
+
+<h2>四、需要你拍板</h2>
+<div class="ask">
+  <div class="q"><b>1. 识别引擎用哪个？</b><span>我推荐腾讯混元视觉（与云托管同厂、约 1.5 分/张）；也可以选阿里 Qwen3-VL（约 3 分/张，中文版式更强）。定了之后需要你给一个 API Key，我只放进云托管环境变量。</span></div>
+  <div class="q"><b>2. 补录后的默认状态选哪个？</b><span>我建议默认「已约」—— 会去补录一节课的人，十有八九是这节课真要去上。另两个选项仍然保留。</span></div>
+  <div class="q"><b>3. 补录入口要不要搬到课表页？</b><span>搬（课表页「＋」，自动带城市和日期，同时保留「我的」入口）还是先只修逻辑不动入口。</span></div>
+  <div class="q"><b>4. 先做哪一半？</b><span>我建议需求 2 先做（不依赖外部服务、当天可验证），需求 1 并行等你给 key。也可以两件一起上。</span></div>
+</div>
+
+<footer>
+DanceHub · 补录改造方案 · 2026-09-29<br>
+本文中识别模型价格取自各厂商公开定价页，实际以开通后账单为准。
+</footer>
+
+</div>
+</body>
+</html>

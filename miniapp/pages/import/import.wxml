@@ -107,6 +107,28 @@
         >{{item}}</view>
       </view>
     </view>
+    <!-- 补录不是往库里丢一条数据，而是把一节课加进我的行程。
+         所以必须问一句这节课怎么处理 —— 以前不问，用户录完还得回课表再点一次
+         「预约」，于是「我录过的课」在预约记录里永远查不到 -->
+    <view class="field">
+      <view class="label">这节课怎么处理</view>
+      <view class="book-col">
+        <view
+          wx:for="{{bookOpts}}"
+          wx:key="title"
+          class="book-opt {{bookMode === item.value ? 'on' : ''}}"
+          hover-class="press"
+          data-value="{{item.value}}"
+          bindtap="tapBook"
+        >
+          <view class="book-head">
+            {{item.title}}
+            <text wx:if="{{bookMode === item.value}}" class="book-check">✓</text>
+          </view>
+          <view class="book-sub">{{item.sub}}</view>
+        </view>
+      </view>
+    </view>
   </view>
 
   <button class="submit {{submitBusy ? 'busy' : ''}}" hover-class="press" bindtap="submit">
@@ -114,7 +136,7 @@
   </button>
 
   <view wx:if="{{lastResult}}" class="done">
-    ✅ 已录入：{{lastResult.city}} · {{lastResult.studio}} · {{lastResult.date}} {{lastResult.time}} · {{lastResult.course}}
+    ✅ {{lastResult.bookText}}：{{lastResult.city}} · {{lastResult.studio}} · {{lastResult.date}} {{lastResult.time}} · {{lastResult.course}}
     <view class="done-sub">继续录下一节吧</view>
   </view>
 
@@ -123,7 +145,13 @@
     <view class="mine-title">我录过的课（{{mine.length}}）</view>
     <view class="mine-item" wx:for="{{mine}}" wx:key="id">
       <view class="mine-main">
-        <view class="mine-course">{{item.courseName}}</view>
+        <view class="mine-course">
+          {{item.courseName}}
+          <text wx:if="{{item.bookingStatus === 'CONFIRMED'}}" class="mine-tag mt-ok">已约</text>
+          <text wx:elif="{{item.bookingStatus === 'PENDING'}}" class="mine-tag mt-warn">想上</text>
+          <text wx:else class="mine-tag mt-dim">只记录</text>
+          <text wx:if="{{item.hasReminder}}" class="mine-tag mt-bell">🔔</text>
+        </view>
         <view class="mine-sub">
           <block wx:if="{{item.cityName}}">{{item.cityName}} · </block>{{item.studioName}} · {{item.date}} {{item.startTime}}-{{item.endTime}}<block wx:if="{{item.coachName}}"> · {{item.coachName}}</block>
         </view>

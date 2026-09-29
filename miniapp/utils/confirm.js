@@ -20,4 +20,27 @@ function confirm({ title = "确认操作", content = "", confirmText = "确定",
   });
 }
 
-module.exports = { confirm };
+/**
+ * 多选一（超过两个选项时用）。
+ *
+ * wx.showModal 只有「确定 / 取消」两个按钮，三岔口塞不进去 ——
+ * 比如取消一节**自己录入**的课时，用户其实有三个去处：
+ * 只取消预约 / 连课一起删 / 算了。硬压缩成「确定吗」等于替他做了决定。
+ *
+ * @param {string[]} itemList 最多 6 项（微信限制）
+ * @param {string} [alert] 标题，放在列表上方
+ * @returns 选中的**下标**；点了自带的「取消」返回 -1
+ */
+function choose({ itemList = [], alert = "" } = {}) {
+  return new Promise((resolve) => {
+    wx.showActionSheet({
+      itemList,
+      ...(alert ? { alert } : {}),
+      success: (r) => resolve(r.tapIndex),
+      // 点空白处/取消都走 fail，和 confirm 一样按「不选」处理，不要 reject
+      fail: () => resolve(-1),
+    });
+  });
+}
+
+module.exports = { confirm, choose };

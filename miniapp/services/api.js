@@ -139,10 +139,22 @@ const apiFavCoach = (name) => req.post("/coach-follows", { name });
 const apiUnfavCoach = (name) =>
   req.delete("/coach-follows/" + encodeURIComponent(name));
 // 结构化逐条录入课表（用户手动补抓不到的店）
-const apiImportSchedule = (payload) => req.post("/imports/schedule", payload);
+/**
+ * 补录一节课。book 决定这一节同时也是不是一条行程：
+ *   "CONFIRMED" = 已约 / "PENDING" = 想上（顺带开提醒）/ 不传 = 只记录。
+ * 服务端会在同一个事务里把课程和预约一起建出来。
+ */
+const apiImportSchedule = (payload) => {
+  markDirty();
+  return req.post("/imports/schedule", payload);
+};
 // 我录过的课：录入是私有的，所以要能回看、能删
 const apiMyImports = () => req.get("/imports/mine");
-const apiDeleteImport = (id) => req.delete("/imports/schedule/" + id);
+// 删掉的可能是课表里正在显示的课，所以同样要打脏让课表页重刷
+const apiDeleteImport = (id) => {
+  markDirty();
+  return req.delete("/imports/schedule/" + id);
+};
 // 我录过课的城市（含库外新建的，如三亚）——「我的」页要能找到这些城市
 const apiMyCities = () => req.get("/imports/cities");
 // 缺失舞室提报

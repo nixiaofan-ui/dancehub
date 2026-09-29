@@ -50,7 +50,7 @@
       <view class="tab {{tab === 'coaches' ? 'on' : ''}}" data-tab="coaches" bindtap="switchTab">
         我的老师<text wx:if="{{coaches.length}}" class="tab-n">{{coaches.length}}</text>
       </view>
-      <view class="tab {{tab === 'bookings' ? 'on' : ''}}" data-tab="bookings" bindtap="switchTab">预约记录</view>
+      <view class="tab {{tab === 'mine' ? 'on' : ''}}" data-tab="mine" bindtap="switchTab">我的课表<text wx:if="{{schedules.length}}" class="tab-n">{{schedules.length}}</text></view>
       <view class="tab {{tab === 'reminders' ? 'on' : ''}}" data-tab="reminders" bindtap="switchTab">提醒设置</view>
     </view>
   </scroll-view>
@@ -121,9 +121,11 @@
     </view>
   </view>
 
-  <!-- 预约记录 -->
-  <view wx:if="{{tab === 'bookings'}}">
-    <view wx:if="{{bookings.length === 0}}" class="empty">
+  <!-- 我的课表：我录的课 + 我约的课，合并一处。
+       以前这两拨数据分列两处（预约记录里没有录的课，录课页里没有约的课），
+       两边都不完整，于是「录完就消失」成了常态 -->
+  <view wx:if="{{tab === 'mine'}}">
+    <view wx:if="{{schedules.length === 0}}" class="empty">
       <view class="dancer-lg empty-dancer">
         <view class="d-head"></view>
         <view class="d-torso"></view>
@@ -132,17 +134,27 @@
         <view class="d-limb d-leg-l"></view>
         <view class="d-limb d-leg-r"></view>
       </view>
-      <view class="empty-title">一张票都还没约</view>
-      <view class="empty-sub">首页点「预约」，抢位不等人</view>
+      <view class="empty-title">这里还空着</view>
+      <view class="empty-sub">在课表里约一节课，或补录一节抓不到的课，都会出现在这里</view>
     </view>
-    <view wx:for="{{bookings}}" wx:key="id" class="record-card">
+    <view wx:for="{{schedules}}" wx:key="id" class="record-card {{item.past ? 'card-dim' : ''}}">
       <view class="record-head">
-        <text class="record-course">{{item.schedule.courseName}}</text>
-        <text class="status {{item.status === 'CONFIRMED' ? 'ok' : 'pending'}}">{{item.statusLabel}}</text>
+        <text class="record-course">{{item.courseName}}</text>
+        <text class="sk {{item.statusClass}}">{{item.statusLabel}}</text>
       </view>
-      <view class="record-meta">{{item.cityName}} · {{item.schedule.studio}}</view>
-      <view class="record-meta">{{item.dateLabel}} {{item.schedule.startTime}} - {{item.schedule.endTime}} · {{item.schedule.coach || '教练待定'}}</view>
-      <button class="cancel-book" hover-class="press" data-id="{{item.schedule.id}}" data-name="{{item.schedule.courseName}}" bindtap="cancelBooking">取消预约</button>
+      <view class="record-meta">
+        <text class="chip-src {{item.mine ? 'src-mine' : ''}}">{{item.sourceLabel}}</text>
+        {{item.cityName}} · {{item.studioName}}
+      </view>
+      <view class="record-meta">
+        {{item.dateText}} {{item.startTime}}<block wx:if="{{item.endTime}}"> - {{item.endTime}}</block><block wx:if="{{item.coach}}"> · {{item.coach}}</block><block wx:if="{{item.hasReminder}}"> · 🔔 已开提醒</block>
+      </view>
+      <view class="row-acts">
+        <view wx:if="{{item.booked}}" class="act act-cancel" hover-class="press" data-id="{{item.id}}" bindtap="tapCancelRow">取消预约</view>
+        <view wx:else class="act act-book" hover-class="press" data-id="{{item.id}}" bindtap="tapBookRow">预约这节</view>
+        <view wx:if="{{item.mine}}" class="act act-del" hover-class="press" data-id="{{item.id}}" bindtap="tapDeleteRow">删除这节课</view>
+        <view wx:if="{{item.past}}" class="act-past">已结束</view>
+      </view>
     </view>
   </view>
 

@@ -17,6 +17,28 @@ const DIFF_VALUE = {
 };
 
 /**
+ * 补录的「行程状态」三选一。
+ *
+ * 以前补录只往库里丢一条课程数据，用户录完还得回课表再点一次预约 ——
+ * 结果「我录过的课」在预约记录里永远查不到。而专程来补录一节课的人
+ * 本来就是打算去上它，所以这里把两件事合成一步。
+ *
+ * value 直接对应服务端 imports/schedule 的 book 字段；
+ * 空字符串 = 只记录（服务端收到空值就不建预约）。
+ */
+const BOOK_OPTIONS = [
+  { value: "CONFIRMED", title: "已约", sub: "我在店里已经约好了" },
+  { value: "PENDING", title: "想上", sub: "先记着，开课前提醒我" },
+  { value: "", title: "只记录", sub: "不约也不提醒，先把课记下来" },
+];
+
+const BOOK_TEXT = {
+  CONFIRMED: "已录入并标记为已约",
+  PENDING: "已录入，开课前会提醒你",
+  "": "已录入",
+};
+
+/**
  * 结构化逐条录入。
  *
  * 为什么不做「粘贴文本自动解析」：各家公众号课表排版五花八门，
@@ -63,6 +85,9 @@ Page(
       coachName: "",
       submitBusy: false,
       lastResult: null,
+      // 行程状态：默认「已约」—— 会来补录的人，绝大多数这节课是真要去上
+      bookMode: "CONFIRMED",
+      bookOpts: BOOK_OPTIONS,
       // 我录过的课（只有本人可见，所以列表也只列本人的）
       mine: [],
     }),
@@ -85,8 +110,11 @@ Page(
         }
         const region = app.globalData.region || "CN";
         const sameRegion = cities.filter((c) => c.region === region);
+        // 从课表页「＋」进来时带着那座城市（this.presetCityId），
+        // 别自作主张换回「当前城市」—— 用户正在录的是他眼下看的那个城市。
+        const preferred = this.presetCityId || app.globalData.cityId;
         const cur =
-          sameRegion.find((c) => c.id === app.globalData.cityId) || sameRegion[0] || null;
+          sameRegion.find((c) => c.id === preferred) || sameRegion[0] || null;
         this.setData(
           Object.assign(
             { region, cities },
@@ -183,14 +211,28 @@ Page(
     }
   },
 
-  onLoad() {
+  onLoad(o) {
     const today = todayKey();
-    this.setData({
+    const opts = o || {};
+    // 从课表页「＋」进来：带上当前城市和选中的那一天，用户不用再选一遍。
+    // 这是「在某个日期下补一节课」最常见的场景 —— 发现这天缺课，就地补上。
+    const init = {
       dateText: today,
       dateStart: today,
       dateEnd: addDays(today, 13),
       endAuto: addMinutes(this.data.startText, 90),
-    });
+    };
+    if (opts.cityId) {
+      this.presetCityId = Number(opts.cityId);
+      init.cityId = Number(opts.cityId);
+      init.cityName = decodeURIComponent(opts.cityName || "");
+    }
+    // 日期早于今天没意义；晚于可选上限就把上限放开，保证他能选到那一天
+    if (opts.date && /^\d{4}-\d{2}-\d{2}$/.test(opts.date)) {
+      init.dateText = opts.date < today ? today : opts.date;
+      if (init.dateText > init.dateEnd) init.dateEnd = init.dateText;
+    }
+    this.setData(init);
   },
 
   onStudio(e) {
@@ -221,6 +263,9 @@ Page(
   tapDiff(e) {
     this.setData({ diffIndex: Number(e.currentTarget.dataset.i) });
   },
+  tapBook(e) {
+    this.setData({ bookMode: e.currentTarget.dataset.value });
+  },
 
   async submit() {
     const s = this.data;
@@ -247,9 +292,14 @@ Page(
         courseName: s.courseName.trim(),
         coachName: s.coachName.trim(),
         difficulty: DIFF_VALUE[s.diffs[s.diffIndex]],
+        // 行程状态：服务端会在同一个事务里把课程和预约一起建出来
+        book: s.bookMode,
       });
 
-      toast(this, res.message || "已录入", "success");
+      // 回执按服务端实际建出来的状态说 —— 它说没建成就一定是没建成，
+      // 前端默认自己是「已约」会在服务出错时对着用户撒谎。
+      const key = res && res.bookingStatus ? res.bookingStatus : "";
+      toast(this, BOOK_TEXT[key] || "已录入", "success");
       this.setData({
         lastResult: {
           studio: s.studioName.trim(),
@@ -257,6 +307,7 @@ Page(
           date: s.dateText,
           time: s.startText,
           course: s.courseName.trim(),
+          bookText: BOOK_TEXT[key] || "已录入",
         },
         // 清掉这一节的课名教练，方便连着录同一家店的下一节
         courseName: "",

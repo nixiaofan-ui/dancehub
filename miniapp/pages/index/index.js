@@ -6,7 +6,7 @@ const { DIFF_LABEL } = require("../../utils/constants");
 const { API_HOST } = require("../../utils/config");
 const { requestSubscribe } = require("../../utils/subscribe");
 const { toast } = require("../../utils/toast");
-const { confirm } = require("../../utils/confirm");
+const { confirm, choose } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
 const { locateCity, openSetting } = require("../../utils/locate");
 const { isBlocked } = require("../../utils/blocked");
@@ -532,15 +532,35 @@ Page(
     }
   },
 
+  /**
+   * 取消预约。
+   *
+   * ⚠ 自己录的课要额外问一句。录课时那节课多半是为自己留的位置，
+   *   只删预约的话，课表里那条「我录的」还原样杵着 ——
+   *   用户看到的画面和他期望的「这节课跟我没关系了」差得很远，
+   *   于是就有了「取消预约了怎么课还在」这个经典误会。
+   *   给一条「连课一起删」的路，比让人猜下一步该去哪儿删要强得多。
+   */
   async cancelBooking() {
     const item = this.data.panel.item;
     if (!item) return;
-    const yes = await confirm({
-      title: "取消预约",
-      content: `确定取消「${item.courseName || "这节课"}」的预约吗？`,
-      confirmText: "取消预约",
-    });
-    if (!yes) return;
+
+    if (item.mine) {
+      const idx = await choose({
+        itemList: ["只取消预约", "连这节课一起删掉"],
+        alert: `「${item.courseName || "这节课"}」是你自己录的课`,
+      });
+      if (idx < 0) return;
+      if (idx === 1) return this.deleteOwnCourse(item);
+    } else {
+      const yes = await confirm({
+        title: "取消预约",
+        content: `确定取消「${item.courseName || "这节课"}」的预约吗？`,
+        confirmText: "取消预约",
+      });
+      if (!yes) return;
+    }
+
     try {
       const res = await api.apiCancelBooking(item.id);
       this.setData({ panel: { visible: false, item: null } });
@@ -554,6 +574,36 @@ Page(
     } catch (e) {
       toast(this, e.message);
     }
+  },
+
+  /** 删掉一条自己录的课（服务端会把它的预约与提醒一并清掉） */
+  async deleteOwnCourse(item) {
+    try {
+      const res = await api.apiDeleteImport(item.id);
+      this.setData({ panel: { visible: false, item: null } });
+      this.refreshBadge();
+      toast(this, res && res.bookings ? "已删除，预约也一并清掉了" : "已删除", "success");
+      this.load();
+    } catch (e) {
+      toast(this, e.message);
+    }
+  },
+
+  /**
+   * 补录：从课表页直接进，带上当前城市和选中的那一天。
+   *
+   * 真实场景是「翻到某天发现这家店的课没抓到，就地补上」，而不是
+   * 「专门去菜单里找录入入口」—— 后者多数人根本想不到要去。
+   */
+  goImport() {
+    // cityName 来自 city-picker-mixin 的 syncCityView，与 chip 条上显示的是同一个值
+    const cityName = this.data.cityName || "";
+    const url =
+      "/pages/import/import?date=" +
+      (this.data.currentKey || "") +
+      (this.data.cityId ? "&cityId=" + this.data.cityId : "") +
+      (cityName ? "&cityName=" + encodeURIComponent(cityName) : "");
+    wx.navigateTo({ url });
   },
 
   async toggleRemind() {
