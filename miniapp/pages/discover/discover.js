@@ -4,6 +4,7 @@ const { toast } = require("../../utils/toast");
 const { API_HOST } = require("../../utils/config");
 const { onNavTop } = require("../../utils/scroll-top");
 const CP = require("../../utils/city-picker-mixin");
+const { buildBrandGroups } = require("../../utils/brand");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
@@ -177,12 +178,10 @@ Page(
       const params = { cityId: this.data.cityId };
       if (this.data.keyword) params.keyword = this.data.keyword;
       // 品牌接口失败不该挡住发现页 → 兜底空数组，最差退化成纯门店列表
-      const [rawStudios, follows, brands] = await Promise.all([
+      const [rawStudios, follows] = await Promise.all([
         api.apiStudios(params),
         api.apiFollows(),
-        api.apiBrands(this.data.cityId).catch(() => []),
       ]);
-      const brandList = brands || [];
       const followedIds = follows.map((f) => f.studio.id);
       const studios = rawStudios.map((s) => {
         const { brand, branch } = splitStudioName(s.name);
@@ -199,6 +198,16 @@ Page(
           extraStyles: Math.max(0, allStyles.length - MAX_TAGS),
         };
       });
+      // 品牌归属前端自己算：服务端 /studios/brands 要等云托管发版才生效，
+      // 而门店名本来就在手上、聚类又是纯函数 —— 本地算就不受发版节奏牵制。
+      // 搜索时沿用上一次全量算好的结果（顶部品牌栏不该跟着关键词变），
+      // 两端都算不出来才退回服务端接口，最差退化成纯门店列表。
+      let brandList = this.data.keyword
+        ? this.data.brands || []
+        : buildBrandGroups(studios);
+      if (!brandList.length) {
+        brandList = await api.apiBrands(this.data.cityId).catch(() => []);
+      }
       // 多店品牌收成一行（顶部那条横滑品牌栏另有入口，这里只是别让同品牌刷屏）
       const rows = mergeBrandRows(studios, brandList);
       const { letters, sections } = buildSections(rows);
