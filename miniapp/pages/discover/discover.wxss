@@ -144,6 +144,9 @@
 }
 .search-input {
   flex: 1;
+  min-width: 0;
+  /* 原生 input 有 min-height:1.4rem，在 flex 里被压扁时会裁掉半个字 */
+  min-height: 48rpx;
   font-size: 28rpx;
   color: #ffffff;
 }

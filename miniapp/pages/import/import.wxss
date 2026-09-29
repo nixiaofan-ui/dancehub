@@ -44,24 +44,32 @@ page {
 .req {
   color: #ff6b35;
 }
+/* 原生 input 自带 min-height:1.4rem（≈45rpx），只靠上下 padding 撑高会把内容区压到几 rpx，
+   文字就被裁掉一半 —— 所以这里必须显式给 height，并且上下不留 padding */
 .input {
   width: 100%;
   box-sizing: border-box;
+  height: 80rpx;
+  min-height: 80rpx;
+  line-height: 80rpx;
   font-size: 26rpx;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.05);
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   border-radius: 12rpx;
-  padding: 18rpx 20rpx;
+  padding: 0 20rpx;
   font-weight: 700;
 }
 .pick {
+  box-sizing: border-box;
+  height: 80rpx;
+  line-height: 80rpx;
   font-size: 26rpx;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.05);
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   border-radius: 12rpx;
-  padding: 18rpx 20rpx;
+  padding: 0 20rpx;
   font-weight: 700;
 }
 .pick.ph-pick {
@@ -75,13 +83,25 @@ page {
 }
 .city-pick {
   flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 80rpx;
+  line-height: 80rpx;
   font-size: 26rpx;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.05);
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   border-radius: 12rpx;
-  padding: 18rpx 20rpx;
+  padding: 0 20rpx;
   font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* 手输模式：城市行里直接就是输入框，不再多一个「改用手动输入」的占位块 */
+.city-input {
+  flex: 1;
+  min-width: 0;
 }
 .city-pick.off {
   color: #6b7089;

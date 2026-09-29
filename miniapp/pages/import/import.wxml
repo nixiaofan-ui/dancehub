@@ -13,23 +13,26 @@
     <view class="field">
       <view class="label">城市 <text class="req">*</text></view>
       <view class="city-row">
+        <!-- 手输模式下这一行本身就是输入框，不再另外叠一个 input，
+             免得上方留着「改用手动输入」的占位、下面又冒出一个空框 -->
+        <input
+          wx:if="{{customCityMode}}"
+          class="input city-input"
+          placeholder="输入城市名，例如：三亚"
+          placeholder-class="ph"
+          value="{{customCityName}}"
+          bindinput="onCustomCity"
+        />
         <view
-          class="city-pick {{customCityMode ? 'off' : ''}}"
+          wx:else
+          class="city-pick {{cityName ? '' : 'off'}}"
           hover-class="press"
           bindtap="openCityPicker"
-        >{{customCityMode ? '改用手动输入' : (cityName || '选择城市')}}</view>
+        >{{cityName || '选择城市'}}</view>
         <view class="city-alt" hover-class="press" bindtap="tapCustomCity">
           {{customCityMode ? '取消' : '+ 库外城市'}}
         </view>
       </view>
-      <input
-        wx:if="{{customCityMode}}"
-        class="input"
-        placeholder="输入城市名，例如：三亚"
-        placeholder-class="ph"
-        value="{{customCityName}}"
-        bindinput="onCustomCity"
-      />
       <view wx:if="{{customCityMode}}" class="hint">
         这个城市我们还没接入 —— 录入后会建出来，之后在「我的 · 我的城市」里能找到
       </view>

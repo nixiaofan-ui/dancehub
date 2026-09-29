@@ -10,9 +10,13 @@
   margin-bottom: 20rpx;
 }
 .search {
+  box-sizing: border-box;
+  height: 80rpx;
+  min-height: 80rpx;
+  line-height: 80rpx;
   background: rgba(168, 173, 194, 0.12);
   border-radius: 16rpx;
-  padding: 18rpx 24rpx;
+  padding: 0 24rpx;
   font-size: 28rpx;
   color: #ffffff;
 }
