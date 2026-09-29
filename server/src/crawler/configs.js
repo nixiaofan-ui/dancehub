@@ -17,6 +17,7 @@ const AUTO_CONFIG_FILES = [
   "studios.csdsp.json",
   "studios.feiyuntoo.json",
   "studios.newdance.json",
+  "studios.iwod-extra.json",
 ];
 
 /**
@@ -28,6 +29,9 @@ const AUTO_CONFIG_FILES = [
  * - studios.aiwugong.json   由 capture/scan_aiwugong_brands.mjs 生成（爱舞功/舞十平台）
  * - studios.newdance.json   由 capture/generate_newdance_configs.py 生成（菲云全平台补扫，
  *                            补的是 TOP10 之外的城市：重庆/长沙/苏州/西安/石家庄…）
+ * - studios.iwod-extra.json 由 capture/generate_iwod_extra.py 生成（iWOD 全平台补扫，
+ *                            补的是 boxes-all.jsonl 里课表样本是舞蹈、但此前没生成配置的 box，
+ *                            含 MAX POWER 陆家嘴等一批此前漏掉/丢失的配置）
  * 文件不存在或格式错误时静默跳过，不影响手写配置。
  */
 function loadAutoConfigs() {
