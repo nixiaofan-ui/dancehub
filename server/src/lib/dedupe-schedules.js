@@ -263,6 +263,18 @@ export async function dedupeSchedules(opts = {}) {
     }
   }
 
+  // 库里少了这么多课，城市时间轴的缓存（TIMELINE_TTL = 5 分钟）里可能还留着
+  // 带重复的旧结果 —— 顺手清掉，否则用户刷新完还是看到两行，以为没修好。
+  // 用动态 import：schedule.service 在依赖图上比这里靠上，静态引容易绕出环。
+  if (stats.removed) {
+    try {
+      const { invalidateTimelineCache } = await import("../services/schedule.service.js");
+      await invalidateTimelineCache();
+    } catch (err) {
+      console.warn(`[dedupe-schedules] 缓存失效失败：${err.message}`);
+    }
+  }
+
   stats.ms = Date.now() - started;
   return stats;
 }
