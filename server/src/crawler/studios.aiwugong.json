@@ -14554,7 +14554,8 @@
       "notloginShowCourse": true,
       "todayCourses": 0,
       "verifiedAt": "2026-09-27"
-    }
+    },
+    "note": "爱舞功品牌未开放「未登录看课表」（notlogin_isshowcourse=0），免登录课表接口一律 HTTP 500，账号仍在但抓不到课，勿启用"
   },
   {
     "id": "aiwugong-347-蒂舞街区街舞文化站",
@@ -17164,7 +17165,8 @@
       "notloginShowCourse": true,
       "todayCourses": 0,
       "verifiedAt": "2026-09-27"
-    }
+    },
+    "note": "爱舞功品牌未开放「未登录看课表」（notlogin_isshowcourse=0），免登录课表接口一律 HTTP 500，账号仍在但抓不到课，勿启用"
   },
   {
     "id": "aiwugong-411-MC舞蹈工作室",

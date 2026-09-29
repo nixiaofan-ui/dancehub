@@ -1914,5 +1914,324 @@
   "timeFormat": "HH:mm-HH:mm",
   "address": "重庆市江北区观音桥步行街嘉年华大厦12楼",
   "note": "官方名 OriginalDanceGalaxy（OG Dance）；菲云只有 1 个 branch，不带 branchid 才回全量，勿改成 id=0"
+ },
+ {
+  "id": "fityun-11005112",
+  "enabled": true,
+  "label": "TRANSCEND全盛舞蹈",
+  "auto": false,
+  "studio": {
+   "name": "TRANSCEND全盛舞蹈",
+   "city": "深圳",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11005112",
+   "branches": [
+    {
+     "id": "0",
+     "name": "TRANSCEND全盛舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "深圳"
+ },
+ {
+  "id": "fityun-11046778",
+  "enabled": true,
+  "label": "BOOGIEHOP不羁摇摆",
+  "auto": false,
+  "studio": {
+   "name": "BOOGIEHOP不羁摇摆",
+   "city": "武汉",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11046778",
+   "branches": [
+    {
+     "id": "0",
+     "name": "BOOGIEHOP不羁摇摆"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "武汉"
+ },
+ {
+  "id": "fityun-11055325",
+  "enabled": true,
+  "label": "DH舞蹈中心",
+  "auto": false,
+  "studio": {
+   "name": "DH舞蹈中心",
+   "city": "郑州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11055325",
+   "branches": [
+    {
+     "id": "0",
+     "name": "DH舞蹈中心"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "郑州"
+ },
+ {
+  "id": "fityun-11052373",
+  "enabled": true,
+  "label": "LIM舞蹈",
+  "auto": false,
+  "studio": {
+   "name": "LIM舞蹈",
+   "city": "郑州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11052373",
+   "branches": [
+    {
+     "id": "0",
+     "name": "LIM舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "郑州"
+ },
+ {
+  "id": "fityun-11056095",
+  "enabled": true,
+  "label": "JD街舞工作室",
+  "auto": false,
+  "studio": {
+   "name": "JD街舞工作室",
+   "city": "郑州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056095",
+   "branches": [
+    {
+     "id": "0",
+     "name": "JD街舞工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "郑州"
+ },
+ {
+  "id": "fityun-11045209",
+  "enabled": true,
+  "label": "THE ONE 舞蹈",
+  "auto": false,
+  "studio": {
+   "name": "THE ONE 舞蹈",
+   "city": "上海",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11045209",
+   "branches": [
+    {
+     "id": "0",
+     "name": "THE ONE 舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "上海"
+ },
+ {
+  "id": "fityun-11058590",
+  "enabled": true,
+  "label": "JC DANCE",
+  "auto": false,
+  "studio": {
+   "name": "JC DANCE",
+   "city": "上海",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058590",
+   "branches": [
+    {
+     "id": "0",
+     "name": "JC DANCE"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "上海"
+ },
+ {
+  "id": "fityun-11051230",
+  "enabled": true,
+  "label": "JUICE LEVEL街舞工作室",
+  "auto": false,
+  "studio": {
+   "name": "JUICE LEVEL街舞工作室",
+   "city": "上海",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11051230",
+   "branches": [
+    {
+     "id": "0",
+     "name": "JUICE LEVEL街舞工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "上海"
+ },
+ {
+  "id": "fityun-11052408",
+  "enabled": true,
+  "label": "炫姿舞蹈",
+  "auto": false,
+  "studio": {
+   "name": "炫姿舞蹈",
+   "city": "上海",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11052408",
+   "branches": [
+    {
+     "id": "0",
+     "name": "炫姿舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "上海"
+ },
+ {
+  "id": "fityun-11053873",
+  "enabled": true,
+  "label": "汉舞集舞蹈艺术中心",
+  "auto": false,
+  "studio": {
+   "name": "汉舞集舞蹈艺术中心",
+   "city": "上海",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11053873",
+   "branches": [
+    {
+     "id": "0",
+     "name": "汉舞集舞蹈艺术中心"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "上海"
+ },
+ {
+  "id": "fityun-11050858",
+  "enabled": true,
+  "label": "钻石街舞DIAMOND",
+  "auto": false,
+  "studio": {
+   "name": "钻石街舞DIAMOND",
+   "city": "上海",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11050858",
+   "branches": [
+    {
+     "id": "0",
+     "name": "钻石街舞DIAMOND"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "上海"
  }
 ]
