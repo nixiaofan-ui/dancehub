@@ -139,6 +139,24 @@ function check(label, got, want) {
   check("有 globalData 缓存时不打详情接口", calls.detail.length, 0);
   check("仍会拉一次今日课数", calls.timeline.length >= 1, true);
 
+  // 场景 8：回归 —— 末尾括号里是**城市**时不能当成分店名。
+  // 2026-09-29 老板在分店页看到 39 行全是「北京」，就是因为先按括号切，
+  // 「G-STEPS·祥云小镇店（北京）」被切成了 分店名=北京。顺序必须是「·」优先。
+  appSingleton.globalData.brandStores = [
+    { id: 11, name: "G-STEPS·祥云小镇店（北京）", cityName: "北京", address: "a" },
+    { id: 12, name: "G-STEPS·三里屯店（北京）", cityName: "北京", address: "b" },
+    { id: 13, name: "MAX POWER STUDIO（苏河湾店）（市静安）", cityName: "上海", address: "c" },
+    { id: 14, name: "单色舞蹈（王家湾店）", cityName: "武汉", address: "d" },
+  ];
+  const page3 = makePage();
+  await page3.onLoad({ ids: "11,12,13,14", name: "混合" });
+  await new Promise((r) => setTimeout(r, 30));
+  check(
+    "分店名不许是城市名（· 优先 + 括号需含店/校/区/分/馆/中心）",
+    page3.data.stores.map((s) => s.short),
+    ["祥云小镇店", "三里屯店", "苏河湾店", "王家湾店"],
+  );
+
   console.log(failed ? `\n✖ ${failed} 项未通过` : "\n✔ 全部通过");
   process.exit(failed ? 1 : 0);
 })();

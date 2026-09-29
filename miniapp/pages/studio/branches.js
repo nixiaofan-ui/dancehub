@@ -3,7 +3,7 @@ const api = require("../../services/api");
 const { toast } = require("../../utils/toast");
 const { todayKey } = require("../../utils/date");
 const { onNavTop } = require("../../utils/scroll-top");
-const { splitStudioName } = require("../../utils/brand");
+const { branchOf, stripDistrictTag } = require("../../utils/brand");
 
 /**
  * 品牌分店列表：一个品牌的多家门店，逐店关注。
@@ -52,10 +52,15 @@ Page({
       const counts = await this.fetchTodayCounts();
       const followedIds = (follows || []).map((f) => f.studio.id);
       const stores = details.map((s) => {
-        const { brand, branch } = splitStudioName(s.name);
+        // 行标题只要分店名（品牌已经写在页面标题里）。
+        // ⚠ 别退回 splitStudioName —— 那个的主名是给发现页排版用的，
+        //   而「G-STEPS·祥云小镇店（北京）」这类店名里分店名就在主名里，
+        //   用主名当行标题会把「G-STEPS·」也带进来，40 行全是同一个前缀。
+        //   取不出分店名时退回「去掉行政区尾巴的完整店名」，至少每行还能区分开。
+        const short = branchOf(s.name) || stripDistrictTag(s.name) || s.name;
         return {
           id: s.id,
-          short: branch || s.name, // 品牌已显示在标题里，行内只留分店名
+          short, // 品牌已显示在标题里，行内只留分店名
           full: s.name,
           cityName: s.cityName || (s.city && s.city.name) || "",
           address: s.address || "",

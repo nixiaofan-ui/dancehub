@@ -87,6 +87,15 @@ ALTER TABLE \`Schedule\`
   ADD COLUMN \`bookedNum\` INT NULL;
 `;
 
+/**
+ * 课程预告视频的「取址」（形如 `fityun|11058641|34103272`，非空即代表有预告）。
+ * 存的是取址不是 URL：菲体云给的是腾讯云点播签名链接，1 小时就过期。
+ */
+const SCHEDULE_VIDEOREF_SQL = `
+ALTER TABLE \`Schedule\`
+  ADD COLUMN \`videoRef\` VARCHAR(64) NULL;
+`;
+
 async function run(label, sql) {
   try {
     await prisma.$executeRawUnsafe(sql);
@@ -118,5 +127,8 @@ export async function ensureSchema() {
   }
   if (!(await columnExists("Schedule", "bookedNum"))) {
     await run("Schedule.bookedNum", SCHEDULE_BOOKEDNUM_SQL);
+  }
+  if (!(await columnExists("Schedule", "videoRef"))) {
+    await run("Schedule.videoRef", SCHEDULE_VIDEOREF_SQL);
   }
 }

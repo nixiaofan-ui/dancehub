@@ -66,6 +66,9 @@ const apiStudioSchedules = (studioId, from, to) =>
   req.get("/schedules", { studioId, from, to });
 const apiScheduleDetail = (id) => req.get(`/schedules/${id}`);
 const apiScheduleVideoPreview = (id) => req.get(`/schedules/${id}/video-preview`);
+// 舞室官方系统里的「课程预告视频」地址。上游给的是腾讯云点播签名链接（1 小时过期），
+// 所以每次都要现取、不要缓存 —— 取到旧的会白屏。见 server/src/services/fityun-video.js
+const apiScheduleVideoUrl = (id) => req.get(`/schedules/${id}/video-url`);
 // 实时回源舞室官方系统取当前真实已约人数（失败会静默降级到库里的旧值）
 const apiLiveBooking = (id) => req.get(`/schedules/${id}/live-booking`);
 // 周课表/首页用：一次刷完整店当天的预约人数（上面那个一次只解决一节，列表里逐节调太多）
@@ -176,6 +179,7 @@ module.exports = {
   apiStudioSchedules,
   apiScheduleDetail,
   apiScheduleVideoPreview,
+  apiScheduleVideoUrl,
   apiLiveBooking,
   apiStudioDayLive,
   apiFollows,

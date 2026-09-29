@@ -14,6 +14,7 @@ import {
   toDateKey,
 } from "../services/schedule.service.js";
 import { searchCourseVideo } from "../services/video.service.js";
+import { getFityunVideoUrl } from "../services/fityun-video.js";
 
 const router = Router();
 
@@ -57,6 +58,24 @@ router.get(
 );
 
 router.get(
+  "/:id/video-url",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: Number(req.params.id) },
+      select: { id: true, videoRef: true },
+    });
+    if (!schedule) return fail(res, 404, "课程不存在");
+    if (!schedule.videoRef) return ok(res, { scheduleId: schedule.id, url: "" });
+
+    // 上游给的是腾讯云点播签名链接（1 小时过期），这里每 50 分钟才回源一次；
+    // 取不到就返回空串，前端把「课程预告」整块藏掉，不影响约课。
+    const url = await getFityunVideoUrl(schedule.videoRef);
+    ok(res, { scheduleId: schedule.id, url });
+  }),
+);
+
+router.get(
   "/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
@@ -88,6 +107,9 @@ router.get(
       bookingUrl: schedule.bookingUrl,
       // 课程封面图（iWOD 独有）
       coursePicUrl: schedule.coursePicUrl,
+      // 这节课有没有上游的「课程预告视频」。只给标记不给地址 —— 地址是签名链接、
+      // 1 小时过期，必须由前端另打 /:id/video-url 现取（见 fityun-video.js）。
+      hasVideo: Boolean(schedule.videoRef),
       capacity: schedule.capacity,
       remark: schedule.remark,
       coach: schedule.coach

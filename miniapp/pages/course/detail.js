@@ -54,6 +54,9 @@ Page({
     refreshing: false,
     showVideo: false,
     videos: [],
+    // 舞室官方系统的「课程预告视频」直链。**不缓存**：上游给的是签名地址，
+    // 1 小时就过期，缓存下来再打开就是白屏。每次进页面重新问服务端要。
+    nativeVideo: "",
     busy: false,
   },
 
@@ -125,8 +128,29 @@ Page({
       });
       // 详情渲染完再后台回源刷新一次（不阻塞首屏；拿不到就保持旧值）
       this.refreshLive();
+      // 课程预告视频同样后台取，不挡住首屏 —— 它是一次额外的上游往返
+      if (d.hasVideo) this.loadNativeVideo();
     } catch (e) {
       toast(this, e.message);
+    }
+  },
+
+  /**
+   * 取这节课的「课程预告视频」直链（舞室官方系统里的那条）。
+   *
+   * 为什么不跟详情一起返回：那个地址是腾讯云点播的**签名链接，1 小时过期**，
+   * 服务端每次都要去上游换一张新签名，是一次独立往返。放在详情里会拖慢首屏，
+   * 而视频本来就在页面底部，后台取完全够用。
+   *
+   * 取不到（商家撤回了 / 上游抖动）就保持空串 → 整块不渲染，
+   * 用户看到的只是没有预告视频，不会看到一块报错的播放器。
+   */
+  async loadNativeVideo() {
+    try {
+      const r = await api.apiScheduleVideoUrl(this.scheduleId);
+      if (r && r.url) this.setData({ nativeVideo: r.url });
+    } catch (e) {
+      // 静默降级
     }
   },
 

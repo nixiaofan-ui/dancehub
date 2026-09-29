@@ -61,6 +61,32 @@ export function stripDistrictTag(name) {
 }
 
 /**
+ * 「（市秦淮）」→「（秦淮）」：洗掉区名前面那半个市。
+ *
+ * 成因：配置生成器拿地址「江苏省南京市秦淮区…」切区名时，正则咬到了紧挨「区」
+ * 的三个字「市秦淮」，于是 112 条配置、105 家门店名字上都挂了这个半截市名。
+ *
+ * 为什么必须只吃**末尾括号**里那一个市：真店名里也有「市」——
+ * 「囍瑜伽（市民之家店）」「S.Pink舞蹈 市北店（市市北）」（后者是青岛**市北区**，
+ * 删全市就把区名删没了）。所以判据是：末尾括号 + 内容以「市」开头 + 去掉市后
+ * 剩 2~3 字 + 剩下这截不含「店/校/区/分/馆/中心」（含了说明那是分店名不是区名）。
+ *
+ * 「（市市北）」洗完是「（市北）」，再洗一次也不动（剩 1 字，不满足 2~3 字）——
+ * 天然幂等，可以放心在每次启动时跑。
+ *
+ * @param {string} name
+ * @returns {string} 洗不掉就原样返回
+ */
+export function fixCityPrefixDistrict(name) {
+  const raw = String(name || "").trim();
+  const m = raw.match(/[（(]\s*市([^）)]{2,3})\s*[）)]\s*$/);
+  if (!m) return raw;
+  const district = m[1];
+  if (BRANCH_WORD_RE.test(district)) return raw;
+  return raw.slice(0, raw.length - m[0].length) + `（${district}）`;
+}
+
+/**
  * 「品牌·分店」→ { brand, branch }；没有分隔符则 brand 为空。
  *
  * 两种分隔符都认：

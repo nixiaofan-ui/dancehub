@@ -97,6 +97,20 @@
     <button wx:if="{{bookingStatus}}" class="action danger" hover-class="press" bindtap="cancelBooking" disabled="{{busy}}">取消预约</button>
   </view>
 
+  <!-- 课程预告视频（舞室官方系统里的预告片；菲体云系店铺抓得到） -->
+  <view wx:if="{{nativeVideo}}" class="video-sec">
+    <view class="video-title">🎬 课程预告</view>
+    <video
+      class="course-video"
+      src="{{nativeVideo}}"
+      object-fit="contain"
+      show-center-play-btn
+      show-fullscreen-btn
+      show-play-btn
+      enable-progress-gesture="{{false}}"
+    />
+  </view>
+
   <!-- 课程预告视频（海外平台店铺：YouTube 搜索结果） -->
   <view wx:if="{{showVideo && videos.length > 0}}" class="video-sec">
     <view class="video-title">🎬 课程预告</view>

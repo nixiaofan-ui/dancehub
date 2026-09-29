@@ -185,6 +185,86 @@ async function crawlWithHttp(config, date) {
  * @param {Date} date 要抓取的日期（UTC 午夜）
  * @returns {Promise<Array>} 原始条目（含 _studioName 分店名）
  */
+/**
+ * 菲体云的接口域名换过，而**旧域名不会报错，只是安静地返回空课表**：
+ * 2026-09-29 晚发现所有生成配置里写死的 `xiaochengxu-edu-api-hz.fityun.cn`
+ * 对 dailyschedules 稳定返回 `{status:0, info:{list:[]}}`，连测 4 次都是 0 节；
+ * 同参数打 `xiaochengxu-v3-api.fityun.cn` 能拿到 10 节。更阴的是旧域名并没有死 ——
+ * `/tuancourse/scheduleappointinfo`、`/project/getinfo` 都还正常，所以
+ * 「接口通不通」这类健康检查发现不了它，只有比对课表内容才知道。
+ *
+ * ⚠ 两个域名的**响应形状还不一样**：旧域名 `info` 是数组，新域名 `info` 是
+ * `{ iconType, list: [...], tagFilterList }`。只改 baseUrl 不改解析会直接崩在
+ * `for...of`（对象不可迭代），所以统一走 pickFityunList()。
+ *
+ * 策略：优先用「本进程最近一次返回过非空课表的域名」；遇到空结果时换另一个域名
+ * **复核一次**（只复核一次，避免每个真没排课的日子都多打一次请求）。上游再换
+ * 域名时这里能自己切，不用我们盯着。
+ */
+const FITYUN_HOSTS = [
+  "https://xiaochengxu-v3-api.fityun.cn",
+  "https://xiaochengxu-edu-api-hz.fityun.cn",
+];
+let fityunHost = null; // 进程级记忆：上次成功返回非空课表的域名
+let fityunEmptyChecked = false; // 是否已用另一个域名复核过空结果（只做一次）
+
+/** info 既可能是数组（旧域名）也可能是 { list: [...] }（新域名） */
+function pickFityunList(info) {
+  if (Array.isArray(info)) return info;
+  if (info && Array.isArray(info.list)) return info.list;
+  return [];
+}
+
+/** 拉某机构某天课表，自动跨域名兜底；返回原始课程数组 */
+async function fetchFityunDay({ baseUrl, orgId, branchId, dateStr }) {
+  const custom = baseUrl && !FITYUN_HOSTS.includes(baseUrl) ? baseUrl : null;
+  const ordered = [...new Set([fityunHost, custom, ...FITYUN_HOSTS].filter(Boolean))];
+
+  for (let i = 0; i < ordered.length; i++) {
+    const host = ordered[i];
+    // 已有可信域名、且复核过一次空结果 → 不再为「那天真的没课」多打请求
+    if (i > 0 && fityunEmptyChecked) break;
+    const headers = {
+      "User-Agent":
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+      orgid: String(orgId),
+    };
+    if (branchId) headers.branchid = String(branchId);
+    const url =
+      `${host}/tuancourse/dailyschedules` +
+      `?date=${dateStr}&is_appoint=0&tagname=&teacherid=-1&classroomid=-1`;
+    try {
+      const resp = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
+      if (!resp.ok) {
+        console.warn(`[菲体云] ${host} HTTP ${resp.status}，换域名重试`);
+        continue;
+      }
+      const body = await resp.json();
+      if (body?.status !== 0) {
+        console.warn(
+          `[菲体云] ${host} status=${body?.status} ${body?.info || ""}，换域名重试`,
+        );
+        continue;
+      }
+      const list = pickFityunList(body.info);
+      if (list.length) {
+        if (fityunHost !== host) {
+          console.log(
+            `[菲体云] 课表域名切到 ${host}` +
+              (fityunHost ? `（原 ${fityunHost} 返回空课表）` : ""),
+          );
+        }
+        fityunHost = host;
+        return list;
+      }
+      if (i > 0) fityunEmptyChecked = true;
+    } catch (err) {
+      console.warn(`[菲体云] ${host} 请求失败：${err.message}，换域名重试`);
+    }
+  }
+  return [];
+}
+
 async function crawlWithFityun(config, date) {
   const {
     baseUrl = "https://xiaochengxu-edu-api-hz.fityun.cn",
@@ -202,25 +282,9 @@ async function crawlWithFityun(config, date) {
 
   const out = [];
   for (const br of targets) {
-    const headers = {
-      "User-Agent":
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
-      orgid: String(orgId),
-    };
-    if (br.id) headers.branchid = String(br.id);
+    const list = await fetchFityunDay({ baseUrl, orgId, branchId: br.id, dateStr });
 
-    const url =
-      `${baseUrl}/tuancourse/dailyschedules` +
-      `?date=${dateStr}&is_appoint=0&tagname=&teacherid=-1&classroomid=-1`;
-    const resp = await fetch(url, { headers, signal: AbortSignal.timeout(20000) });
-    if (!resp.ok) throw new Error(`菲体云接口 HTTP ${resp.status}`);
-
-    const body = await resp.json();
-    if (body?.status !== 0) {
-      throw new Error(`菲体云接口返回异常: status=${body?.status} ${body?.info || ""}`);
-    }
-
-    for (const c of body.info || []) {
+    for (const c of list) {
       const courseName = cleanCourseName(stripBranchPrefix(c.projectname));
       if (!courseName) continue;
       const time = c.start_hour && c.end_hour ? `${c.start_hour}-${c.end_hour}` : "";
@@ -247,6 +311,15 @@ async function crawlWithFityun(config, date) {
         _studioName: (br.name || config.studio?.name || "").trim(),
         // 菲体云课表带 roomname（教室名），透传进 remark 供详情页展示
         _roomName: String(c.roomname || c.room_name || "").trim(),
+        // 「课程预告视频」的引用：菲体云的课表接口只在 `has_video=1` 时标记
+        // 「这节课有预告视频」，视频地址要另打 /tuancourse/scheduleappointinfo。
+        // 那个地址是**腾讯云点播的签名链接，签名 1 小时就过期**，所以这里只存
+        // 「去哪儿取」（机构ID + 排课ID），绝不存 URL —— 存了半小时后就是死链。
+        // 详情页打开时再按需回源（见 services/fityun-video.js）。
+        _videoRef:
+          Number(c.has_video) === 1 && c.scheduleid
+            ? `fityun|${orgId}|${c.scheduleid}`
+            : null,
       });
     }
   }

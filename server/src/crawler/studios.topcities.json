@@ -5,7 +5,7 @@
     "label": "1STEP DANCE STUDIO",
     "auto": true,
     "studio": {
-      "name": "1STEP DANCE STUDIO（市余杭）",
+      "name": "1STEP DANCE STUDIO（余杭）",
       "city": "杭州",
       "region": "CN"
     },
@@ -33,7 +33,7 @@
     "label": "Hiwink Dance Studio（萧山店）",
     "auto": true,
     "studio": {
-      "name": "Hiwink Dance Studio（萧山店）（市萧山）",
+      "name": "Hiwink Dance Studio（萧山店）（萧山）",
       "city": "杭州",
       "region": "CN"
     },
@@ -61,7 +61,7 @@
     "label": "BA街舞工作室（阿里店）",
     "auto": true,
     "studio": {
-      "name": "BA街舞工作室（阿里店）（市余杭）",
+      "name": "BA街舞工作室（阿里店）（余杭）",
       "city": "杭州",
       "region": "CN"
     },
@@ -89,7 +89,7 @@
     "label": "UIW舞蹈工作室（诺德店）",
     "auto": true,
     "studio": {
-      "name": "UIW舞蹈工作室（诺德店）（市萧山）",
+      "name": "UIW舞蹈工作室（诺德店）（萧山）",
       "city": "杭州",
       "region": "CN"
     },
@@ -117,7 +117,7 @@
     "label": "SWAG ME OUT｜舞蹈厂牌",
     "auto": true,
     "studio": {
-      "name": "SWAG ME OUT｜舞蹈厂牌（市萧山）",
+      "name": "SWAG ME OUT｜舞蹈厂牌（萧山）",
       "city": "杭州",
       "region": "CN"
     },
@@ -145,7 +145,7 @@
     "label": "Hi-5 Dance赛银店",
     "auto": true,
     "studio": {
-      "name": "Hi-5 Dance赛银店（市余杭）",
+      "name": "Hi-5 Dance赛银店（余杭）",
       "city": "杭州",
       "region": "CN"
     },
@@ -173,7 +173,7 @@
     "label": "Dala Dala舞蹈(天阳D32店)",
     "auto": true,
     "studio": {
-      "name": "Dala Dala舞蹈(天阳D32店)（市拱墅）",
+      "name": "Dala Dala舞蹈(天阳D32店)（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -201,7 +201,7 @@
     "label": "SOULSISTER·UPUP舞蹈工作室（开元店）",
     "auto": true,
     "studio": {
-      "name": "SOULSISTER·UPUP舞蹈工作室（开元店）（市滨江）",
+      "name": "SOULSISTER·UPUP舞蹈工作室（开元店）（滨江）",
       "city": "杭州",
       "region": "CN"
     },
@@ -229,7 +229,7 @@
     "label": "HelloMiss舞蹈工作室（临平店）",
     "auto": true,
     "studio": {
-      "name": "HelloMiss舞蹈工作室（临平店）（市临平）",
+      "name": "HelloMiss舞蹈工作室（临平店）（临平）",
       "city": "杭州",
       "region": "CN"
     },
@@ -257,7 +257,7 @@
     "label": "URBANANIMAL｜奥体AT店",
     "auto": true,
     "studio": {
-      "name": "URBANANIMAL｜奥体AT店（市萧山）",
+      "name": "URBANANIMAL｜奥体AT店（萧山）",
       "city": "杭州",
       "region": "CN"
     },
@@ -285,7 +285,7 @@
     "label": "URBANANIMAL｜星光店",
     "auto": true,
     "studio": {
-      "name": "URBANANIMAL｜星光店（市西湖）",
+      "name": "URBANANIMAL｜星光店（西湖）",
       "city": "杭州",
       "region": "CN"
     },
@@ -313,7 +313,7 @@
     "label": "AceGem 舞室",
     "auto": true,
     "studio": {
-      "name": "AceGem 舞室（市拱墅）",
+      "name": "AceGem 舞室（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -341,7 +341,7 @@
     "label": "DPM DANCE",
     "auto": true,
     "studio": {
-      "name": "DPM DANCE（市上城）",
+      "name": "DPM DANCE（上城）",
       "city": "杭州",
       "region": "CN"
     },
@@ -369,7 +369,7 @@
     "label": "FLOAT",
     "auto": true,
     "studio": {
-      "name": "FLOAT（市拱墅）",
+      "name": "FLOAT（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -397,7 +397,7 @@
     "label": "SoulSister舞蹈工作室（武林店）",
     "auto": true,
     "studio": {
-      "name": "SoulSister舞蹈工作室（武林店）（市拱墅）",
+      "name": "SoulSister舞蹈工作室（武林店）（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -425,7 +425,7 @@
     "label": "Magic University",
     "auto": true,
     "studio": {
-      "name": "Magic University（市滨江）",
+      "name": "Magic University（滨江）",
       "city": "杭州",
       "region": "CN"
     },
@@ -453,7 +453,7 @@
     "label": "Dala Dala舞蹈(金地广场店)",
     "auto": true,
     "studio": {
-      "name": "Dala Dala舞蹈(金地广场店)（市余杭）",
+      "name": "Dala Dala舞蹈(金地广场店)（余杭）",
       "city": "杭州",
       "region": "CN"
     },
@@ -481,7 +481,7 @@
     "label": "Dala Dala舞蹈(杭师大仓前店)",
     "auto": true,
     "studio": {
-      "name": "Dala Dala舞蹈(杭师大仓前店)（市余杭）",
+      "name": "Dala Dala舞蹈(杭师大仓前店)（余杭）",
       "city": "杭州",
       "region": "CN"
     },
@@ -509,7 +509,7 @@
     "label": "YME DANCE（滨江天街店）",
     "auto": true,
     "studio": {
-      "name": "YME DANCE（滨江天街店）（市滨江）",
+      "name": "YME DANCE（滨江天街店）（滨江）",
       "city": "杭州",
       "region": "CN"
     },
@@ -537,7 +537,7 @@
     "label": "Dala Dala舞蹈(浙大紫金港店)",
     "auto": true,
     "studio": {
-      "name": "Dala Dala舞蹈(浙大紫金港店)（市西湖）",
+      "name": "Dala Dala舞蹈(浙大紫金港店)（西湖）",
       "city": "杭州",
       "region": "CN"
     },
@@ -565,7 +565,7 @@
     "label": "SoulSister舞蹈工作室（余杭店）",
     "auto": true,
     "studio": {
-      "name": "SoulSister舞蹈工作室（余杭店）（市余杭）",
+      "name": "SoulSister舞蹈工作室（余杭店）（余杭）",
       "city": "杭州",
       "region": "CN"
     },
@@ -593,7 +593,7 @@
     "label": "浩学艺术",
     "auto": true,
     "studio": {
-      "name": "浩学艺术（市拱墅）",
+      "name": "浩学艺术（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -621,7 +621,7 @@
     "label": "FM DANCE 运河店",
     "auto": true,
     "studio": {
-      "name": "FM DANCE 运河店（市拱墅）",
+      "name": "FM DANCE 运河店（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -649,7 +649,7 @@
     "label": "SEVEN ONE 7+1舞蹈工作室（紫荆店）",
     "auto": true,
     "studio": {
-      "name": "SEVEN ONE 7+1舞蹈工作室（紫荆店）（市西湖）",
+      "name": "SEVEN ONE 7+1舞蹈工作室（紫荆店）（西湖）",
       "city": "杭州",
       "region": "CN"
     },
@@ -677,7 +677,7 @@
     "label": "Hi-5 Dance文三店",
     "auto": true,
     "studio": {
-      "name": "Hi-5 Dance文三店（市西湖）",
+      "name": "Hi-5 Dance文三店（西湖）",
       "city": "杭州",
       "region": "CN"
     },
@@ -705,7 +705,7 @@
     "label": "Sugar Dance",
     "auto": true,
     "studio": {
-      "name": "Sugar Dance（市拱墅）",
+      "name": "Sugar Dance（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -733,7 +733,7 @@
     "label": "Dala Dala舞蹈 (奥体印象城店)",
     "auto": true,
     "studio": {
-      "name": "Dala Dala舞蹈 (奥体印象城店)（市萧山）",
+      "name": "Dala Dala舞蹈 (奥体印象城店)（萧山）",
       "city": "杭州",
       "region": "CN"
     },
@@ -761,7 +761,7 @@
     "label": "Together Dance (运河上街店）",
     "auto": true,
     "studio": {
-      "name": "Together Dance (运河上街店）（市拱墅）",
+      "name": "Together Dance (运河上街店）（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -789,7 +789,7 @@
     "label": "杭州咪舞舞蹈（西溪银泰店）",
     "auto": true,
     "studio": {
-      "name": "杭州咪舞舞蹈（西溪银泰店）（市西湖）",
+      "name": "杭州咪舞舞蹈（西溪银泰店）（西湖）",
       "city": "杭州",
       "region": "CN"
     },
@@ -817,7 +817,7 @@
     "label": "SoulStar舞蹈工作室",
     "auto": true,
     "studio": {
-      "name": "SoulStar舞蹈工作室（市西湖）",
+      "name": "SoulStar舞蹈工作室（西湖）",
       "city": "杭州",
       "region": "CN"
     },
@@ -845,7 +845,7 @@
     "label": "天舞华翎舞蹈（总校5）",
     "auto": true,
     "studio": {
-      "name": "天舞华翎舞蹈（总校5）（市萧山）",
+      "name": "天舞华翎舞蹈（总校5）（萧山）",
       "city": "杭州",
       "region": "CN"
     },
@@ -873,7 +873,7 @@
     "label": "小满舞韵",
     "auto": true,
     "studio": {
-      "name": "小满舞韵（市滨江）",
+      "name": "小满舞韵（滨江）",
       "city": "杭州",
       "region": "CN"
     },
@@ -901,7 +901,7 @@
     "label": "JF Dance",
     "auto": true,
     "studio": {
-      "name": "JF Dance（市拱墅）",
+      "name": "JF Dance（拱墅）",
       "city": "杭州",
       "region": "CN"
     },
@@ -929,7 +929,7 @@
     "label": "天舞华翎舞蹈 （总校）",
     "auto": true,
     "studio": {
-      "name": "天舞华翎舞蹈 （总校）（市萧山）",
+      "name": "天舞华翎舞蹈 （总校）（萧山）",
       "city": "杭州",
       "region": "CN"
     },
@@ -957,7 +957,7 @@
     "label": "舞悦之城",
     "auto": true,
     "studio": {
-      "name": "舞悦之城（市余杭）",
+      "name": "舞悦之城（余杭）",
       "city": "杭州",
       "region": "CN"
     },
@@ -985,7 +985,7 @@
     "label": "白·舞蹈工作室",
     "auto": true,
     "studio": {
-      "name": "白·舞蹈工作室（市滨江）",
+      "name": "白·舞蹈工作室（滨江）",
       "city": "杭州",
       "region": "CN"
     },
@@ -1013,7 +1013,7 @@
     "label": "东四健身空间&东三团操室",
     "auto": true,
     "studio": {
-      "name": "东四健身空间&东三团操室（市西湖）",
+      "name": "东四健身空间&东三团操室（西湖）",
       "city": "杭州",
       "region": "CN"
     },
@@ -1041,7 +1041,7 @@
     "label": "APE舞蹈",
     "auto": true,
     "studio": {
-      "name": "APE舞蹈（市朝阳）",
+      "name": "APE舞蹈（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1069,7 +1069,7 @@
     "label": "享·芭蕾",
     "auto": true,
     "studio": {
-      "name": "享·芭蕾（市朝阳）",
+      "name": "享·芭蕾（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1097,7 +1097,7 @@
     "label": "刘佳舞蹈工作室",
     "auto": true,
     "studio": {
-      "name": "刘佳舞蹈工作室（市海淀）",
+      "name": "刘佳舞蹈工作室（海淀）",
       "city": "北京",
       "region": "CN"
     },
@@ -1125,7 +1125,7 @@
     "label": "纯白舞蹈空间",
     "auto": true,
     "studio": {
-      "name": "纯白舞蹈空间（市朝阳）",
+      "name": "纯白舞蹈空间（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1153,7 +1153,7 @@
     "label": "NBsalsa恩必莎莎俱乐部",
     "auto": true,
     "studio": {
-      "name": "NBsalsa恩必莎莎俱乐部（市朝阳）",
+      "name": "NBsalsa恩必莎莎俱乐部（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1209,7 +1209,7 @@
     "label": "HERE ON Dance 丛·此",
     "auto": true,
     "studio": {
-      "name": "HERE ON Dance 丛·此（市朝阳）",
+      "name": "HERE ON Dance 丛·此（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1237,7 +1237,7 @@
     "label": "艺树舞蹈ART. Dance",
     "auto": true,
     "studio": {
-      "name": "艺树舞蹈ART. Dance（市朝阳）",
+      "name": "艺树舞蹈ART. Dance（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1265,7 +1265,7 @@
     "label": "Time to Dance Studio",
     "auto": true,
     "studio": {
-      "name": "Time to Dance Studio（市朝阳）",
+      "name": "Time to Dance Studio（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1293,7 +1293,7 @@
     "label": "亦庄店",
     "auto": true,
     "studio": {
-      "name": "亦庄店（市大兴）",
+      "name": "亦庄店（大兴）",
       "city": "北京",
       "region": "CN"
     },
@@ -1321,7 +1321,7 @@
     "label": "雷动天下现代舞团",
     "auto": true,
     "studio": {
-      "name": "雷动天下现代舞团（市朝阳）",
+      "name": "雷动天下现代舞团（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1377,7 +1377,7 @@
     "label": "Air Box",
     "auto": true,
     "studio": {
-      "name": "Air Box（市朝阳）",
+      "name": "Air Box（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1405,7 +1405,7 @@
     "label": "XUEAI雪艾舞蹈",
     "auto": true,
     "studio": {
-      "name": "XUEAI雪艾舞蹈（市朝阳）",
+      "name": "XUEAI雪艾舞蹈（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1433,7 +1433,7 @@
     "label": "土拨鼠运动空间",
     "auto": true,
     "studio": {
-      "name": "土拨鼠运动空间（市海淀）",
+      "name": "土拨鼠运动空间（海淀）",
       "city": "北京",
       "region": "CN"
     },
@@ -1461,7 +1461,7 @@
     "label": "汉舞佳人·class",
     "auto": true,
     "studio": {
-      "name": "汉舞佳人·class（市东城）",
+      "name": "汉舞佳人·class（东城）",
       "city": "北京",
       "region": "CN"
     },
@@ -1489,7 +1489,7 @@
     "label": "猫角工作室",
     "auto": true,
     "studio": {
-      "name": "猫角工作室（市朝阳）",
+      "name": "猫角工作室（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1517,7 +1517,7 @@
     "label": "予佳舞蹈艺术中心",
     "auto": true,
     "studio": {
-      "name": "予佳舞蹈艺术中心（市东城）",
+      "name": "予佳舞蹈艺术中心（东城）",
       "city": "北京",
       "region": "CN"
     },
@@ -1545,7 +1545,7 @@
     "label": "X-studio街舞工作室",
     "auto": true,
     "studio": {
-      "name": "X-studio街舞工作室（市顺义）",
+      "name": "X-studio街舞工作室（顺义）",
       "city": "北京",
       "region": "CN"
     },
@@ -1573,7 +1573,7 @@
     "label": "ZZ Dance",
     "auto": true,
     "studio": {
-      "name": "ZZ Dance（市朝阳）",
+      "name": "ZZ Dance（朝阳）",
       "city": "北京",
       "region": "CN"
     },
@@ -1601,7 +1601,7 @@
     "label": "卓越艺行舞蹈工作室",
     "auto": true,
     "studio": {
-      "name": "卓越艺行舞蹈工作室（市海淀）",
+      "name": "卓越艺行舞蹈工作室（海淀）",
       "city": "北京",
       "region": "CN"
     },
@@ -1937,7 +1937,7 @@
     "label": "此间风雅舞蹈艺术空间(市北店)",
     "auto": true,
     "studio": {
-      "name": "此间风雅舞蹈艺术空间(市北店)（市市北）",
+      "name": "此间风雅舞蹈艺术空间(市北店)（市北）",
       "city": "青岛",
       "region": "CN"
     },
@@ -1965,7 +1965,7 @@
     "label": "繁花艺术",
     "auto": true,
     "studio": {
-      "name": "繁花艺术（市市南）",
+      "name": "繁花艺术（市南）",
       "city": "青岛",
       "region": "CN"
     },
@@ -1993,7 +1993,7 @@
     "label": "此间风雅舞蹈艺术空间(城阳店)",
     "auto": true,
     "studio": {
-      "name": "此间风雅舞蹈艺术空间(城阳店)（市城阳）",
+      "name": "此间风雅舞蹈艺术空间(城阳店)（城阳）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2021,7 +2021,7 @@
     "label": "此间风雅舞蹈艺术空间(黄岛店)",
     "auto": true,
     "studio": {
-      "name": "此间风雅舞蹈艺术空间(黄岛店)（市黄岛）",
+      "name": "此间风雅舞蹈艺术空间(黄岛店)（黄岛）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2049,7 +2049,7 @@
     "label": "NEIWAI内外舞蹈(黄岛店)",
     "auto": true,
     "studio": {
-      "name": "NEIWAI内外舞蹈(黄岛店)（市黄岛）",
+      "name": "NEIWAI内外舞蹈(黄岛店)（黄岛）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2077,7 +2077,7 @@
     "label": "S.Pink舞蹈 市南店",
     "auto": true,
     "studio": {
-      "name": "S.Pink舞蹈 市南店（市市南）",
+      "name": "S.Pink舞蹈 市南店（市南）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2105,7 +2105,7 @@
     "label": "S.Pink舞蹈 市北店",
     "auto": true,
     "studio": {
-      "name": "S.Pink舞蹈 市北店（市市北）",
+      "name": "S.Pink舞蹈 市北店（市北）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2133,7 +2133,7 @@
     "label": "由乙贝贝空中舞蹈（市南店）",
     "auto": true,
     "studio": {
-      "name": "由乙贝贝空中舞蹈（市南店）（市市南）",
+      "name": "由乙贝贝空中舞蹈（市南店）（市南）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2161,7 +2161,7 @@
     "label": "NEIWAI内外舞蹈(城阳店)",
     "auto": true,
     "studio": {
-      "name": "NEIWAI内外舞蹈(城阳店)（市城阳）",
+      "name": "NEIWAI内外舞蹈(城阳店)（城阳）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2189,7 +2189,7 @@
     "label": "发光体舞蹈（李村店）",
     "auto": true,
     "studio": {
-      "name": "发光体舞蹈（李村店）（市李沧）",
+      "name": "发光体舞蹈（李村店）（李沧）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2217,7 +2217,7 @@
     "label": "发光体舞蹈（市北和达店）",
     "auto": true,
     "studio": {
-      "name": "发光体舞蹈（市北和达店）（市市北）",
+      "name": "发光体舞蹈（市北和达店）（市北）",
       "city": "青岛",
       "region": "CN"
     },
@@ -2245,7 +2245,7 @@
     "label": "STB街舞工作室",
     "auto": true,
     "studio": {
-      "name": "STB街舞工作室（市越秀）",
+      "name": "STB街舞工作室（越秀）",
       "city": "广州",
       "region": "CN"
     },
@@ -2273,7 +2273,7 @@
     "label": "StudioOneMore玩梦街舞",
     "auto": true,
     "studio": {
-      "name": "StudioOneMore玩梦街舞（市天河）",
+      "name": "StudioOneMore玩梦街舞（天河）",
       "city": "广州",
       "region": "CN"
     },
@@ -2301,7 +2301,7 @@
     "label": "KILLERS街舞工作室",
     "auto": true,
     "studio": {
-      "name": "KILLERS街舞工作室（市海珠）",
+      "name": "KILLERS街舞工作室（海珠）",
       "city": "广州",
       "region": "CN"
     },
@@ -2329,7 +2329,7 @@
     "label": "Eric Dance",
     "auto": true,
     "studio": {
-      "name": "Eric Dance（市天河）",
+      "name": "Eric Dance（天河）",
       "city": "广州",
       "region": "CN"
     },
@@ -2357,7 +2357,7 @@
     "label": "KiDance街舞",
     "auto": true,
     "studio": {
-      "name": "KiDance街舞（市越秀）",
+      "name": "KiDance街舞（越秀）",
       "city": "广州",
       "region": "CN"
     },
@@ -2385,7 +2385,7 @@
     "label": "广州溪流舞蹈剧场",
     "auto": true,
     "studio": {
-      "name": "广州溪流舞蹈剧场（市越秀）",
+      "name": "广州溪流舞蹈剧场（越秀）",
       "city": "广州",
       "region": "CN"
     },
@@ -2413,7 +2413,7 @@
     "label": "Win Dance屿光街舞",
     "auto": true,
     "studio": {
-      "name": "Win Dance屿光街舞（市增城）",
+      "name": "Win Dance屿光街舞（增城）",
       "city": "广州",
       "region": "CN"
     },
@@ -2441,7 +2441,7 @@
     "label": "正经街舞工作室",
     "auto": true,
     "studio": {
-      "name": "正经街舞工作室（市黄埔）",
+      "name": "正经街舞工作室（黄埔）",
       "city": "广州",
       "region": "CN"
     },
@@ -2469,7 +2469,7 @@
     "label": "汇景阅动空间",
     "auto": true,
     "studio": {
-      "name": "汇景阅动空间（市天河）",
+      "name": "汇景阅动空间（天河）",
       "city": "广州",
       "region": "CN"
     },
@@ -2497,7 +2497,7 @@
     "label": "白云区白云汇店",
     "auto": true,
     "studio": {
-      "name": "白云区白云汇店（市白云）",
+      "name": "白云区白云汇店（白云）",
       "city": "广州",
       "region": "CN"
     },
@@ -2525,7 +2525,7 @@
     "label": "FAB菲比舞蹈（阳光店校区）",
     "auto": true,
     "studio": {
-      "name": "FAB菲比舞蹈（阳光店校区）（市锦江）",
+      "name": "FAB菲比舞蹈（阳光店校区）（锦江）",
       "city": "成都",
       "region": "CN"
     },
@@ -2553,7 +2553,7 @@
     "label": "递趣嘻哈-锦江",
     "auto": true,
     "studio": {
-      "name": "递趣嘻哈-锦江（市锦江）",
+      "name": "递趣嘻哈-锦江（锦江）",
       "city": "成都",
       "region": "CN"
     },
@@ -2581,7 +2581,7 @@
     "label": "递趣嘻哈-成华",
     "auto": true,
     "studio": {
-      "name": "递趣嘻哈-成华（市成华）",
+      "name": "递趣嘻哈-成华（成华）",
       "city": "成都",
       "region": "CN"
     },
@@ -2609,7 +2609,7 @@
     "label": "递趣嘻哈-高新",
     "auto": true,
     "studio": {
-      "name": "递趣嘻哈-高新（市武侯）",
+      "name": "递趣嘻哈-高新（武侯）",
       "city": "成都",
       "region": "CN"
     },
@@ -2637,7 +2637,7 @@
     "label": "FAB菲比舞蹈（万达店校区）",
     "auto": true,
     "studio": {
-      "name": "FAB菲比舞蹈（万达店校区）（市武侯）",
+      "name": "FAB菲比舞蹈（万达店校区）（武侯）",
       "city": "成都",
       "region": "CN"
     },
@@ -2665,7 +2665,7 @@
     "label": "竹汐舞蹈",
     "auto": true,
     "studio": {
-      "name": "竹汐舞蹈（市高新）",
+      "name": "竹汐舞蹈（高新）",
       "city": "成都",
       "region": "CN"
     },
@@ -2721,7 +2721,7 @@
     "label": "Poletopia",
     "auto": true,
     "studio": {
-      "name": "Poletopia（市成华）",
+      "name": "Poletopia（成华）",
       "city": "成都",
       "region": "CN"
     },
@@ -2749,7 +2749,7 @@
     "label": "界外·璇 室内蹦极运动",
     "auto": true,
     "studio": {
-      "name": "界外·璇 室内蹦极运动（市武侯）",
+      "name": "界外·璇 室内蹦极运动（武侯）",
       "city": "成都",
       "region": "CN"
     },
@@ -2777,7 +2777,7 @@
     "label": "大悦城店",
     "auto": true,
     "studio": {
-      "name": "大悦城店（市武侯）",
+      "name": "大悦城店（武侯）",
       "city": "成都",
       "region": "CN"
     },
@@ -2805,7 +2805,7 @@
     "label": "舞岛Danceisland",
     "auto": true,
     "studio": {
-      "name": "舞岛Danceisland（市玄武）",
+      "name": "舞岛Danceisland（玄武）",
       "city": "南京",
       "region": "CN"
     },
@@ -2833,7 +2833,7 @@
     "label": "D-DAY 舞蹈",
     "auto": true,
     "studio": {
-      "name": "D-DAY 舞蹈（市秦淮）",
+      "name": "D-DAY 舞蹈（秦淮）",
       "city": "南京",
       "region": "CN"
     },
@@ -2861,7 +2861,7 @@
     "label": "C.A DANCE（百家湖店）",
     "auto": true,
     "studio": {
-      "name": "C.A DANCE（百家湖店）（市江宁）",
+      "name": "C.A DANCE（百家湖店）（江宁）",
       "city": "南京",
       "region": "CN"
     },
@@ -2889,7 +2889,7 @@
     "label": "SPEC舞蹈工作室",
     "auto": true,
     "studio": {
-      "name": "SPEC舞蹈工作室（市鼓楼）",
+      "name": "SPEC舞蹈工作室（鼓楼）",
       "city": "南京",
       "region": "CN"
     },
@@ -2945,7 +2945,7 @@
     "label": "New Dance Studio",
     "auto": true,
     "studio": {
-      "name": "New Dance Studio（市浦口）",
+      "name": "New Dance Studio（浦口）",
       "city": "南京",
       "region": "CN"
     },
@@ -2973,7 +2973,7 @@
     "label": "AD街舞（孝陵卫店）",
     "auto": true,
     "studio": {
-      "name": "AD街舞（孝陵卫店）（市栖霞）",
+      "name": "AD街舞（孝陵卫店）（栖霞）",
       "city": "南京",
       "region": "CN"
     },
@@ -3001,7 +3001,7 @@
     "label": "C.A DANCE（托乐嘉总店）",
     "auto": true,
     "studio": {
-      "name": "C.A DANCE（托乐嘉总店）（市江宁）",
+      "name": "C.A DANCE（托乐嘉总店）（江宁）",
       "city": "南京",
       "region": "CN"
     },
@@ -3029,7 +3029,7 @@
     "label": "薇尔芭蕾",
     "auto": true,
     "studio": {
-      "name": "薇尔芭蕾（市武昌）",
+      "name": "薇尔芭蕾（武昌）",
       "city": "武汉",
       "region": "CN"
     },
@@ -3057,7 +3057,7 @@
     "label": "XC DANCE",
     "auto": true,
     "studio": {
-      "name": "XC DANCE（市江夏）",
+      "name": "XC DANCE（江夏）",
       "city": "武汉",
       "region": "CN"
     },
@@ -3085,7 +3085,7 @@
     "label": "SHINE BALLET 耀芭蕾",
     "auto": true,
     "studio": {
-      "name": "SHINE BALLET 耀芭蕾（市汉阳）",
+      "name": "SHINE BALLET 耀芭蕾（汉阳）",
       "city": "武汉",
       "region": "CN"
     },
@@ -3113,7 +3113,7 @@
     "label": "MZ DANCE",
     "auto": true,
     "studio": {
-      "name": "MZ DANCE（市洪山）",
+      "name": "MZ DANCE（洪山）",
       "city": "武汉",
       "region": "CN"
     },
@@ -3141,7 +3141,7 @@
     "label": "云屹舞境",
     "auto": true,
     "studio": {
-      "name": "云屹舞境（市洪山）",
+      "name": "云屹舞境（洪山）",
       "city": "武汉",
       "region": "CN"
     },
@@ -3169,7 +3169,7 @@
     "label": "LUNA BALLET 汉口店",
     "auto": true,
     "studio": {
-      "name": "LUNA BALLET 汉口店（市江岸）",
+      "name": "LUNA BALLET 汉口店（江岸）",
       "city": "武汉",
       "region": "CN"
     },
@@ -3197,7 +3197,7 @@
     "label": "W舞蹈",
     "auto": true,
     "studio": {
-      "name": "W舞蹈（市武昌）",
+      "name": "W舞蹈（武昌）",
       "city": "武汉",
       "region": "CN"
     },
@@ -3225,7 +3225,7 @@
     "label": "漫舞蹈瑶海校区",
     "auto": true,
     "studio": {
-      "name": "漫舞蹈瑶海校区（市瑶海）",
+      "name": "漫舞蹈瑶海校区（瑶海）",
       "city": "合肥",
       "region": "CN"
     },
@@ -3253,7 +3253,7 @@
     "label": "漫舞蹈高新校区",
     "auto": true,
     "studio": {
-      "name": "漫舞蹈高新校区（市蜀山）",
+      "name": "漫舞蹈高新校区（蜀山）",
       "city": "合肥",
       "region": "CN"
     },
@@ -3281,7 +3281,7 @@
     "label": "漫舞蹈港汇校区",
     "auto": true,
     "studio": {
-      "name": "漫舞蹈港汇校区（市蜀山）",
+      "name": "漫舞蹈港汇校区（蜀山）",
       "city": "合肥",
       "region": "CN"
     },
@@ -3309,7 +3309,7 @@
     "label": "漫舞蹈经开校区",
     "auto": true,
     "studio": {
-      "name": "漫舞蹈经开校区（市蜀山）",
+      "name": "漫舞蹈经开校区（蜀山）",
       "city": "合肥",
       "region": "CN"
     },
@@ -3337,7 +3337,7 @@
     "label": "漫舞蹈包河校区",
     "auto": true,
     "studio": {
-      "name": "漫舞蹈包河校区（市包河）",
+      "name": "漫舞蹈包河校区（包河）",
       "city": "合肥",
       "region": "CN"
     },
@@ -3365,7 +3365,7 @@
     "label": "漫舞蹈庐阳校区",
     "auto": true,
     "studio": {
-      "name": "漫舞蹈庐阳校区（市庐阳）",
+      "name": "漫舞蹈庐阳校区（庐阳）",
       "city": "合肥",
       "region": "CN"
     },
@@ -3393,7 +3393,7 @@
     "label": "D.EE DANCE（公明中心店）",
     "auto": true,
     "studio": {
-      "name": "D.EE DANCE（公明中心店）（市光明）",
+      "name": "D.EE DANCE（公明中心店）（光明）",
       "city": "深圳",
       "region": "CN"
     },
@@ -3421,7 +3421,7 @@
     "label": "D.EE DANCE（公明广场店）",
     "auto": true,
     "studio": {
-      "name": "D.EE DANCE（公明广场店）（市光明）",
+      "name": "D.EE DANCE（公明广场店）（光明）",
       "city": "深圳",
       "region": "CN"
     },
@@ -3449,7 +3449,7 @@
     "label": "天韵芭蕾",
     "auto": true,
     "studio": {
-      "name": "天韵芭蕾（市南山）",
+      "name": "天韵芭蕾（南山）",
       "city": "深圳",
       "region": "CN"
     },
@@ -3477,7 +3477,7 @@
     "label": "云开舞事",
     "auto": true,
     "studio": {
-      "name": "云开舞事（市龙岗）",
+      "name": "云开舞事（龙岗）",
       "city": "深圳",
       "region": "CN"
     },
@@ -3505,7 +3505,7 @@
     "label": "起·舞艺术",
     "auto": true,
     "studio": {
-      "name": "起·舞艺术（市福田）",
+      "name": "起·舞艺术（福田）",
       "city": "深圳",
       "region": "CN"
     },
@@ -3533,7 +3533,7 @@
     "label": "邮储银行-深圳电信",
     "auto": true,
     "studio": {
-      "name": "邮储银行-深圳电信（市福田）",
+      "name": "邮储银行-深圳电信（福田）",
       "city": "深圳",
       "region": "CN"
     },

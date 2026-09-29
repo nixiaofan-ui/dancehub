@@ -185,21 +185,57 @@ function buildBrandGroups(studios) {
  * 为什么拆：整串名字用 32rpx/900 一股脑塞一行时，品牌名和「（苏河湾店）」一样重，
  * 长名还会把右侧按钮顶出卡片。拆成两级后主名吃掉视觉重量，分店名降级成辅助信息。
  *
- * ⚠ 只用于**前端排版**，与上面那套品牌归属算法（要和服务端保持一致的那份）无关：
- * 这里的正则只认「末尾的括号」，不作任何品牌判定。
- * 「（某某）」这种括号前没有主名的角落情况不拆，原样返回。
+ * ⚠ 只用于**前端排版**，与上面那套品牌归属算法（要和服务端保持一致的那份）无关。
+ *
+ * ⚠ 顺序很关键：先剥末尾的行政区尾巴（「（市秦淮）」），再看「·」,**最后**才看括号。
+ *   旧版直接拿末尾括号切，于是 `G-STEPS·祥云小镇店（北京）` 被切成
+ *   主名「G-STEPS·祥云小镇店」+ 分店名「北京」—— 末尾括号里是**城市不是分店**，
+ *   39 家 G-STEPS 全被挂上「北京」这个假分店名（2026-09-29 老板在分店页看到的就是这个）。
+ *   「品牌·分店」这种写法里分店名本来就在主名里，所以不再单独给分店标签。
  */
 function splitStudioName(name) {
-  const raw = String(name || "").trim();
-  const m = raw.match(/^(.*?)\s*[（(]\s*([^）)]+?)\s*[)）]\s*$/);
-  if (!m || !m[1]) return { brand: raw, branch: "" };
-  return { brand: m[1].trim(), branch: m[2].trim() };
+  const clean = stripDistrictTag(String(name || "").trim());
+  const dot = clean.indexOf("·");
+  if (dot >= 2) {
+    return { brand: clean.replace(/[·\s]+$/, ""), branch: "" };
+  }
+  const m = clean.match(/^(.*?)\s*[（(]\s*([^）)]+?)\s*[)）]\s*$/);
+  // 括号里得有分店字眼（店/校/区/分/馆/中心）才算分店名，
+  // 否则可能只是「（杭州）」这样的城市尾巴，当成品牌名的一部分更安全。
+  if (m && m[1].trim() && m[2].trim() && BRANCH_WORD_RE.test(m[2]) && !NOISE_RE.test(clean)) {
+    return { brand: m[1].trim(), branch: m[2].trim() };
+  }
+  return { brand: clean, branch: "" };
+}
+
+/**
+ * 取「分店名」—— 分店列表页每一行的标题。
+ *
+ * 与 splitStudioName 的区别：那个是给列表行排版用的（主名要保留分店信息），
+ * 这个是只要分店名那一截（品牌已经写在页面标题里了）。
+ *
+ * ⚠ 同样必须「·」优先于括号，理由见 splitStudioName。
+ * 取不出来时返回 ""，由调用方决定显示「总店」还是退回完整店名 —— 不在这里瞎猜。
+ */
+function branchOf(name) {
+  const clean = stripDistrictTag(String(name || "").trim());
+  const dot = clean.indexOf("·");
+  if (dot >= 2) {
+    const tail = clean.slice(dot + 1).replace(/^[\s·]+/, "").trim();
+    if (tail) return tail;
+  }
+  const m = clean.match(/^(.*?)\s*[（(]\s*([^）)]+?)\s*[)）]\s*$/);
+  if (m && m[1].trim() && m[2].trim() && BRANCH_WORD_RE.test(m[2]) && !NOISE_RE.test(clean)) {
+    return m[2].trim();
+  }
+  return "";
 }
 
 module.exports = {
   buildBrandGroups: buildBrandGroups,
   splitBrandBranch: splitBrandBranch,
   splitStudioName: splitStudioName,
+  branchOf: branchOf,
   stripDistrictTag: stripDistrictTag,
   cleanBrandLabel: cleanBrandLabel,
 };
