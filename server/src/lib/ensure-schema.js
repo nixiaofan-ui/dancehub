@@ -96,6 +96,15 @@ ALTER TABLE \`Schedule\`
   ADD COLUMN \`videoRef\` VARCHAR(64) NULL;
 `;
 
+/**
+ * Studio.district（所在行政区，短名如「海淀」「余杭」）
+ * 对应 schema.prisma 的 model Studio 里的 district。
+ */
+const STUDIO_DISTRICT_SQL = `
+ALTER TABLE \`Studio\`
+  ADD COLUMN \`district\` VARCHAR(32) NULL;
+`;
+
 async function run(label, sql) {
   try {
     await prisma.$executeRawUnsafe(sql);
@@ -130,5 +139,8 @@ export async function ensureSchema() {
   }
   if (!(await columnExists("Schedule", "videoRef"))) {
     await run("Schedule.videoRef", SCHEDULE_VIDEOREF_SQL);
+  }
+  if (!(await columnExists("Studio", "district"))) {
+    await run("Studio.district", STUDIO_DISTRICT_SQL);
   }
 }

@@ -129,6 +129,37 @@
     <view class="loading-text">正在热身…</view>
   </view>
 
+  <!--
+    行政区筛选：同城店多了以后，「只看海淀区的」是最常见的收窄方式。
+    ⚠ 覆盖率不是 100%（上游地址长期缺失），抽不到区的店单独成「未标注」一档并默认带上，
+    数字摆在 chip 上 —— 悄悄剔掉会让用户以为筛出来的是全部。
+  -->
+  <view wx:if="{{showDistrictBar}}" class="dist-filter">
+    <scroll-view scroll-x class="dist-scroll" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{districtChips}}"
+        wx:key="label"
+        class="df-chip {{item.on ? 'on' : ''}}"
+        hover-class="press"
+        data-label="{{item.label}}"
+        bindtap="tapDistrictChip"
+      >{{item.label}}<text class="df-n">{{item.count}}</text></view>
+    </scroll-view>
+    <view class="df-all" hover-class="press" bindtap="tapAllDistricts">全选</view>
+  </view>
+
+  <!--
+    同城搜不到、但全国有命中。
+    没有这一句的话，「杭州搜 T-rex」看到的就是一片空 —— 用户只会以为我们没收录，
+    而实际上是那家店挂在别的城市（t-rex dance 在北京）。点一下放开城市限定。
+  -->
+  <view wx:if="{{crossCity}}" class="cross-bar" hover-class="press" bindtap="goCrossCity">
+    <view class="cb-main">
+      <view class="cb-title">本城没有「{{keyword}}」</view>
+      <view class="cb-sub">全国还有 {{crossCity.total}} 家 · {{crossCityText}}，看看 ›</view>
+    </view>
+  </view>
+
   <view wx:if="{{!loading && sections.length === 0}}" class="empty">
     <view class="dancer-lg empty-dancer">
       <view class="d-head"></view>

@@ -1,0 +1,1 @@
+ALTER TABLE `Studio` ADD COLUMN `district` VARCHAR(32) NULL;

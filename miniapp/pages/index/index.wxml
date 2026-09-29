@@ -83,6 +83,25 @@
     <view class="sf-all" hover-class="press" bindtap="tapAllStores">全选</view>
   </view>
 
+  <!--
+    舞种筛选：关注的店多了以后，一天几十节课里往往只想看某一类
+    （「今天只想跳 Jazz」）。课名里自带舞种，本地识别即可过滤。
+    认不出舞种的课归到「其它」，不会被悄悄筛掉。
+  -->
+  <view wx:if="{{showStyleBar}}" class="style-filter">
+    <scroll-view scroll-x class="style-scroll" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{styleChips}}"
+        wx:key="label"
+        class="stf-chip {{item.on ? 'on' : ''}}"
+        hover-class="press"
+        data-label="{{item.label}}"
+        bindtap="tapStyleChip"
+      >{{item.label}}<text class="stf-n">{{item.count}}</text></view>
+    </scroll-view>
+    <view class="stf-all {{styleAllOn ? 'on' : ''}}" hover-class="press" bindtap="tapAllStyles">全部</view>
+  </view>
+
   <!-- 服务不可达：不能只留一片空白，给出原因和重试入口 -->
   <view wx:if="{{loadError}}" class="load-error">
     <view class="le-title">连不上服务</view>

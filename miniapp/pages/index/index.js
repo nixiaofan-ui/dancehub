@@ -16,6 +16,7 @@ const { onNavTop } = require("../../utils/scroll-top");
 // 跳老师主页统一走这里：详情页/周课表页也是同一个实现，行为保持一致
 const { onTapCoach } = require("../../utils/coach-nav");
 const CP = require("../../utils/city-picker-mixin");
+const { detectStyle, OTHER, DISPLAY_ORDER } = require("../../utils/dance-style");
 
 /**
  * 首页和发现页共用一套城市选择逻辑（热门 chip + 全量面板）。
@@ -46,6 +47,10 @@ Page(
     // 已关注门店筛选条
     storeChips: [],
     showStoreBar: false,
+    // 舞种筛选条（课名里天然带舞种，本地识别即可，不用等服务端发版）
+    styleChips: [],
+    showStyleBar: false,
+    styleAllOn: true,
     // 因「屏蔽老师」而隐藏的课
     hiddenCount: 0,
     showBlocked: false,
@@ -239,7 +244,8 @@ Page(
       const base = this.data.showBlocked ? items : items.filter((i) => this.isVisibleCoach(i));
 
       this.syncStoreChips(base);
-      const visible = this.filterByStore(base);
+      this.syncStyleChips(base);
+      const visible = this.applyFilters(base);
       const pendingCount = items.filter((i) => i.bookingStatus === "PENDING").length;
 
       // 藏了多少课要让用户看见，别悄悄替他做决定
@@ -305,6 +311,85 @@ Page(
   },
 
   /**
+   * 构建舞种筛选条。
+   *
+   * ⚠ 计数用**未经过门店筛选**的那份（base），不跟着门店勾选变：
+   * 否则用户取消勾选一家店，舞种条上的数字和 chip 数量就跟着跳，
+   * 看起来像筛选条自己坏了。
+   *
+   * ⚠ 「认不出舞种」的课归到「其它」，不能丢 —— 那批课也是用户想看的。
+   */
+  syncStyleChips(items) {
+    const tally = new Map();
+    items.forEach((i) => {
+      const label = detectStyle(i.courseName) || OTHER;
+      tally.set(label, (tally.get(label) || 0) + 1);
+    });
+    // 只有一个舞种（或全都识别不出来）时不显示：没有选择余地的开关是噪音
+    if (tally.size < 2) {
+      this.activeStyles = [];
+      this.setData({ styleChips: [], showStyleBar: false, styleAllOn: true });
+      return;
+    }
+    // 「其它」不是真舞种，同课时一律排最后（它没有 DISPLAY_ORDER 位次）
+    const orderOf = (l) => (l === OTHER ? 999 : DISPLAY_ORDER.indexOf(l));
+    const chips = [...tally.entries()]
+      .map((p) => ({ label: p[0], count: p[1] }))
+      .sort((a, b) => b.count - a.count || orderOf(a.label) - orderOf(b.label));
+
+    // 首次全选；之后保留上次勾选，但剔掉这次列表里已经没有的舞种
+    let active = (this.activeStyles || []).filter((l) => tally.has(l));
+    if (!active.length) active = chips.map((c) => c.label);
+    this.activeStyles = active;
+
+    const on = new Set(active);
+    this.setData({
+      styleChips: chips.map((c) => ({ ...c, on: on.has(c.label) })),
+      showStyleBar: true,
+      styleAllOn: on.size === chips.length,
+    });
+  },
+
+  filterByStyle(items) {
+    const active = this.activeStyles;
+    if (!active || !active.length) return items;
+    const on = new Set(active);
+    return items.filter((i) => on.has(detectStyle(i.courseName) || OTHER));
+  },
+
+  /** 两级筛选串起来：门店 → 舞种。顺序不影响结果，但只调这一个地方不容易漏 */
+  applyFilters(items) {
+    return this.filterByStyle(this.filterByStore(items));
+  },
+
+  tapStyleChip(e) {
+    const label = e.currentTarget.dataset.label;
+    const active = new Set(this.activeStyles || []);
+    if (active.has(label)) {
+      if (active.size === 1) return toast(this, "至少保留一个舞种");
+      active.delete(label);
+    } else {
+      active.add(label);
+    }
+    this.activeStyles = [...active];
+    this.setData({
+      styleChips: (this.data.styleChips || []).map((c) => ({ ...c, on: active.has(c.label) })),
+      styleAllOn: active.size === (this.data.styleChips || []).length,
+      items: this.applyFilters(this.allItems || []),
+    });
+  },
+
+  tapAllStyles() {
+    const chips = this.data.styleChips || [];
+    this.activeStyles = chips.map((c) => c.label);
+    this.setData({
+      styleChips: chips.map((c) => ({ ...c, on: true })),
+      styleAllOn: true,
+      items: this.applyFilters(this.allItems || []),
+    });
+  },
+
+  /**
    * 没被屏蔽的老师。
    * 屏蔽名单可能刚被改过（从老师页返回），所以每次渲染重新读 Storage，
    * 不在 page 实例上缓存。
@@ -320,9 +405,10 @@ Page(
     const raw = this.rawItems || [];
     const base = show ? raw : raw.filter((i) => this.isVisibleCoach(i));
     this.syncStoreChips(base);
+    this.syncStyleChips(base);
     this.allItems = base;
     this.setData({
-      items: this.filterByStore(base),
+      items: this.applyFilters(base),
       hiddenCount: 0,
     });
   },
@@ -342,7 +428,7 @@ Page(
     this.activeIds = [...active];
     this.setData({
       storeChips: (this.data.storeChips || []).map((c) => ({ ...c, on: active.has(c.id) })),
-      items: this.filterByStore(this.allItems || []),
+      items: this.applyFilters(this.allItems || []),
     });
   },
 
@@ -351,7 +437,7 @@ Page(
     this.activeIds = chips.map((c) => c.id);
     this.setData({
       storeChips: chips.map((c) => ({ ...c, on: true })),
-      items: this.filterByStore(this.allItems || []),
+      items: this.applyFilters(this.allItems || []),
     });
   },
 

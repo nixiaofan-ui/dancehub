@@ -13,6 +13,9 @@ const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
 /** 卡片上最多平铺几个舞种标签，多出来的收成「+N」 */
 const MAX_TAGS = 3;
 
+/** 没定到行政区的门店在筛选条上的档位名（真实区名不会叫这个，不会撞） */
+const UNLABELED = "未标注";
+
 /** 字母排序：「#」垫底，其余 A-Z */
 function compareLetter(a, b) {
   if (a === b) return 0;
@@ -134,8 +137,25 @@ Page(
     searchCityId: null,
     cityCounts: [],
     hitTotal: 0,
+    /**
+     * 行政区筛选条。
+     * ⚠ 覆盖率不是 100%（北京 31% / 杭州 51% / 上海 41%）：库里 address 长期为空，
+     * 区名只能从回源上游补的地址和店名尾巴抽。抽不到的店**归到「未标注」chip 里**，
+     * 不藏起来 —— 藏了用户会以为筛出来的是全部，实际漏了一大半。
+     */
+    districtChips: [],
+    showDistrictBar: false,
+    unlabeledCount: 0,
     /** 本次结果是跨城的：卡片要带城市标签，且不做同城品牌合并 */
     globalMode: false,
+    /**
+     * 同城搜不到、但全国有命中（服务端算好回传）。
+     * 「杭州搜 T-rex」就是这种：那家店挂在北京，同城页显示 0 结果，
+     * 不说一句的话用户只会以为我们没收录。
+     */
+    crossCity: null,
+    /** WXML 不能拼字符串，城市列表先在 JS 里拼好 */
+    crossCityText: "",
   }),
 
   async onLoad() {
@@ -194,6 +214,11 @@ Page(
       const rawStudios = Array.isArray(res) ? res : res.items || [];
       const cityCounts = Array.isArray(res) ? [] : res.cityCounts || [];
       const hitTotal = Array.isArray(res) ? rawStudios.length : res.total || 0;
+      // 同城 0 结果但全国有 → 服务端会把跨城命中一并回传（见 studio.routes.js）
+      const cc = Array.isArray(res) ? null : res.crossCity || null;
+      const crossCityText = cc
+        ? (cc.cities || []).slice(0, 4).map((c) => `${c.name} ${c.count}`).join(" · ")
+        : "";
       const followedIds = follows.map((f) => f.studio.id);
       const studios = rawStudios.map((s) => {
         const { brand, branch } = splitStudioName(s.name);
@@ -226,12 +251,23 @@ Page(
         }
       }
       // 多店品牌收成一行（顶部那条横滑品牌栏另有入口，这里只是别让同品牌刷屏）
-      const rows = globalMode ? studios : mergeBrandRows(studios, brandList);
-      const { letters, sections } = buildSections(rows);
-      // 扁平列表只留在实例上（关注状态回写用），视图只吃 sections，避免同一份数据被传两遍
-      this._rows = rows;
+      this.syncDistrictChips(studios);
+      // 筛选条每次勾选都要按新口径重算视图，原始列表和品牌表留在实例上复用
+      this._studios = studios;
+      this._brandList = brandList;
+      const view = this.buildRows(this.applyDistrictFilter(studios));
       this.setData(
-        { brands: brandList, sections, letters, followedIds, cityCounts, hitTotal, loading: false },
+        {
+          brands: brandList,
+          sections: view.sections,
+          letters: view.letters,
+          followedIds,
+          cityCounts,
+          hitTotal,
+          crossCity: cc,
+          crossCityText,
+          loading: false,
+        },
         () => {
           // 视图渲染完再量索引条，否则拿到的位置是旧的
           this.measureIndexBar();
@@ -376,7 +412,122 @@ Page(
 
   clearKeyword() {
     // 关键词没了，城市收窄也该一起解掉 —— 否则回到列表态还盯着某个城市
-    this.setData({ keyword: "", searchCityId: null, cityCounts: [], hitTotal: 0 });
+    this.setData({
+      keyword: "",
+      searchCityId: null,
+      cityCounts: [],
+      hitTotal: 0,
+      crossCity: null,
+      crossCityText: "",
+    });
+    this.load();
+  },
+
+  /**
+   * 行政区筛选条。
+   *
+   * 抽不到区的店放进「未标注」这一档并且**默认带上**：
+   * 它们本来就在同城列表里，悄悄剔除会让用户以为「海淀区只有 12 家」，
+   * 而实际还有一百多家只是我们没定到区。数字摆出来，让他自己决定看不看。
+   */
+  syncDistrictChips(studios) {
+    const tally = new Map();
+    let unlabeled = 0;
+    studios.forEach((s) => {
+      const d = s.district || "";
+      if (!d) {
+        unlabeled += 1;
+        return;
+      }
+      tally.set(d, (tally.get(d) || 0) + 1);
+    });
+    // 一个区都没有（也没未标注的）→ 不给筛选条
+    if (!tally.size && !unlabeled) {
+      this.activeDistricts = [];
+      this.setData({ districtChips: [], showDistrictBar: false, unlabeledCount: 0 });
+      return;
+    }
+    const chips = [...tally.entries()]
+      .map((p) => ({ label: p[0], count: p[1] }))
+      .sort((a, b) => b.count - a.count);
+    if (unlabeled) chips.push({ label: UNLABELED, count: unlabeled });
+
+    // 只有一个可选项时也没必要给开关
+    if (chips.length < 2) {
+      this.activeDistricts = [];
+      this.setData({ districtChips: [], showDistrictBar: false, unlabeledCount: unlabeled });
+      return;
+    }
+    const known = new Set(chips.map((c) => c.label));
+    let active = (this.activeDistricts || []).filter((l) => known.has(l));
+    if (!active.length) active = chips.map((c) => c.label);
+    this.activeDistricts = active;
+
+    const on = new Set(active);
+    this.setData({
+      districtChips: chips.map((c) => ({ ...c, on: on.has(c.label) })),
+      showDistrictBar: true,
+      unlabeledCount: unlabeled,
+    });
+  },
+
+  applyDistrictFilter(studios) {
+    const active = this.activeDistricts;
+    if (!active || !active.length) return studios;
+    const on = new Set(active);
+    return studios.filter((s) => on.has(s.district || UNLABELED));
+  },
+
+  tapDistrictChip(e) {
+    const label = e.currentTarget.dataset.label;
+    const active = new Set(this.activeDistricts || []);
+    if (active.has(label)) {
+      if (active.size === 1) return toast(this, "至少保留一个区域");
+      active.delete(label);
+    } else {
+      active.add(label);
+    }
+    this.activeDistricts = [...active];
+    const rows = this.applyDistrictFilter(this._studios || []);
+    this.setData({
+      districtChips: (this.data.districtChips || []).map((c) => ({
+        ...c,
+        on: active.has(c.label),
+      })),
+      ...this.buildRows(rows),
+    });
+  },
+
+  tapAllDistricts() {
+    const chips = this.data.districtChips || [];
+    this.activeDistricts = chips.map((c) => c.label);
+    const rows = this.applyDistrictFilter(this._studios || []);
+    this.setData({
+      districtChips: chips.map((c) => ({ ...c, on: true })),
+      ...this.buildRows(rows),
+    });
+  },
+
+  /**
+   * 门店 → 视图行（品牌合并 + 字母分组）。
+   * 抽出来是因为筛选条每次勾选都要重算一遍，和 load() 里那段必须完全一致，
+   * 复制一份迟早会两边不一致（一边合品牌一边不合）。
+   */
+  buildRows(studios) {
+    const globalMode = this.data.globalMode;
+    const rows = globalMode ? studios : mergeBrandRows(studios, this._brandList || []);
+    const built = buildSections(rows);
+    this._rows = rows;
+    return { sections: built.sections, letters: built.letters };
+  },
+
+  /**
+   * 点「全国还有 N 家」：放开城市限定重搜。
+   * 只在这一次把 searchCityId 清空，cityId（浏览城市）不动 ——
+   * 用户可能只是想看看这家店在哪，看完还要回本城列表。
+   */
+  goCrossCity() {
+    this.setData({ searchCityId: null, crossCity: null, crossCityText: "" });
     this.load();
   },
 

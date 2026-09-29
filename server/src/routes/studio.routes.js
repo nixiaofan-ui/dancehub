@@ -181,6 +181,31 @@ router.get(
       fuzzyApplied = studios.length > 0;
     }
 
+    // 同城搜不到 → 查一次全国，只回提示不外城门店。
+    // 「杭州搜 T-rex 什么都搜不到」多半不是没这家店，而是它在别的城市
+    // （t-rex dance 实际挂在北京）。不直接把外城结果塞进列表，是因为同城页
+    // 突然冒出「北京 XX」会让人以为定位错了；给用户一句话 + 一键放开城市限定更稳。
+    let crossCity = null;
+    if (keyword && cityId && studios.length === 0) {
+      const all = await fuzzySearchStudio(
+        String(keyword),
+        { status: baseWhere.status },
+        includeArg,
+      );
+      if (all.length) {
+        const byCity = new Map();
+        for (const s of all) byCity.set(s.cityId, (byCity.get(s.cityId) || 0) + 1);
+        const cities = await prisma.city.findMany({ where: { id: { in: [...byCity.keys()] } } });
+        crossCity = {
+          total: all.length,
+          cities: cities
+            .map((c) => ({ cityId: c.id, name: c.name, count: byCity.get(c.id) || 0 }))
+            .filter((c) => c.count)
+            .sort((a, b) => b.count - a.count),
+        };
+      }
+    }
+
     const styleMap = await buildStyleMap(studios.map((s) => s.id));
     // 按名称首字母排序（中文走拼音），并给每家带上分组字母，供发现页右侧索引条定位
     const list = sortStudiosByName(studios).map((s) => ({
@@ -216,6 +241,8 @@ router.get(
       return ok(res, { items: list, cityCounts, total: cityCounts.reduce((n, c) => n + c.count, 0) });
     }
 
+    // 有跨城兜底时回对象（前端 Array.isArray 判断那条路会走到 res.items）
+    if (crossCity) return ok(res, { items: list, crossCity });
     ok(res, list);
   }),
 );

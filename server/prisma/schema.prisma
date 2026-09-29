@@ -124,6 +124,10 @@ model Studio {
   // 「去预约」走 web-view 打开这个地址，而不是 navigateToMiniProgram。
   // 国内场馆一般为空（走小程序跳转）。
   officialUrl String?
+  // 所在行政区（「海淀」「余杭」这种不带后缀的短名）。
+  // 由 scripts/build-district-overrides.mjs 回源上游补的地址 + 店名尾巴抽出来，
+  // 启动时 ensureDistrict() 回填。抽不到就是 null —— 别猜，宁可归到「未标注」。
+  district         String?        @db.VarChar(32)
   status           Boolean        @default(true)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

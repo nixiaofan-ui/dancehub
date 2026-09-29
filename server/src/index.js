@@ -9,6 +9,7 @@ import { ensureSchema } from "./lib/ensure-schema.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
 import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
 import { fixStudioDistrictNames } from "./lib/fix-district-name.js";
+import { ensureDistrict } from "./lib/fill-district.js";
 
 // ── 容器/云托管适配 ──
 // 云托管要求监听 80 / 8080；本地开发仍可走 3000。
@@ -55,6 +56,13 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       fixStudioDistrictNames({ log: (m) => console.log(m) }).catch((err) =>
         console.warn(`[dancehub] 区名清洗失败: ${err.message}`)
+      )
+    )
+    // 行政区回填（幂等）：发现页要按「海淀区」筛店，但库里 address 95% 是空的，
+    // 只能靠回源上游补的地址 + 店名尾巴抽。抽不到的留 null，前端归「未标注」并标数量。
+    .then(() =>
+      ensureDistrict({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 行政区回填失败: ${err.message}`)
       )
     )
     // 重复门店自愈（幂等）：同一个抓取目标被两份配置/两个实例各建了一条门店，
