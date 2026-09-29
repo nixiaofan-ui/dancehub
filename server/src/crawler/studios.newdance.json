@@ -5518,5 +5518,1325 @@
   "timeFormat": "HH:mm-HH:mm",
   "address": "华士镇新世界商业广场3F 10-12号",
   "note": "全平台补扫接入（舞蹈 3/4）"
+ },
+ {
+  "id": "fityun-11047032",
+  "enabled": true,
+  "label": "FUNNY HOUSE 舞蹈室",
+  "auto": true,
+  "studio": {
+   "name": "FUNNY HOUSE 舞蹈室",
+   "city": "萍乡",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11047032",
+   "branches": [
+    {
+     "id": "",
+     "name": "FUNNY HOUSE 舞蹈室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "安源区德铭路楚萍花园a栋131号",
+  "note": "全平台补扫接入（舞蹈 7/8）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058891",
+  "enabled": true,
+  "label": "MRY舞蹈",
+  "auto": true,
+  "studio": {
+   "name": "MRY舞蹈",
+   "city": "抚州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058891",
+   "branches": [
+    {
+     "id": "",
+     "name": "MRY舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "江西省抚州市",
+  "note": "全平台补扫接入（舞蹈 49/60）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059098",
+  "enabled": true,
+  "label": "Mr.Lz舞蹈德阳店",
+  "auto": true,
+  "studio": {
+   "name": "Mr.Lz舞蹈德阳店",
+   "city": "德阳",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059098",
+   "branches": [
+    {
+     "id": "",
+     "name": "Mr.Lz舞蹈德阳店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "德阳",
+  "note": "全平台补扫接入（舞蹈 22/26）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11050878",
+  "enabled": true,
+  "label": "赣州耐斯舞室",
+  "auto": true,
+  "studio": {
+   "name": "赣州耐斯舞室",
+   "city": "赣州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11050878",
+   "branches": [
+    {
+     "id": "",
+     "name": "赣州耐斯舞室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "幸福里3期/阳明国际1号楼",
+  "note": "全平台补扫接入（舞蹈 21/23）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059212",
+  "enabled": true,
+  "label": "NX舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "NX舞蹈工作室",
+   "city": "阜阳",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059212",
+   "branches": [
+    {
+     "id": "",
+     "name": "NX舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "安徽省阜阳市颍州区-颍泉区-颍东区",
+  "note": "全平台补扫接入（舞蹈 17/18）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11052877",
+  "enabled": true,
+  "label": "胡杨舞蹈自贡华商店",
+  "auto": true,
+  "studio": {
+   "name": "胡杨舞蹈自贡华商店",
+   "city": "自贡",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11052877",
+   "branches": [
+    {
+     "id": "",
+     "name": "胡杨舞蹈自贡华商店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "华商购物中心3楼1-2号",
+  "note": "全平台补扫接入（舞蹈 13/15）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11050542",
+  "enabled": true,
+  "label": "爱舞工作室",
+  "auto": true,
+  "studio": {
+   "name": "爱舞工作室",
+   "city": "荆州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11050542",
+   "branches": [
+    {
+     "id": "",
+     "name": "爱舞工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "湖北荆州",
+  "note": "全平台补扫接入（舞蹈 12/17）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058574",
+  "enabled": true,
+  "label": "FALCON TRIBE街舞工作室",
+  "auto": true,
+  "studio": {
+   "name": "FALCON TRIBE街舞工作室",
+   "city": "赣州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058574",
+   "branches": [
+    {
+     "id": "",
+     "name": "FALCON TRIBE街舞工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "江西赣州",
+  "note": "全平台补扫接入（舞蹈 12/12）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059193",
+  "enabled": true,
+  "label": "mr.lz灵子舞蹈景德镇店",
+  "auto": true,
+  "studio": {
+   "name": "mr.lz灵子舞蹈景德镇店",
+   "city": "景德镇",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059193",
+   "branches": [
+    {
+     "id": "",
+     "name": "mr.lz灵子舞蹈景德镇店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "江西景德镇",
+  "note": "全平台补扫接入（舞蹈 12/16）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11048557",
+  "enabled": true,
+  "label": "吉首市星传奇舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "吉首市星传奇舞蹈工作室",
+   "city": "湘西",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11048557",
+   "branches": [
+    {
+     "id": "",
+     "name": "吉首市星传奇舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "位于世纪广场商业城A区6楼624-1【五斗米旁观光电梯可直达】",
+  "note": "全平台补扫接入（舞蹈 11/11）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056550",
+  "enabled": true,
+  "label": "宜昌自由街舞",
+  "auto": true,
+  "studio": {
+   "name": "宜昌自由街舞",
+   "city": "宜昌",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056550",
+   "branches": [
+    {
+     "id": "",
+     "name": "宜昌自由街舞"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "大洋百货4楼 / 环球港5楼",
+  "note": "全平台补扫接入（舞蹈 10/10）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056863",
+  "enabled": true,
+  "label": "美吉儿&MR.LZ灵子吉安城南校区",
+  "auto": true,
+  "studio": {
+   "name": "美吉儿&MR.LZ灵子吉安城南校区",
+   "city": "吉安",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056863",
+   "branches": [
+    {
+     "id": "",
+     "name": "美吉儿&MR.LZ灵子吉安城南校区"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "城南天虹商场西区二楼",
+  "note": "全平台补扫接入（舞蹈 10/16）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058161",
+  "enabled": true,
+  "label": "JM吾行艺术",
+  "auto": true,
+  "studio": {
+   "name": "JM吾行艺术",
+   "city": "崇左",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058161",
+   "branches": [
+    {
+     "id": "",
+     "name": "JM吾行艺术"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "崇左市江州区山秀路18号柏曼酒店三楼",
+  "note": "全平台补扫接入（舞蹈 10/10）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11054445",
+  "enabled": true,
+  "label": "赣州PASSION派星舞蹈",
+  "auto": true,
+  "studio": {
+   "name": "赣州PASSION派星舞蹈",
+   "city": "赣州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11054445",
+   "branches": [
+    {
+     "id": "",
+     "name": "赣州PASSION派星舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "师院南路高校服务区8号写字楼PASSION舞蹈工作室",
+  "note": "全平台补扫接入（舞蹈 9/10）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11055173",
+  "enabled": true,
+  "label": "ZT舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "ZT舞蹈工作室",
+   "city": "宝鸡",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11055173",
+   "branches": [
+    {
+     "id": "",
+     "name": "ZT舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "陕西宝鸡",
+  "note": "全平台补扫接入（舞蹈 9/9）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11055485",
+  "enabled": true,
+  "label": "嘉玲伊甸园舞蹈工作室（山水缘店）",
+  "auto": true,
+  "studio": {
+   "name": "嘉玲伊甸园舞蹈工作室（山水缘店）",
+   "city": "郴州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11055485",
+   "branches": [
+    {
+     "id": "",
+     "name": "嘉玲伊甸园舞蹈工作室（山水缘店）"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "湖南省郴州市北湖区燕泉街道香花南路19号锦泰山水缘会所四层",
+  "note": "全平台补扫接入（舞蹈 9/9）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058776",
+  "enabled": true,
+  "label": "爱舞工作室万达店",
+  "auto": true,
+  "studio": {
+   "name": "爱舞工作室万达店",
+   "city": "荆州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058776",
+   "branches": [
+    {
+     "id": "",
+     "name": "爱舞工作室万达店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "湖北省 荆州市",
+  "note": "全平台补扫接入（舞蹈 9/10）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11057493",
+  "enabled": true,
+  "label": "临沂市兰山区炫舞舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "临沂市兰山区炫舞舞蹈工作室",
+   "city": "临沂",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11057493",
+   "branches": [
+    {
+     "id": "",
+     "name": "临沂市兰山区炫舞舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "山东临沂兰山区",
+  "note": "全平台补扫接入（舞蹈 8/9）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059129",
+  "enabled": true,
+  "label": "Stage One Dance",
+  "auto": true,
+  "studio": {
+   "name": "Stage One Dance",
+   "city": "眉山",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059129",
+   "branches": [
+    {
+     "id": "",
+     "name": "Stage One Dance"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "四川眉山",
+  "note": "全平台补扫接入（舞蹈 8/8）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11052773",
+  "enabled": true,
+  "label": "玉林百特旦斯文化广场店",
+  "auto": true,
+  "studio": {
+   "name": "玉林百特旦斯文化广场店",
+   "city": "玉林",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11052773",
+   "branches": [
+    {
+     "id": "",
+     "name": "玉林百特旦斯文化广场店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "文化广场【品螺居】左手边楼梯口上二楼舞蹈室点击右边小图标，即可搜索小地图",
+  "note": "全平台补扫接入（舞蹈 6/7）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056233",
+  "enabled": true,
+  "label": "MR.LZ灵子舞蹈",
+  "auto": true,
+  "studio": {
+   "name": "MR.LZ灵子舞蹈",
+   "city": "资阳",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056233",
+   "branches": [
+    {
+     "id": "",
+     "name": "MR.LZ灵子舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "四川省资阳市雁江区建设北路二段达高国际商业广场4F 4-13号",
+  "note": "全平台补扫接入（舞蹈 6/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056365",
+  "enabled": true,
+  "label": "街梯舞蹈利川店",
+  "auto": true,
+  "studio": {
+   "name": "街梯舞蹈利川店",
+   "city": "恩施土家",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056365",
+   "branches": [
+    {
+     "id": "",
+     "name": "街梯舞蹈利川店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "利川市",
+  "note": "全平台补扫接入（舞蹈 6/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056412",
+  "enabled": true,
+  "label": "贝丝芭蕾 Art Center",
+  "auto": true,
+  "studio": {
+   "name": "贝丝芭蕾 Art Center",
+   "city": "漯河",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056412",
+   "branches": [
+    {
+     "id": "",
+     "name": "贝丝芭蕾 Art Center"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "河南省漯河市召陵区人民东路君悦新世界3A街区三楼贝丝芭蕾",
+  "note": "全平台补扫接入（舞蹈 6/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056451",
+  "enabled": true,
+  "label": "花花舞蹈",
+  "auto": true,
+  "studio": {
+   "name": "花花舞蹈",
+   "city": "蚌埠",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056451",
+   "branches": [
+    {
+     "id": "",
+     "name": "花花舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "蚌山区万达香港街中段花花舞蹈",
+  "note": "全平台补扫接入（舞蹈 6/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11057395",
+  "enabled": true,
+  "label": "蚌埠DanceHome舞蹈家",
+  "auto": true,
+  "studio": {
+   "name": "蚌埠DanceHome舞蹈家",
+   "city": "蚌埠",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11057395",
+   "branches": [
+    {
+     "id": "",
+     "name": "蚌埠DanceHome舞蹈家"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "新地城市广场B2栋公寓楼4楼",
+  "note": "全平台补扫接入（舞蹈 6/7）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11057845",
+  "enabled": true,
+  "label": "绍兴v舞工作室",
+  "auto": true,
+  "studio": {
+   "name": "绍兴v舞工作室",
+   "city": "绍兴",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11057845",
+   "branches": [
+    {
+     "id": "",
+     "name": "绍兴v舞工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "越城区缪家桥河沿8号院3号楼",
+  "note": "全平台补扫接入（舞蹈 6/7）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059084",
+  "enabled": true,
+  "label": "17街舞工作室",
+  "auto": true,
+  "studio": {
+   "name": "17街舞工作室",
+   "city": "赣州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059084",
+   "branches": [
+    {
+     "id": "",
+     "name": "17街舞工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "瑞金市京里街中段17街舞工作室(总校)\n瑞金市豪门旺族大旺街二楼17街舞培训基地(分校)",
+  "note": "全平台补扫接入（舞蹈 6/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11055061",
+  "enabled": true,
+  "label": "D.R舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "D.R舞蹈工作室",
+   "city": "秦皇岛",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11055061",
+   "branches": [
+    {
+     "id": "",
+     "name": "D.R舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "亚泰店:海港区民族路168号亚泰对面聚贤大厦309 310室开发区店:孟营广缘周顿教育综合体楼",
+  "note": "全平台补扫接入（舞蹈 5/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11044949",
+  "enabled": true,
+  "label": "浙江嘉兴A.N Studio 舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "浙江嘉兴A.N Studio 舞蹈工作室",
+   "city": "嘉兴",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11044949",
+   "branches": [
+    {
+     "id": "",
+     "name": "浙江嘉兴A.N Studio 舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "浙江嘉兴",
+  "note": "全平台补扫接入（舞蹈 4/5）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11052451",
+  "enabled": true,
+  "label": "造梦者舞蹈",
+  "auto": true,
+  "studio": {
+   "name": "造梦者舞蹈",
+   "city": "赣州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11052451",
+   "branches": [
+    {
+     "id": "",
+     "name": "造梦者舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "新赣州大道华润幸福里三期 24栋5号商铺",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11053965",
+  "enabled": true,
+  "label": "V5 舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "V5 舞蹈工作室",
+   "city": "蚌埠",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11053965",
+   "branches": [
+    {
+     "id": "",
+     "name": "V5 舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "蚌埠市荣盛时代广场5号楼二层501",
+  "note": "全平台补扫接入（舞蹈 4/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056698",
+  "enabled": true,
+  "label": "SWAGGY街舞",
+  "auto": true,
+  "studio": {
+   "name": "SWAGGY街舞",
+   "city": "梧州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056698",
+   "branches": [
+    {
+     "id": "",
+     "name": "SWAGGY街舞"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "梧州百盛商场三楼C区宝宝乐园旁013-014铺Swaggy街舞",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056917",
+  "enabled": true,
+  "label": "LOVE DANCE STUDIO",
+  "auto": true,
+  "studio": {
+   "name": "LOVE DANCE STUDIO",
+   "city": "包头",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056917",
+   "branches": [
+    {
+     "id": "",
+     "name": "LOVE DANCE STUDIO"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "包头市九原区万达广场四楼电影院对面乐舞丹斯舞蹈",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11057604",
+  "enabled": true,
+  "label": "湖南益阳安化新琪点舞蹈旗舰店",
+  "auto": true,
+  "studio": {
+   "name": "湖南益阳安化新琪点舞蹈旗舰店",
+   "city": "益阳",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11057604",
+   "branches": [
+    {
+     "id": "",
+     "name": "湖南益阳安化新琪点舞蹈旗舰店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "东坪镇 罗马商业广场97、98、99、100、101、102号",
+  "note": "全平台补扫接入（舞蹈 4/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058563",
+  "enabled": true,
+  "label": "广西玉林 MAMA舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "广西玉林 MAMA舞蹈工作室",
+   "city": "玉林",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058563",
+   "branches": [
+    {
+     "id": "",
+     "name": "广西玉林 MAMA舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058764",
+  "enabled": true,
+  "label": "华韵舞當",
+  "auto": true,
+  "studio": {
+   "name": "华韵舞當",
+   "city": "南阳",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058764",
+   "branches": [
+    {
+     "id": "",
+     "name": "华韵舞當"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "酒城大道一段南阳花园正门旁",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058899",
+  "enabled": true,
+  "label": "野FREEDOM DANCE",
+  "auto": true,
+  "studio": {
+   "name": "野FREEDOM DANCE",
+   "city": "宣城",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058899",
+   "branches": [
+    {
+     "id": "",
+     "name": "野FREEDOM DANCE"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "宣州区西林街道万达广场对面亚夏汽车城林海路10栋305室",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059035",
+  "enabled": true,
+  "label": "1XX街舞工作室",
+  "auto": true,
+  "studio": {
+   "name": "1XX街舞工作室",
+   "city": "苏州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059035",
+   "branches": [
+    {
+     "id": "",
+     "name": "1XX街舞工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "江苏省昆山市花桥镇鑫都汇商业广场8-11",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059157",
+  "enabled": true,
+  "label": "UT DANCE西关店",
+  "auto": true,
+  "studio": {
+   "name": "UT DANCE西关店",
+   "city": "中山",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059157",
+   "branches": [
+    {
+     "id": "",
+     "name": "UT DANCE西关店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "临夏路街道中山路275号第2单元17层003室",
+  "note": "全平台补扫接入（舞蹈 4/6）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11059167",
+  "enabled": true,
+  "label": "SY舞蹈工作室",
+  "auto": true,
+  "studio": {
+   "name": "SY舞蹈工作室",
+   "city": "西双版纳傣",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11059167",
+   "branches": [
+    {
+     "id": "",
+     "name": "SY舞蹈工作室"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "云南省 景洪市",
+  "note": "全平台补扫接入（舞蹈 4/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056047",
+  "enabled": true,
+  "label": "荟金池舞蹈",
+  "auto": true,
+  "studio": {
+   "name": "荟金池舞蹈",
+   "city": "台州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056047",
+   "branches": [
+    {
+     "id": "",
+     "name": "荟金池舞蹈"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "浙江省台州市椒江区巨鼎联合商厦313（耀达路步行街）",
+  "note": "全平台补扫接入（舞蹈 3/4）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11056083",
+  "enabled": true,
+  "label": "DCT DANCE造梦工厂",
+  "auto": true,
+  "studio": {
+   "name": "DCT DANCE造梦工厂",
+   "city": "张家界",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11056083",
+   "branches": [
+    {
+     "id": "",
+     "name": "DCT DANCE造梦工厂"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "湖南省张家界市桑植县澧源镇御水半岛三期13-5-131（壹号院南大门左侧二楼）",
+  "note": "全平台补扫接入（舞蹈 3/5）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058552",
+  "enabled": true,
+  "label": "舞梦国舞艺术",
+  "auto": true,
+  "studio": {
+   "name": "舞梦国舞艺术",
+   "city": "阜阳",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058552",
+   "branches": [
+    {
+     "id": "",
+     "name": "舞梦国舞艺术"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "安徽省阜阳市颍州区金悦金融大厦B座2101 •舞梦国舞艺术",
+  "note": "全平台补扫接入（舞蹈 3/3）· 区划反查定城市"
+ },
+ {
+  "id": "fityun-11058811",
+  "enabled": true,
+  "label": "YAK潮流街舞-中央公园店",
+  "auto": true,
+  "studio": {
+   "name": "YAK潮流街舞-中央公园店",
+   "city": "沧州",
+   "region": "CN"
+  },
+  "mode": "fityun",
+  "fityun": {
+   "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+   "orgId": "11058811",
+   "branches": [
+    {
+     "id": "",
+     "name": "YAK潮流街舞-中央公园店"
+    }
+   ]
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "任丘市中央公园东侧2层244号",
+  "note": "全平台补扫接入（舞蹈 3/3）· 区划反查定城市"
  }
 ]

@@ -2044,5 +2044,191 @@
   "lng": 118.05322265625,
   "pic": "https://cdn2.iwod.cn//mp_img/wxe04afc35e874e913/b_24063_u_4634663/1k116vhti_nhu03.jpg",
   "note": "iWOD 补扫：舞蹈 2/3"
+ },
+ {
+  "id": "iwod-7046-延安STC（中际店）",
+  "enabled": true,
+  "label": "延安STC（中际店）",
+  "auto": true,
+  "studio": {
+   "name": "延安STC（中际店）",
+   "city": "延安",
+   "region": "CN"
+  },
+  "mode": "http",
+  "http": {
+   "baseUrl": "https://api2.iwod.cn",
+   "appId": "wxd98a63e99d3f94ec",
+   "boxId": 7046,
+   "allBoxes": false
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "陕西省延安市宝塔区中心街中际大厦4楼",
+  "district": "",
+  "phone": "15619895152",
+  "lat": 36.59455108642578,
+  "lng": 109.4897689819336,
+  "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wxd98a63e99d3f94ec/1509940/1fokl2lgh_8s1tb.jpg",
+  "note": "iWOD 补扫：区划反查定城市"
+ },
+ {
+  "id": "iwod-7082-延安STC（吾悦店）",
+  "enabled": true,
+  "label": "延安STC（吾悦店）",
+  "auto": true,
+  "studio": {
+   "name": "延安STC（吾悦店）",
+   "city": "延安",
+   "region": "CN"
+  },
+  "mode": "http",
+  "http": {
+   "baseUrl": "https://api2.iwod.cn",
+   "appId": "wxd98a63e99d3f94ec",
+   "boxId": 7082,
+   "allBoxes": false
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "陕西省延安市宝塔区吾悦广场3层",
+  "district": "",
+  "phone": "15667665152",
+  "lat": 36.642234802246094,
+  "lng": 109.49900817871094,
+  "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wxd98a63e99d3f94ec/1509940/1fp6aqeiv_2qnqp.jpg",
+  "note": "iWOD 补扫：区划反查定城市"
+ },
+ {
+  "id": "iwod-7935-舞玖•舞蹈 | 西大街校区",
+  "enabled": true,
+  "label": "舞玖•舞蹈 | 西大街校区",
+  "auto": true,
+  "studio": {
+   "name": "舞玖•舞蹈 | 西大街校区",
+   "city": "安康",
+   "region": "CN"
+  },
+  "mode": "http",
+  "http": {
+   "baseUrl": "https://api2.iwod.cn",
+   "appId": "wx1f7c358fd46dd559",
+   "boxId": 7935,
+   "allBoxes": false
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "陕西省安康市汉滨区西大街54号",
+  "district": "",
+  "phone": "0915-3227575",
+  "lat": 32.69485855102539,
+  "lng": 109.02180480957031,
+  "pic": "https://cdn2.iwod.cn//mp_img/wx1f7c358fd46dd559/b_7935_u_5011424/1k18h8spi_sl34a.jpg",
+  "note": "iWOD 补扫：区划反查定城市"
+ },
+ {
+  "id": "iwod-7967-舞玖•舞蹈 | 城市风景校区",
+  "enabled": true,
+  "label": "舞玖•舞蹈 | 城市风景校区",
+  "auto": true,
+  "studio": {
+   "name": "舞玖•舞蹈 | 城市风景校区",
+   "city": "安康",
+   "region": "CN"
+  },
+  "mode": "http",
+  "http": {
+   "baseUrl": "https://api2.iwod.cn",
+   "appId": "wx1f7c358fd46dd559",
+   "boxId": 7967,
+   "allBoxes": false
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "陕西省安康市汉滨区高井路城市风景4号楼4-1-102商铺",
+  "district": "",
+  "phone": "0915-3095959",
+  "lat": 32.68424606323242,
+  "lng": 109.04396057128906,
+  "pic": "https://cdn.iwod.cn//mp_img/thumbnail/wx1f7c358fd46dd559/1840322/1g5gcqb36_7dct0.png",
+  "note": "iWOD 补扫：区划反查定城市"
+ },
+ {
+  "id": "iwod-9255-舞玖•舞蹈｜高新万达校区",
+  "enabled": true,
+  "label": "舞玖•舞蹈｜高新万达校区",
+  "auto": true,
+  "studio": {
+   "name": "舞玖•舞蹈｜高新万达校区",
+   "city": "安康",
+   "region": "CN"
+  },
+  "mode": "http",
+  "http": {
+   "baseUrl": "https://api2.iwod.cn",
+   "appId": "wx1f7c358fd46dd559",
+   "boxId": 9255,
+   "allBoxes": false
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "陕西省安康市汉滨区高新四路与江汉路交叉口西北侧",
+  "district": "",
+  "phone": "13333333333",
+  "lat": 32.70686721801758,
+  "lng": 108.97907257080078,
+  "pic": "https://cdn2.iwod.cn//mp_img/wx1f7c358fd46dd559/b_7935_u_1818300/1glgd166f_712lt.jpg",
+  "note": "iWOD 补扫：区划反查定城市"
+ },
+ {
+  "id": "iwod-12857-吉朵舞蹈",
+  "enabled": true,
+  "label": "吉朵舞蹈",
+  "auto": true,
+  "studio": {
+   "name": "吉朵舞蹈",
+   "city": "宜宾",
+   "region": "CN"
+  },
+  "mode": "http",
+  "http": {
+   "baseUrl": "https://api2.iwod.cn",
+   "appId": "wx09f0dd03116388d3",
+   "boxId": 12857,
+   "allBoxes": false
+  },
+  "dateMode": "nextDays",
+  "days": 7,
+  "dates": [],
+  "refreshHours": 6,
+  "cron": null,
+  "timeFormat": "HH:mm-HH:mm",
+  "address": "四川省宜宾市叙州区丽雅龙璟台1层-B-119",
+  "district": "",
+  "phone": "15280974920",
+  "lat": 28.732878,
+  "lng": 104.61426,
+  "pic": "https://cdn2.iwod.cn//mp_img/wx09f0dd03116388d3/b_null_u_4285934/1hoqsfsjs_ikdr7.jpg",
+  "note": "iWOD 补扫：区划反查定城市"
  }
 ]
