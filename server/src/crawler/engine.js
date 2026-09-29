@@ -227,12 +227,23 @@ async function crawlWithFityun(config, date) {
       // "剩余/容量" 形式，mapper.parseCapacity 会取容量分母
       const capacity =
         c.maxstudent != null ? `${c.left != null ? c.left : ""}/${c.maxstudent}` : "";
+      // 真实已约 = 容量 - 剩余。注意 left 是**剩余**不是已约（和 iWOD 的 remain 相反）：
+      // 实测 max=22/left=18 → 已约 4，且越近的课 left 越小、未开放预约的课 left=max。
+      // 未开放（schedule_status 6 / -3）时 left 等于容量，算出来就是 0，也说得通。
+      // 只认 0 <= left <= max 的区间，越界说明字段语义变了，宁可留 null。
+      const max = Number(c.maxstudent);
+      const left = Number(c.left);
+      const bookedNum =
+        Number.isFinite(max) && Number.isFinite(left) && left >= 0 && left <= max
+          ? max - left
+          : null;
       out.push({
         courseName,
         coach: String(c.teachername || "").trim(),
         time,
         capacity,
         status: Number(c.left) === 0 ? "已满" : "可预约",
+        _bookedNum: bookedNum,
         _studioName: (br.name || config.studio?.name || "").trim(),
         // 菲体云课表带 roomname（教室名），透传进 remark 供详情页展示
         _roomName: String(c.roomname || c.room_name || "").trim(),

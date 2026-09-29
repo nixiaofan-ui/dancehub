@@ -1854,5 +1854,35 @@
     "address": "KR壹燃街舞",
     "danceScore": 1.0,
     "danceCourses": 1
+  },
+  {
+    "id": "fityun-11058541",
+    "enabled": true,
+    "label": "505DANCE POPLAY",
+    "auto": true,
+    "studio": {
+      "name": "505DANCE POPLAY",
+      "city": "北京",
+      "region": "CN"
+    },
+    "mode": "fityun",
+    "fityun": {
+      "baseUrl": "https://xiaochengxu-edu-api-hz.fityun.cn",
+      "orgId": "11058541",
+      "branches": [
+        {
+          "id": "",
+          "name": "505DANCE POPLAY"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "北京市 崇文门/花园桥/国贸/望京/亦庄",
+    "note": "官方名 505DANCE✖️POPLAY（北京艺点天慧文化传媒）；校区靠课名前缀【花园桥】【崇文门】区分，stripBranchPrefix 不会剥（不以店/校区结尾），勿改"
   }
 ]
