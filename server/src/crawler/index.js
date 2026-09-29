@@ -23,6 +23,7 @@ import { prisma } from "../lib/prisma.js";
 import { crawl } from "./engine.js";
 import { importSchedules } from "./importer.js";
 import { dedupeStudios } from "../lib/dedupe-studios.js";
+import { maybeDedupeSchedules } from "../lib/dedupe-schedules.js";
 import {
   crawlerConfigs,
   getCrawlerConfig,
@@ -369,6 +370,13 @@ export async function maybeDedupeStudios(reason = "tick") {
   // 先自愈「同一家店被插了两条」再去抓：抓取时若两家同名门店都在库里，
   // 课程会分叉到两条记录上，用户看到的课表就是两家的并集（多出来的课约不到）
   await maybeDedupeStudios(reason);
+
+  // 再清「同一节课被插了两条」（内部每小时节流）。
+  // 为什么必须清：Schedule 表没有唯一约束，重复的两条在 pruneVanished 眼里
+  // 「指纹相同、互相证明对方存在」，一旦产生就永远不会自己消失 ——
+  // 2026-09-29 用户报「t-rex 的课表每节课都显示两遍」就是这么来的，
+  // 当时全库积压了 710 家门店 / 16658 组。
+  await maybeDedupeSchedules(reason);
 
   const now = Date.now();
   const queue = crawlerConfigs.filter(

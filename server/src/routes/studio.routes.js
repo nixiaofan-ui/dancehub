@@ -8,6 +8,7 @@ import { toDateKey, parseDateKey, visibleScope } from "../services/schedule.serv
 import { pickStyles } from "../services/dance-style.service.js";
 import { sortStudiosByName } from "../services/studio-sort.service.js";
 import { assignBrands, brandKey, cleanBrandLabel } from "../lib/studio-name.js";
+import { searchStudioIdsByNorm } from "../lib/studio-index.js";
 
 const router = Router();
 
@@ -104,6 +105,22 @@ async function fuzzySearchStudio(keyword, baseWhere, includeArg) {
   const needles = fuzzyVariants(keyword);
   if (!needles.length || !needles[0]) return [];
 
+  // ① 归一化内存索引优先。
+  //    这是唯一能处理「原串里被标点切断」的路径：`t-rex dance` 归一化成 `trexdance`，
+  //    下面那些探针前缀是从归一化串上截的，拿去 DB contains 原始店名永远落空
+  //    （`tre` 在 `t-rex dance` 里不是一个连续子串）—— 用户搜 `trex` 得到 0 结果。
+  const indexed = await searchStudioIdsByNorm(needles, {
+    cityId: baseWhere.cityId,
+    onlyActive: baseWhere.status === true,
+  });
+  if (indexed.length) {
+    return prisma.studio.findMany({
+      where: { ...baseWhere, id: { in: indexed } },
+      include: includeArg,
+    });
+  }
+
+  // ② 索引没命中（多为索引尚未刷新到最新门店）→ 回退到前缀探针
   // 探针前缀优先用剥过尾巴的短变体 —— 拿原串的前缀（"gh5da"）去探候选是捞不到的
   const probes = [];
   for (const root of needles) {

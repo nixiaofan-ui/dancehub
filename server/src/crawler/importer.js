@@ -5,6 +5,7 @@
  */
 import { prisma } from "../lib/prisma.js";
 import { canonStudioName } from "../lib/dedupe-studios.js";
+import { collapseGroup, courseKey } from "../lib/dedupe-schedules.js";
 import { invalidateTimelineCache } from "../services/schedule.service.js";
 import { mapRawToSchedule } from "./mapper.js";
 
@@ -197,7 +198,13 @@ function keepOldOnMissing(entry, existing) {
 }
 
 export async function upsertSchedule(entry) {
-  // @db.Time 列过滤在 Prisma/MySQL 下不可靠，改为按日期+课程拉取后 JS 比对 UTC 时分
+  const eh = entry.startTime.getUTCHours();
+  const em = entry.startTime.getUTCMinutes();
+  const sameSlot = (c) =>
+    c.startTime.getUTCHours() === eh && c.startTime.getUTCMinutes() === em;
+
+  // ① 精确匹配（绝大多数情况）。@db.Time 列过滤在 Prisma/MySQL 下不可靠，
+  //    改为按日期+课程拉取后 JS 比对 UTC 时分。
   const candidates = await prisma.schedule.findMany({
     where: {
       studioId: entry.studioId,
@@ -205,18 +212,47 @@ export async function upsertSchedule(entry) {
       courseName: entry.courseName,
     },
   });
-  const eh = entry.startTime.getUTCHours();
-  const em = entry.startTime.getUTCMinutes();
-  const existing = candidates.find(
-    (c) => c.startTime.getUTCHours() === eh && c.startTime.getUTCMinutes() === em,
-  );
-  if (existing) {
+  let matched = candidates.filter(sameSlot);
+
+  // ② 精确匹配落空 → 用「归一化课名」在本店本日再找一遍。
+  //    上游把课名从 `古典舞（望明月）` 改成 `古典舞(望明月)`（全角括号→半角），
+  //    或把 `Jazz 入门` 的空格去掉时，精确匹配必然落空；若不做这一步，
+  //    每轮抓取都会新建一条、pruneVanished 再把旧那条删掉 —— 同一节课的 id 天天变，
+  //    挂在旧 id 上的用户预约/提醒也跟着一起没。归一化口径必须与
+  //    dedupe-schedules 的 courseKey 完全一致（NFKC + 去标点），否则两边会互相打架。
+  if (!matched.length) {
+    const dayRows = await prisma.schedule.findMany({
+      where: {
+        studioId: entry.studioId,
+        scheduleDate: entry.scheduleDate,
+        ownerId: null, // 用户手录的课不认领
+      },
+    });
+    const want = courseKey(entry.courseName);
+    matched = dayRows.filter((c) => courseKey(c.courseName) === want && sameSlot(c));
+  }
+
+  if (matched.length === 1) {
+    const existing = matched[0];
     await prisma.schedule.update({
       where: { id: existing.id },
       data: keepOldOnMissing(entry, existing),
     });
     return { action: "updated", id: existing.id };
   }
+
+  if (matched.length > 1) {
+    // 库里这一节已经是重复状态（历史遗留，或本轮并发刚各插了一条）：
+    // 就地合并成一条再更新，别让它继续以两条的形态留在课表上。
+    const { keepId } = await collapseGroup(matched);
+    const keep = matched.find((m) => m.id === keepId) || matched[0];
+    await prisma.schedule.update({
+      where: { id: keep.id },
+      data: keepOldOnMissing(entry, keep),
+    });
+    return { action: "updated", id: keep.id, merged: matched.length - 1 };
+  }
+
   const created = await prisma.schedule.create({ data: entry });
   return { action: "created", id: created.id };
 }

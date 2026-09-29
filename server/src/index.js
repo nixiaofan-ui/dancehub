@@ -3,6 +3,7 @@ import { createApp } from "./app.js";
 import { redis } from "./lib/redis.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
 import { startCrawlScheduler, probeOutbound, maybeDedupeStudios } from "./crawler/index.js";
+import { maybeDedupeSchedules } from "./lib/dedupe-schedules.js";
 import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
@@ -54,6 +55,16 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       maybeDedupeStudios("startup").catch((err) =>
         console.warn(`[dancehub] 重复门店自愈失败: ${err.message}`)
+      )
+    )
+    // 重复课表自愈（幂等）：同一节课被两份抓取/并发实例各插一条时，
+    // 用户在周课表上看到同一节课列两遍（一条带预约人数一条不带）。
+    // 2026-09-29 t-rex dance 就是这么被发现的；全库当时积压 16658 组。
+    // 挂在启动流程里一并清掉，之后由抓取心跳每小时增量维护。
+    // CRAWL_MODE=off（本地只想开接口时）也会跑这里，所以不必依赖调度器。
+    .then(() =>
+      maybeDedupeSchedules("startup").catch((err) =>
+        console.warn(`[dancehub] 重复课表自愈失败: ${err.message}`)
       )
     );
 
