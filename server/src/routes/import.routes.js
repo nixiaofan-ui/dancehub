@@ -8,6 +8,7 @@ import {
   invalidateTimelineCache,
 } from "../services/schedule.service.js";
 import { computeRemindAt } from "../services/reminder.service.js";
+import { invalidateStudioIndex } from "../lib/studio-index.js";
 
 const router = Router();
 
@@ -112,6 +113,8 @@ router.post(
         select: { id: true },
       });
       studioCreated = true;
+      // 新补录的门店要能立刻被搜到（索引有 10 分钟 TTL）
+      invalidateStudioIndex();
     }
 
     // 教练同理：Coach 挂在门店下，换家店就得重认

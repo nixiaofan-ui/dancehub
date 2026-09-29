@@ -7,6 +7,7 @@ import { prisma } from "../lib/prisma.js";
 import { canonStudioName } from "../lib/dedupe-studios.js";
 import { collapseGroup, courseKey } from "../lib/dedupe-schedules.js";
 import { invalidateTimelineCache } from "../services/schedule.service.js";
+import { invalidateStudioIndex } from "../lib/studio-index.js";
 import { mapRawToSchedule } from "./mapper.js";
 
 /** 按地区+名称幂等创建城市（全国扩展：新城市自动建） */
@@ -141,6 +142,8 @@ async function createStudioOnce(studioRef, extra, city) {
       officialUrl: studioRef.officialUrl || null,
     },
   });
+  // 搜得到的前提是索引里有它 —— 新接入的舞室不能等 10 分钟 TTL
+  invalidateStudioIndex();
 
   const twins = await prisma.studio.findMany({
     where: { cityId: city.id, name: studioRef.name },

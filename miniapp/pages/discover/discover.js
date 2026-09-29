@@ -460,6 +460,9 @@ Page(
     }
     const known = new Set(chips.map((c) => c.label));
     let active = (this.activeDistricts || []).filter((l) => known.has(l));
+    // 搜索态一律放弃上次勾的区：搜「trex」时若还挂着「朝阳」，命中的店会被
+    // 悄悄筛掉，用户只会以为这家店没收录。浏览态才保留（那是用户主动筛的）。
+    if (this.data.keyword) active = [];
     if (!active.length) active = chips.map((c) => c.label);
     this.activeDistricts = active;
 

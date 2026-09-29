@@ -8,7 +8,7 @@ import { toDateKey, parseDateKey, visibleScope } from "../services/schedule.serv
 import { pickStyles } from "../services/dance-style.service.js";
 import { sortStudiosByName } from "../services/studio-sort.service.js";
 import { assignBrands, brandKey, cleanBrandLabel } from "../lib/studio-name.js";
-import { searchStudioIdsByNorm } from "../lib/studio-index.js";
+import { searchStudioIdsByNorm, normName, invalidateStudioIndex } from "../lib/studio-index.js";
 
 const router = Router();
 
@@ -52,15 +52,26 @@ async function buildStyleMap(studioIds) {
  * 同样的问题也出在 `ADZ Dance Studio` / `ADZDanceStudio`、`GH5 Dance Studio` / `GH5`。
  * 这类「连写 vs 分开写」的差异在舞蹈行业名字里非常常见，必须容忍。
  */
-function normFuzzy(s) {
-  return (s || "").toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, "");
-}
+/**
+ * 搜索归一化。**必须与索引侧的 `normName` 是同一个函数** —— needle 在
+ * 索引串上比对，两边算法只要差一点（比如一边留连字符一边不留），
+ * `trex` 就永远匹配不上 `trexdance`。曾经这里是一份独立拷贝，
+ * 改了一边漏了另一边，直接导致「必须打连字符才搜得到」。
+ */
+const normFuzzy = normName;
 
 /**
  * 品牌尾巴。用户习惯搜全名（`GH5DanceStudio`、`BodySoul DanceStudio`、
  * `ADZ舞蹈工作室`），而库里的店名是「品牌 + 分店/区名」（`GH5·中山公园店（长宁）`）——
  * 顺序不一致，光靠归一化也匹配不上，得先把通名后缀剥掉只留品牌本体。
  */
+/**
+ * 精确命中几条以内时，仍然补跑一次松匹配（只追加不替换）。
+ * 定 2 是为了避开「舞蹈」「街舞」这类泛词——它们精确命中成百上千条，
+ * 本来就该走精确路径，补跑松匹配只是白烧一次 CPU。
+ */
+const FUZZY_SUPPLEMENT_MAX = 2;
+
 const GENERIC_TAILS = [
   "dancestudio", "streetdance", "hiphopstudio", "studio", "dance", "club",
   "danceschool", "街舞工作室", "舞蹈工作室", "舞蹈艺术中心", "流行舞", "培训中心",
@@ -114,10 +125,15 @@ async function fuzzySearchStudio(keyword, baseWhere, includeArg) {
     onlyActive: baseWhere.status === true,
   });
   if (indexed.length) {
-    return prisma.studio.findMany({
+    const rows = await prisma.studio.findMany({
       where: { ...baseWhere, id: { in: indexed } },
       include: includeArg,
     });
+    // ⚠ `id: { in: [...] }` 不保证按给的顺序回（MySQL 是按主键扫的），
+    //   不重排的话索引辛苦算出来的「前缀命中优先、长 needle 优先」全白费，
+    //   最相关的那家可能被排到最后几十条里。
+    const rank = new Map(indexed.map((id, i) => [id, i]));
+    return rows.sort((a, b) => (rank.get(a.id) ?? 1e9) - (rank.get(b.id) ?? 1e9));
   }
 
   // ② 索引没命中（多为索引尚未刷新到最新门店）→ 回退到前缀探针
@@ -179,6 +195,24 @@ router.get(
     if (keyword && studios.length === 0) {
       studios = await fuzzySearchStudio(String(keyword), baseWhere, includeArg);
       fuzzyApplied = studios.length > 0;
+    } else if (
+      // 精确命中「太少」时也要补一次：DB 的 contains 只认原串，
+      // `trex` 在 `t-rex dance` 里根本不连续，而只要库里有**另一家**名字里
+      // 恰好含这个子串的店，精确路径就返回非空 → 松匹配被整段跳过，
+      // 结果就是「能搜到，但搜出来的不是你要的那家」。
+      // 只补不替换：精确命中的店不会因此消失（最终顺序由下面的
+      // sortStudiosByName 统一排，这里不管先后）。
+      keyword &&
+      studios.length <= FUZZY_SUPPLEMENT_MAX &&
+      normFuzzy(String(keyword)).length >= 3
+    ) {
+      const extra = await fuzzySearchStudio(String(keyword), baseWhere, includeArg);
+      const seen = new Set(studios.map((s) => s.id));
+      const add = extra.filter((s) => !seen.has(s.id));
+      if (add.length) {
+        studios = studios.concat(add);
+        fuzzyApplied = true;
+      }
     }
 
     // 同城搜不到 → 查一次全国，只回提示不外城门店。
@@ -389,6 +423,8 @@ router.post(
         status: status !== undefined ? Boolean(status) : true,
       },
     });
+    // 搜索索引有 10 分钟 TTL，不失效的话刚建/刚补录的门店要等 TTL 才搜得到
+    invalidateStudioIndex();
     ok(res, studio, "创建成功");
   }),
 );
