@@ -252,6 +252,13 @@ Page({
     wx.navigateTo({ url: "/pages/about/about" });
   },
 
+  /** 关注列表点卡片 → 该店课表（和发现页点门店同一入口，别做成两个详情页） */
+  openStudio(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    wx.navigateTo({ url: "/pages/studio/weekly?id=" + id });
+  },
+
   /** 课表录入：抓取覆盖不到的门店，让用户自己补一节 */
   goImport() {
     wx.navigateTo({ url: "/pages/import/import" });

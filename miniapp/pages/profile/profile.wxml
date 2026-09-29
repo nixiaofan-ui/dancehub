@@ -111,13 +111,21 @@
       <view class="empty-title">还没关注任何舞室</view>
       <view class="empty-sub">去「发现」Pick 你的本命舞室</view>
     </view>
-    <view wx:for="{{follows}}" wx:key="id" class="follow-card">
+    <view
+      wx:for="{{follows}}"
+      wx:key="id"
+      class="follow-card"
+      hover-class="press"
+      data-id="{{item.studio.id}}"
+      bindtap="openStudio"
+    >
       <view class="follow-avatar">{{item.initial}}</view>
       <view class="follow-info">
         <view class="follow-name">{{item.studio.name}}</view>
         <view class="follow-meta">{{item.studio.city}} · {{item.platformLabel}}</view>
       </view>
-      <button class="unfollow" data-id="{{item.studio.id}}" bindtap="unfollow">取消</button>
+      <!-- catchtap：卡片本身可点进门店，取消按钮必须吃掉冒泡，否则点取消会连带跳走 -->
+      <button class="unfollow" data-id="{{item.studio.id}}" catchtap="unfollow">取消</button>
     </view>
   </view>
 

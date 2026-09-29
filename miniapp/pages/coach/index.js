@@ -114,7 +114,8 @@ Page({
       const weekdays = [...weekdayMap.entries()]
         .sort((a, b) => (a[0] === 0 ? 7 : a[0]) - (b[0] === 0 ? 7 : b[0]))
         .map(([wd, list]) => ({
-          weekday: "周" + WEEK_CN[wd],
+          // ⚠ WEEK_CN 里存的已经是「周二」，别再拼「周」——曾渲染成「周周二」（2026-09-29）
+          weekday: WEEK_CN[wd],
           count: list.length,
           items: list.sort((a, b) => String(a.startTime).localeCompare(String(b.startTime))),
         }));
