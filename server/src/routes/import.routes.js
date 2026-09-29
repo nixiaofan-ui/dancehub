@@ -12,6 +12,51 @@ import {
 const router = Router();
 
 /**
+ * 城市名归一化：用户手输的 cityName 可能带行政后缀（「三亚市」「湘西土家族苗族自治州」），
+ * 不统一就会和库里已有的「三亚」建成两条，于是同一座城市出现两遍。
+ * 只剥标准的行政后缀，不动前缀（「张家界市」剥完是「张家界」，不会被误伤成别的地方）。
+ */
+function normalizeCityName(raw) {
+  return String(raw || "")
+    .trim()
+    .replace(/[（(].*?[)）]/g, "")
+    .replace(/(市|自治州|地区|盟|特别行政区|自治县|县)$/g, "")
+    .trim();
+}
+
+/**
+ * 取（或建）城市。
+ *
+ * 为什么允许建库里没有的城市：录入是为「我们没抓到的地方」兜底的，
+ * 而没抓到的地方往往连城市都不在库里（用户就在三亚，库里只有北上广）。
+ * 这时若强行落到当前城市，三亚的课会算到上海名下 —— 用户一看就知道是错的。
+ * 建城市的成本只有一行，而数据错位的成本是整座城市的课都不可信。
+ */
+async function resolveCity(cityId, cityName, regionHint) {
+  const region = regionHint === "OVERSEAS" ? "OVERSEAS" : "CN";
+  const id = Number(cityId);
+  if (Number.isFinite(id) && id > 0) {
+    const hit = await prisma.city.findFirst({ where: { id }, select: { id: true } });
+    if (hit) return { id: hit.id, created: false };
+  }
+  const name = normalizeCityName(cityName);
+  if (!name) return null;
+
+  // 同城不同写法复用：先精确、再去后缀模糊比一次，避免「三亚」和「三亚市」裂成两个城市
+  let city =
+    (await prisma.city.findFirst({ where: { region, name }, select: { id: true } })) ||
+    (await prisma.city.findFirst({
+      where: { region, name: normalizeCityName(name) },
+      select: { id: true },
+    }));
+  if (!city) {
+    city = await prisma.city.create({ data: { region, name }, select: { id: true } });
+    return { id: city.id, created: true, name };
+  }
+  return { id: city.id, created: false, name };
+}
+
+/**
  * 用户手工录入课表：POST /api/imports/schedule
  *
  * 存在的理由：抓取只能覆盖用了那几套 SaaS 的店，头部独立舞室永远有漏，
@@ -39,12 +84,15 @@ router.post(
     const endTime = String(body.endTime || "").trim();
     const courseName = String(body.courseName || "").trim();
     const coachName = String(body.coachName || "").trim();
-    const cityId = Number(body.cityId);
 
     if (!studioName || !dateKey || !startTime || !courseName) {
       return fail(res, 400, "门店、日期、开始时间、课程名必填");
     }
-    if (!cityId) return fail(res, 400, "缺少城市");
+
+    // 城市二选一：cityId（库里已有，前端城市面板选的）或 cityName（库外城市，用户手输）
+    const city = await resolveCity(body.cityId, body.cityName, body.region);
+    if (!city) return fail(res, 400, "缺少城市");
+    const cityId = city.id;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return fail(res, 400, "日期格式应为 YYYY-MM-DD");
     if (!/^\d{2}:\d{2}$/.test(startTime)) return fail(res, 400, "时间格式应为 HH:MM");
     if (endTime && !/^\d{2}:\d{2}$/.test(endTime)) return fail(res, 400, "时间格式应为 HH:MM");
@@ -94,10 +142,15 @@ router.post(
       ownerId: req.userId,
     });
 
+    const msg = studioCreated
+      ? `已录入，并新建了门店「${studioName}」`
+      : city.created
+        ? `已录入，并新建了城市「${city.name}」`
+        : "已录入";
     ok(
       res,
-      { id: schedule.id, studioId: studio.id, studioCreated, coachId },
-      studioCreated ? `已录入，并新建了门店「${studioName}」` : "已录入"
+      { id: schedule.id, studioId: studio.id, studioCreated, cityId, cityCreated: !!city.created },
+      msg
     );
   }),
 );
@@ -130,9 +183,53 @@ router.get(
         endTime: s.endTime.toTimeString().slice(0, 5),
         coachName: s.coach ? s.coach.name : "",
         studioName: s.studio.name,
+        cityId: s.studio.city ? s.studio.city.id : null,
         cityName: s.studio.city ? s.studio.city.name : "",
         difficulty: s.difficulty,
       }))
+    );
+  }),
+);
+
+/**
+ * 「我的城市」：GET /api/imports/cities
+ *
+ * 用户录入过的城市，按课数倒序。存在的理由：
+ * 录入经常发生在**库里没有的城市**（用户人在三亚，我们只接了北上广）。
+ * 这类城市如果不在任何入口露出来，用户录完就找不回去了
+ * —— 课在库里，但切换城市时压根没有「三亚」这个选项。
+ * 这里把「我录过课的城市」单独列一份，既是对录入的回执，
+ * 也是那些**还没被抓取覆盖的城市**的唯一入口。
+ */
+router.get(
+  "/cities",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const rows = await prisma.schedule.findMany({
+      where: { ownerId: req.userId },
+      include: { studio: { include: { city: true } } },
+    });
+
+    const map = new Map();
+    for (const s of rows) {
+      const city = s.studio && s.studio.city;
+      if (!city) continue;
+      const hit = map.get(city.id);
+      if (hit) {
+        hit.count += 1;
+      } else {
+        map.set(city.id, {
+          id: city.id,
+          name: city.name,
+          region: city.region,
+          count: 1,
+        });
+      }
+    }
+
+    ok(
+      res,
+      [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "zh"))
     );
   }),
 );

@@ -143,6 +143,8 @@ const apiImportSchedule = (payload) => req.post("/imports/schedule", payload);
 // 我录过的课：录入是私有的，所以要能回看、能删
 const apiMyImports = () => req.get("/imports/mine");
 const apiDeleteImport = (id) => req.delete("/imports/schedule/" + id);
+// 我录过课的城市（含库外新建的，如三亚）——「我的」页要能找到这些城市
+const apiMyCities = () => req.get("/imports/cities");
 // 缺失舞室提报
 const apiSubmitReport = (payload) => req.post("/reports", payload);
 // 定位 → 城市：解析放在服务端（城市中心点表 + 「哪些城市真有课」都在库里）
@@ -186,4 +188,5 @@ module.exports = {
   apiImportSchedule,
   apiMyImports,
   apiDeleteImport,
+  apiMyCities,
 };

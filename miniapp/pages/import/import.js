@@ -4,6 +4,9 @@ const { dateKey, addDays, todayKey } = require("../../utils/date");
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
 const { onNavTop } = require("../../utils/scroll-top");
+// 城市面板复用首页/发现页那套（能搜汉字/拼音/首字母、能定位）。
+// 录入页只借用它的选择器，不切全局城市 —— 见下面的 applyCity。
+const CP = require("../../utils/city-picker-mixin");
 
 const DIFF_OPTIONS = ["不限", "入门", "进阶", "高阶"];
 const DIFF_VALUE = {
@@ -23,35 +26,94 @@ const DIFF_VALUE = {
  * 主要用途是补那些没用 SaaS、我们抓不到的独立舞室
  * —— 门店名自由输入，库里没有就顺手建出来。
  */
-Page({
-  onNavTop,
+Page(
+  Object.assign({}, CP.methods, {
+    onNavTop,
 
-  data: {
-    // 日期/时间一律走系统原生滚轮（mode="date" / mode="time"）。
-    // 早先是 mode="selector" + 自建选项数组，真机上弹出来一片空白且划不动：
-    // 开始/结束用 -1 当「未选择」的哨兵，value 越界后滚轮算不出初始位置就渲染空了。
-    // 原生滚轮没这个坑，还能选到任意分钟，比 28 项的半小时列表更好用。
-    dateText: "",
-    dateStart: "",
-    dateEnd: "", // 未来 14 天可选，避免录进历史日期
-    startText: "19:00",
-    endText: "", // 空 = 没选，提交时按 90 分钟补
-    endAuto: "20:30",
-    diffIndex: 0,
-    diffs: DIFF_OPTIONS,
+    data: Object.assign({}, CP.data, {
+      // 日期/时间一律走系统原生滚轮（mode="date" / mode="time"）。
+      // 早先是 mode="selector" + 自建选项数组，真机上弹出来一片空白且划不动：
+      // 开始/结束用 -1 当「未选择」的哨兵，value 越界后滚轮算不出初始位置就渲染空了。
+      // 原生滚轮没这个坑，还能选到任意分钟，比 28 项的半小时列表更好用。
+      dateText: "",
+      dateStart: "",
+      dateEnd: "", // 未来 14 天可选，避免录进历史日期
+      startText: "19:00",
+      endText: "", // 空 = 没选，提交时按 90 分钟补
+      endAuto: "20:30",
+      diffIndex: 0,
+      diffs: DIFF_OPTIONS,
 
-    studioName: "",
-    courseName: "",
-    coachName: "",
-    submitBusy: false,
-    lastResult: null,
-    // 我录过的课（只有本人可见，所以列表也只列本人的）
-    mine: [],
-  },
+      // 城市：默认跟着当前城市走，但**必须能改**。
+      // 录入常发生在我们还没接入的地方（用户在三亚，库里只有北上广），
+      // 沿用当前城市会把三亚的课记到上海名下，用户一看就知道不对。
+      region: "CN",
+      cities: [],
+      filteredCities: [],
+      cityId: null,
+      cityName: "",
+      // 库外城市：面板里搜不到时手输，服务端顺手把城市建出来
+      customCityMode: false,
+      customCityName: "",
 
-  async onShow() {
-    this.loadMine();
-  },
+      studioName: "",
+      courseName: "",
+      coachName: "",
+      submitBusy: false,
+      lastResult: null,
+      // 我录过的课（只有本人可见，所以列表也只列本人的）
+      mine: [],
+    }),
+
+    async onShow() {
+      this.loadMine();
+      this.ensureCities();
+    },
+
+    /** 城市列表来自 app 初始化，偶尔还没就绪就自己拉一次 */
+    async ensureCities() {
+      if ((this.data.cities || []).length) return;
+      try {
+        await api.ensureReady();
+        let cities = app.globalData.cities || [];
+        if (!cities.length) {
+          cities = (await api.apiCities()) || [];
+          app.globalData.cities = cities;
+        }
+        const region = app.globalData.region || "CN";
+        const sameRegion = cities.filter((c) => c.region === region);
+        const cur =
+          sameRegion.find((c) => c.id === app.globalData.cityId) || sameRegion[0] || null;
+        this.setData(
+          Object.assign(
+            { region, cities },
+            cur ? this.syncCityView(region, cur.id, cities) : { filteredCities: sameRegion },
+          ),
+        );
+      } catch (e) {
+        console.error("[import] 城市列表载入失败:", e.message);
+      }
+    },
+
+    /**
+     * 面板里选完城市 —— 只更新本页字段，**不切全局城市**。
+     * 录一节课不该把用户当前看的城市也换掉（录完还要回去看课表）。
+     */
+    applyCity() {
+      this.setData({ customCityMode: false, customCityName: "" });
+    },
+
+    /** 「库外城市」入口：面板里搜不到时手输城市名 */
+    tapCustomCity() {
+      this.setData({
+        customCityMode: !this.data.customCityMode,
+        customCityName: this.data.customCityMode ? "" : this.data.customCityName,
+        cityPickerVisible: false,
+      });
+    },
+    onCustomCity(e) {
+      this.setData({ customCityName: e.detail.value });
+    },
 
   async loadMine() {
     try {
@@ -124,6 +186,10 @@ Page({
     const s = this.data;
     if (!s.studioName.trim()) return toast(this, "先填门店名");
     if (!s.courseName.trim()) return toast(this, "先填课程名");
+    // 库外城市走手输，否则必须有 cityId —— 两者都没有课就不知道该挂在哪个城市
+    if (!s.customCityMode && !s.cityId) return toast(this, "先选城市");
+    if (s.customCityMode && !String(s.customCityName || "").trim())
+      return toast(this, "先填城市名");
     if (s.submitBusy) return;
 
     this.setData({ submitBusy: true });
@@ -131,7 +197,10 @@ Page({
       await api.ensureReady();
       const res = await api.apiImportSchedule({
         studioName: s.studioName.trim(),
-        cityId: app.globalData.cityId,
+        // 二选一：手输城市时故意不传 cityId，让服务端按名字取/建城市
+        cityId: s.customCityMode ? null : s.cityId,
+        cityName: s.customCityMode ? String(s.customCityName || "").trim() : "",
+        region: s.region,
         date: s.dateText,
         startTime: s.startText,
         endTime: s.endText || s.endAuto,
@@ -144,6 +213,7 @@ Page({
       this.setData({
         lastResult: {
           studio: s.studioName.trim(),
+          city: s.customCityMode ? String(s.customCityName || "").trim() : s.cityName,
           date: s.dateText,
           time: s.startText,
           course: s.courseName.trim(),
@@ -163,7 +233,8 @@ Page({
   goReport() {
     wx.navigateTo({ url: "/pages/report/index" });
   },
-});
+}),
+);
 
 /** 没选结束时间就按 90 分钟一节（多数舞室的单课时长） */
 function addMinutes(hhmm, mins) {

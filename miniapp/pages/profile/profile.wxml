@@ -22,6 +22,27 @@
     <text class="about-arrow">›</text>
   </view>
 
+  <!-- 我的城市：录入课去过的城市，含库里原本没有、录入时新建的（比如三亚）。
+       这些城市在切换城市里未必有入口，这里给它们一个固定的落脚点 -->
+  <view class="mycity-block" wx:if="{{myCities.length}}">
+    <view class="mycity-title">
+      我的城市
+      <text class="mycity-sub">我录过课的地方</text>
+    </view>
+    <view class="mycity-row">
+      <view
+        wx:for="{{myCities}}"
+        wx:key="id"
+        class="mycity-chip"
+        hover-class="press"
+        data-id="{{item.id}}"
+        data-region="{{item.region}}"
+        data-name="{{item.name}}"
+        bindtap="goMyCity"
+      >{{item.name}}<text class="mycity-n">{{item.count}}</text></view>
+    </view>
+  </view>
+
   <!-- 标签横向滚动：五个标签等分会把字挤到一起 -->
   <scroll-view scroll-x class="tabs" enhanced show-scrollbar="{{false}}">
     <view class="tabs-inner">

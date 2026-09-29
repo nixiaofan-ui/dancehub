@@ -67,6 +67,38 @@ page {
 .pick.ph-pick {
   color: #6b7089;
 }
+/* 城市：选择器 + 「库外城市」两个入口并排，后者是给还没接入的城市留的口子 */
+.city-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.city-pick {
+  flex: 1;
+  font-size: 26rpx;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 12rpx;
+  padding: 18rpx 20rpx;
+  font-weight: 700;
+}
+.city-pick.off {
+  color: #6b7089;
+}
+.city-alt {
+  font-size: 24rpx;
+  color: #ff6b35;
+  font-weight: 700;
+  padding: 18rpx 8rpx;
+  white-space: nowrap;
+}
+.hint {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #79819c;
+  line-height: 1.5;
+}
 .diff-row {
   display: flex;
   gap: 16rpx;

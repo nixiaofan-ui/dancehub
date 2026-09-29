@@ -28,6 +28,48 @@
   color: #6b7089;
 }
 
+/* 我的城市：录过课的城市，横排 chip，数字是录了几节 */
+.mycity-block {
+  margin-top: 20rpx;
+  padding: 24rpx 28rpx;
+  background: #16213e;
+  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-radius: 16rpx;
+}
+.mycity-title {
+  font-size: 25rpx;
+  font-weight: 700;
+  color: #c8ccdd;
+  margin-bottom: 18rpx;
+}
+.mycity-sub {
+  margin-left: 12rpx;
+  font-size: 21rpx;
+  font-weight: 500;
+  color: #6b7089;
+}
+.mycity-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+.mycity-chip {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 20rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(123, 47, 190, 0.18);
+  border: 1rpx solid rgba(123, 47, 190, 0.5);
+  border-radius: 999rpx;
+}
+.mycity-n {
+  margin-left: 10rpx;
+  font-size: 20rpx;
+  color: #00f5d4;
+}
+
 .user-card {
   display: flex;
   align-items: center;

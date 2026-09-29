@@ -8,6 +8,33 @@
   </view>
 
   <view class="form">
+    <!-- 城市放在最前：录哪家店之前先定它是哪座城的店。
+         默认当前城市，库里没有的城市可以手输，服务端顺手建出来 -->
+    <view class="field">
+      <view class="label">城市 <text class="req">*</text></view>
+      <view class="city-row">
+        <view
+          class="city-pick {{customCityMode ? 'off' : ''}}"
+          hover-class="press"
+          bindtap="openCityPicker"
+        >{{customCityMode ? '改用手动输入' : (cityName || '选择城市')}}</view>
+        <view class="city-alt" hover-class="press" bindtap="tapCustomCity">
+          {{customCityMode ? '取消' : '+ 库外城市'}}
+        </view>
+      </view>
+      <input
+        wx:if="{{customCityMode}}"
+        class="input"
+        placeholder="输入城市名，例如：三亚"
+        placeholder-class="ph"
+        value="{{customCityName}}"
+        bindinput="onCustomCity"
+      />
+      <view wx:if="{{customCityMode}}" class="hint">
+        这个城市我们还没接入 —— 录入后会建出来，之后在「我的 · 我的城市」里能找到
+      </view>
+    </view>
+
     <view class="field">
       <view class="label">门店名称 <text class="req">*</text></view>
       <input
@@ -84,7 +111,7 @@
   </button>
 
   <view wx:if="{{lastResult}}" class="done">
-    ✅ 已录入：{{lastResult.studio}} · {{lastResult.date}} {{lastResult.time}} · {{lastResult.course}}
+    ✅ 已录入：{{lastResult.city}} · {{lastResult.studio}} · {{lastResult.date}} {{lastResult.time}} · {{lastResult.course}}
     <view class="done-sub">继续录下一节吧</view>
   </view>
 
@@ -95,7 +122,7 @@
       <view class="mine-main">
         <view class="mine-course">{{item.courseName}}</view>
         <view class="mine-sub">
-          {{item.studioName}} · {{item.date}} {{item.startTime}}-{{item.endTime}}<block wx:if="{{item.coachName}}"> · {{item.coachName}}</block>
+          <block wx:if="{{item.cityName}}">{{item.cityName}} · </block>{{item.studioName}} · {{item.date}} {{item.startTime}}-{{item.endTime}}<block wx:if="{{item.coachName}}"> · {{item.coachName}}</block>
         </view>
       </view>
       <view class="mine-del" hover-class="press" data-id="{{item.id}}" bindtap="delMine">删除</view>
@@ -106,5 +133,16 @@
     不确定这家店叫什么？去提报
   </view>
 </view>
+
+<city-picker
+  visible="{{cityPickerVisible}}"
+  cities="{{filteredCities}}"
+  cityId="{{cityId}}"
+  region="{{region}}"
+  locating="{{locating}}"
+  bind:close="closeCityPicker"
+  bind:select="onPickCity"
+  bind:locate="onPickLocate"
+/>
 
 <toast id="toast" />

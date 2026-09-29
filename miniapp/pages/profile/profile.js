@@ -23,6 +23,8 @@ Page({
     loading: false,
     blocked: [],
     favs: [],
+    // 我录过课的城市（含库外新建的）
+    myCities: [],
   },
 
   async onLoad() {
@@ -40,6 +42,37 @@ Page({
     this.loadBlocked();
     this.loadFavs();
     this.loadAll();
+    this.loadMyCities();
+  },
+
+  /**
+   * 「我的城市」：我录过课的城市，按课数倒序。
+   *
+   * 存在的理由：录入经常发生在**我们还没接入的城市**（用户人在三亚，库里只有北上广）。
+   * 这类城市在切换城市时压根没有选项，录完就找不回去了 ——
+   * 课在库里，人却看不到。这里给它们一个固定入口。
+   */
+  async loadMyCities() {
+    try {
+      await api.ensureReady();
+      const rows = (await api.apiMyCities()) || [];
+      this.setData({ myCities: rows });
+    } catch (e) {
+      // 没有录入记录时就是空列表，不该弹错打断「我的」页
+      this.setData({ myCities: [] });
+    }
+  },
+
+  /**
+   * 点「我的城市」→ 切到那座城看课表。
+   * 用 manual 源：这是用户明确选的，不该被预约城市/定位再拽走。
+   */
+  goMyCity(e) {
+    const { id, region, name } = e.currentTarget.dataset;
+    if (!id) return;
+    app.setCity(region || "CN", Number(id), "manual");
+    wx.showToast({ title: "已切到" + name, icon: "none" });
+    wx.switchTab({ url: "/pages/discover/discover" });
   },
 
   /**

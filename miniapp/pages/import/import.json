@@ -1,6 +1,7 @@
 {
   "usingComponents": {
     "nav-bar": "/components/nav-bar/nav-bar",
-    "toast": "/components/toast/index"
+    "toast": "/components/toast/index",
+    "city-picker": "/components/city-picker/city-picker"
   }
 }
