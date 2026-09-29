@@ -27,7 +27,16 @@
 
     <!-- 搜索态：直接铺结果，不给分组和字母条添乱 -->
     <scroll-view wx:if="{{result !== null}}" scroll-y class="cp-body">
-      <view wx:if="{{noHit}}" class="cp-empty">没这个城市，换个拼音试试</view>
+      <!-- 允许库外城市时（录课页），搜不到就不是死路：直接拿输入词当城市名 -->
+      <view
+        wx:if="{{noHit && allowCustom && missName}}"
+        class="cp-custom"
+        hover-class="press"
+        bindtap="useCustom"
+      >
+        库里还没有「{{missName}}」→ 就用它 <text class="cp-custom-tip">（会自动建城市）</text>
+      </view>
+      <view wx:elif="{{noHit}}" class="cp-empty">没这个城市，换个拼音试试</view>
       <view
         wx:for="{{result}}"
         wx:key="id"

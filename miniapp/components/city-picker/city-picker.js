@@ -16,6 +16,9 @@ Component({
     cityId: { type: null, value: null },
     region: { type: String, value: "CN" },
     locating: { type: Boolean, value: false },
+    // 开启后，搜不到城市时不再只说「没这个城市」，而是给一条
+    // 「就用「三亚」」的入口 —— 录课页要允许把还没接入的城市录进来。
+    allowCustom: { type: Boolean, value: false },
   },
 
   data: {
@@ -25,6 +28,7 @@ Component({
     hot: [],
     result: null, // 搜索结果（null = 没在搜，展示分组）
     noHit: false,
+    missName: "", // 没命中时用户输入的原词，给「直接用它」按钮当参数
     activeLetter: "",
     indexTip: false,
   },
@@ -74,7 +78,7 @@ Component({
       const kw = (e.detail.value || "").trim().toLowerCase();
       this.setData({ keyword: e.detail.value || "" });
       if (!kw) {
-        this.setData({ result: null, noHit: false });
+        this.setData({ result: null, noHit: false, missName: "" });
         return;
       }
       const hit = (this.data.cities || []).filter((c) => {
@@ -86,11 +90,26 @@ Component({
           (c.abbr && c.abbr.toLowerCase().indexOf(kw) === 0)
         );
       });
-      this.setData({ result: hit, noHit: hit.length === 0 });
+      this.setData({
+        result: hit,
+        noHit: hit.length === 0,
+        missName: hit.length === 0 ? (e.detail.value || "").trim() : "",
+      });
     },
 
     clearKeyword() {
-      this.setData({ keyword: "", result: null, noHit: false });
+      this.setData({ keyword: "", result: null, noHit: false, missName: "" });
+    },
+
+    /**
+     * 搜不到但页面允许库外城市：把用户输入的词原样抛给页面。
+     * 录课页拿到后会切成手输模式并填好名字，用户不用再重新打一遍。
+     */
+    useCustom() {
+      const name = String(this.data.missName || "").trim();
+      if (!name) return;
+      this.triggerEvent("custom", { name });
+      this.close();
     },
 
     noop() {

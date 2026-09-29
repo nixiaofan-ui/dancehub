@@ -171,6 +171,24 @@
   padding: 60rpx 0;
 }
 
+/* 搜不到城市、但页面允许库外城市时的「就用它」入口（录课页） */
+.cp-custom {
+  margin: 24rpx 24rpx 0;
+  padding: 26rpx 24rpx;
+  border-radius: 16rpx;
+  background: #f2f0ff;
+  color: #6c5ce7;
+  font-size: 28rpx;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cp-custom-tip {
+  font-weight: 400;
+  font-size: 22rpx;
+  color: #9a93e8;
+}
+
 .cp-pad {
   height: 40rpx;
 }

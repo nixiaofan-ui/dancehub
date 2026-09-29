@@ -140,9 +140,11 @@
   cityId="{{cityId}}"
   region="{{region}}"
   locating="{{locating}}"
+  allow-custom="{{true}}"
   bind:close="closeCityPicker"
   bind:select="onPickCity"
   bind:locate="onPickLocate"
+  bind:custom="onPickCustomCity"
 />
 
 <toast id="toast" />

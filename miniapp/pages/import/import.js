@@ -55,6 +55,8 @@ Page(
       // 库外城市：面板里搜不到时手输，服务端顺手把城市建出来
       customCityMode: false,
       customCityName: "",
+      // null = 还没探测；false = 服务端老版本，建不了新城市
+      cityCreate: null,
 
       studioName: "",
       courseName: "",
@@ -68,6 +70,7 @@ Page(
     async onShow() {
       this.loadMine();
       this.ensureCities();
+      this.probeCityCreate();
     },
 
     /** 城市列表来自 app 初始化，偶尔还没就绪就自己拉一次 */
@@ -103,16 +106,53 @@ Page(
       this.setData({ customCityMode: false, customCityName: "" });
     },
 
-    /** 「库外城市」入口：面板里搜不到时手输城市名 */
-    tapCustomCity() {
+    /**
+     * 「库外城市」入口：面板里搜不到时手输城市名。
+     * 建城市是服务端能力，老版本没有 —— 探测一次，不支持就别让用户白填。
+     */
+    async tapCustomCity() {
+      if (this.data.cityCreate === false) {
+        return toast(this, "服务端还没升级，暂时只能选列表里的城市");
+      }
       this.setData({
         customCityMode: !this.data.customCityMode,
         customCityName: this.data.customCityMode ? "" : this.data.customCityName,
         cityPickerVisible: false,
       });
     },
+
+    /** 探测服务端是否支持建城市（只探一次，结果缓存到页面实例） */
+    async probeCityCreate() {
+      if (this.data.cityCreate != null) return;
+      try {
+        await api.ensureReady();
+        await api.apiMyCities();
+        this.setData({ cityCreate: true });
+      } catch (e) {
+        this.setData({ cityCreate: false });
+      }
+    },
     onCustomCity(e) {
       this.setData({ customCityName: e.detail.value });
+    },
+
+    /**
+     * 城市面板里搜「三亚」没命中 → 组件把这个词抛过来，
+     * 直接切成手输模式并填好名字，省得用户关掉面板再打一遍。
+     */
+    onPickCustomCity(e) {
+      const name = String((e.detail && e.detail.name) || "").trim();
+      if (!name) return;
+      if (this.data.cityCreate === false) {
+        return toast(this, "服务端还没升级，暂时只能选列表里的城市");
+      }
+      this.setData({
+        customCityMode: true,
+        customCityName: name,
+        cityId: null,
+        cityName: "",
+        cityPickerVisible: false,
+      });
     },
 
   async loadMine() {
