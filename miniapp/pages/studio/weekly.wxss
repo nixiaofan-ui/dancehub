@@ -442,3 +442,9 @@
   font-weight: 900;
   margin-left: 10rpx;
 }
+/* 数据新鲜度：上面那个数字是抓取快照，标一句「多久前」 */
+.c-hot-ago {
+  font-size: 18rpx;
+  color: #a8adc2;
+  font-weight: 400;
+}

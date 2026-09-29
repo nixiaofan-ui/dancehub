@@ -57,20 +57,47 @@ router.get(
         { address: { contains: keyword } },
       ];
     }
+    // 不带 cityId = 跨城全局搜索。此时必须限量：像「舞蹈」这种泛词会命中上千家，
+    // 全量回包既慢又把真正想找的那家埋掉。默认 200 条，前端可传 limit 覆盖。
+    const limit = cityId ? undefined : Math.min(Number(req.query.limit) || 200, 500);
+
     const studios = await prisma.studio.findMany({
       where,
+      ...(limit ? { take: limit } : {}),
       include: { city: true, _count: { select: { schedules: true, coaches: true } } },
     });
 
     const styleMap = await buildStyleMap(studios.map((s) => s.id));
     // 按名称首字母排序（中文走拼音），并给每家带上分组字母，供发现页右侧索引条定位
-    ok(
-      res,
-      sortStudiosByName(studios).map((s) => ({
-        ...s,
-        styles: styleMap.get(s.id) || [],
-      })),
-    );
+    const list = sortStudiosByName(studios).map((s) => ({
+      ...s,
+      styles: styleMap.get(s.id) || [],
+    }));
+
+    // 全局搜索额外回「每个城市命中几家」，前端拿它渲染顶部城市筛选条
+    // （结果被 limit 截断过，计数必须单独 groupBy，不能从 list 里数）
+    if (req.query.withCityCounts === "1") {
+      const groups = await prisma.studio.groupBy({
+        by: ["cityId"],
+        where,
+        _count: { _all: true },
+      });
+      const cities = await prisma.city.findMany({
+        where: { id: { in: groups.map((g) => g.cityId) } },
+      });
+      const nameById = new Map(cities.map((c) => [c.id, c.name]));
+      const cityCounts = groups
+        .map((g) => ({
+          cityId: g.cityId,
+          name: nameById.get(g.cityId) || "",
+          count: g._count._all,
+        }))
+        .filter((c) => c.name)
+        .sort((a, b) => b.count - a.count);
+      return ok(res, { items: list, cityCounts, total: cityCounts.reduce((n, c) => n + c.count, 0) });
+    }
+
+    ok(res, list);
   }),
 );
 

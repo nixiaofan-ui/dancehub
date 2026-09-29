@@ -80,6 +80,28 @@ export async function findOrCreateCoach(studioId, name) {
   return prisma.coach.create({ data: { studioId, name: trimmed } });
 }
 
+/**
+ * 更新时「上游没给」的字段保留库里的旧值，不要拿 null 去覆盖。
+ *
+ * 为什么必须这样：`update({ data: entry })` 是全量覆写，而 entry 里
+ * bookedNum / coursePicUrl 是「这次抓不到就为 null」的软字段 ——
+ * 平台偶发不返回（接口抖一下、字段被改版）时，库里已经拿到的真实人数
+ * 和封面图会被一次性擦掉，用户看到的就是「没有数字」且再也回不来
+ * （下一轮抓取如果又正常，才可能补回）。
+ *
+ * 注意只保护**软字段**：课名、时间、教练这些是权威字段，上游说变就是变了。
+ */
+function keepOldOnMissing(entry, existing) {
+  const patch = { ...entry };
+  if (patch.bookedNum == null && existing.bookedNum != null) {
+    patch.bookedNum = existing.bookedNum;
+  }
+  if (!patch.coursePicUrl && existing.coursePicUrl) {
+    patch.coursePicUrl = existing.coursePicUrl;
+  }
+  return patch;
+}
+
 export async function upsertSchedule(entry) {
   // @db.Time 列过滤在 Prisma/MySQL 下不可靠，改为按日期+课程拉取后 JS 比对 UTC 时分
   const candidates = await prisma.schedule.findMany({
@@ -95,7 +117,10 @@ export async function upsertSchedule(entry) {
     (c) => c.startTime.getUTCHours() === eh && c.startTime.getUTCMinutes() === em,
   );
   if (existing) {
-    await prisma.schedule.update({ where: { id: existing.id }, data: entry });
+    await prisma.schedule.update({
+      where: { id: existing.id },
+      data: keepOldOnMissing(entry, existing),
+    });
     return { action: "updated", id: existing.id };
   }
   const created = await prisma.schedule.create({ data: entry });

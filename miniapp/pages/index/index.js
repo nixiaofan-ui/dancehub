@@ -11,6 +11,7 @@ const { bookCourse } = require("../../utils/booking");
 const { locateCity, openSetting } = require("../../utils/locate");
 const { isBlocked } = require("../../utils/blocked");
 const { isFav } = require("../../utils/fav-coaches");
+const { timeAgo } = require("../../utils/time-ago");
 const { onNavTop } = require("../../utils/scroll-top");
 // 跳老师主页统一走这里：详情页/周课表页也是同一个实现，行为保持一致
 const { onTapCoach } = require("../../utils/coach-nav");
@@ -226,6 +227,9 @@ Page(
           edgeClass: "edge-" + (item.difficulty || "ALL_LEVELS").toLowerCase(),
           slotClass,
           slotText,
+          // 人数是抓取快照（热刷新 20 分钟一轮、常规 6 小时一轮），
+          // 标出它有多旧，免得用户拿官方小程序一对以为是我们算错了
+          bookedAgo: item.bookedNum > 0 ? timeAgo(item.bookedAt) : "",
         };
       });
       // 两级过滤都在本地做：数据是当天整城拉回来的，

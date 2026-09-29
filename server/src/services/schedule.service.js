@@ -74,6 +74,10 @@ function serializeTimeline(schedules, userId) {
     // 列表页用它标「N 人已约」热度；注意和 Booking 表计数不是一个东西。
     bookedNum: s.bookedNum ?? null,
     capacity: s.capacity,
+    // 人数是抓取快照，把「这行数据最后写入时间」一起给出去，
+    // 前端才能标「12 分钟前更新」—— 否则用户拿官方小程序一对，差几个数字
+    // 只会觉得我们不准，看不出其实是快照滞后。
+    bookedAt: s.updatedAt ? s.updatedAt.toISOString() : null,
     remark: s.remark,
     // 自己录的课前端要标「我录的」并允许删除，光给 ownerId 前端没法比对
     mine: uid ? Number(s.ownerId) === uid : false,

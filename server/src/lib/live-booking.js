@@ -46,7 +46,7 @@ const hhmm = (startTime) => {
  * 库里的门店名形态不统一：「MAX POWER STUDIO（汶水路店）」「嘉禾舞社·马家堡」「王牌嘻帝·五四北」，
  * 而配置的 studio.name 一般是品牌名，所以做前缀匹配而不是全等。
  */
-function findConfig(studioName, cityName) {
+export function findConfig(studioName, cityName) {
   const name = String(studioName || "").trim();
   if (!name) return null;
   const candidates = crawlerConfigs.filter((c) => {

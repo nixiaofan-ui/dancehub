@@ -144,7 +144,7 @@
         <view
           wx:if="{{item.bookedNum > 0}}"
           class="hot-line"
-        >🔥 已有 {{item.bookedNum}} 人约<text wx:if="{{item.capacity}}" class="hot-cap"> / 上限 {{item.capacity}}</text></view>
+        >🔥 已有 {{item.bookedNum}} 人约<text wx:if="{{item.capacity}}" class="hot-cap"> / 上限 {{item.capacity}}</text><text wx:if="{{item.bookedAgo}}" class="hot-ago"> · {{item.bookedAgo}}</text></view>
         <view class="card-foot">
           <view wx:if="{{item.slotText}}" class="slot {{item.slotClass}}">{{item.slotText}}</view>
           <view class="btn-row">

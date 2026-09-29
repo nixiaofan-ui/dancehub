@@ -114,7 +114,9 @@ Page({
         shownCount: shown,
         bookMeta:
           bookedNum != null
-            ? "来自舞室官方系统 · " + this.stampLabel(d.liveCheckedAt)
+            ? // bookedAt = 这行数据最后写入库的时间（抓取快照）。用它而不是 liveCheckedAt：
+              // 后者只有回源成功才有，缺失时会显示成「刚抓取」，把 6 小时前的旧数说成新的
+              "来自舞室官方系统 · " + this.stampLabel(d.bookedAt)
             : "该舞室未公开人数",
         capacity,
         progress,

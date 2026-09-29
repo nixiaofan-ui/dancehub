@@ -15,6 +15,10 @@
     否则用户切完之后在 chip 条上看不到自己选的是谁。
   -->
   <scroll-view scroll-x class="city-bar" enhanced show-scrollbar="{{false}}">
+    <!-- 定位单独放一个 chip：原来要点开城市面板才能定位，找城市平白多一步 -->
+    <view class="chip chip-locate" hover-class="press" bindtap="tapLocate">
+      {{locating ? '定位中…' : '📍 定位'}}
+    </view>
     <view
       wx:for="{{hotCities}}"
       wx:key="id"
@@ -55,6 +59,28 @@
     />
     <view wx:if="{{keyword}}" class="clear" hover-class="press" bindtap="clearKeyword">✕</view>
     <view class="search-btn" hover-class="press" bindtap="onSearchConfirm">搜索</view>
+  </view>
+
+  <!--
+    全国搜索的命中城市条：默认全国搜，命中哪几个城市在这里列出来，
+    点一下才收窄。这样「不知道那家舞室在哪个城市」也能直接搜。
+  -->
+  <view wx:if="{{cityCounts.length}}" class="hit-bar">
+    <view
+      class="hb-chip hb-all {{!searchCityId ? 'on' : ''}}"
+      hover-class="press"
+      bindtap="clearSearchCity"
+    >全国 {{hitTotal}}</view>
+    <scroll-view scroll-x class="hb-scroll" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{cityCounts}}"
+        wx:key="cityId"
+        class="hb-chip {{searchCityId === item.cityId ? 'on' : ''}}"
+        hover-class="press"
+        data-id="{{item.cityId}}"
+        bindtap="tapHitCity"
+      >{{item.name}} {{item.count}}</view>
+    </scroll-view>
   </view>
 
   <!--
@@ -154,6 +180,8 @@
             <view class="name-row">
               <text class="name">{{item.brand}}</text>
               <text wx:if="{{item.branch}}" class="branch">{{item.branch}}</text>
+              <!-- 跨城结果才带城市标签：同城列表里每家都挂个城市名纯属噪音 -->
+              <text wx:if="{{globalMode && item.cityName}}" class="city-tag">{{item.cityName}}</text>
             </view>
             <!-- 品牌行第二行列分店；单店行显示地址。两者共用省略号样式 -->
             <view wx:if="{{item.branchLine}}" class="addr-line">{{item.branchLine}}</view>

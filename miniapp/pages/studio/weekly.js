@@ -6,6 +6,7 @@ const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 const { foldBlocked } = require("../../utils/blocked");
+const { timeAgo } = require("../../utils/time-ago");
 
 /** 实时刷人数时最多回源几家店：全选十几家分店逐店拉，等待时间比数字本身更烦人 */
 const MAX_LIVE_STORES = 4;
@@ -181,6 +182,8 @@ Page({
             diffClass: (s.difficulty || "ALL_LEVELS").toLowerCase(),
             // 舞室官方系统的真实已约人数，null = 该平台不公开，模板里不显示热度
             bookedNum: s.bookedNum != null ? Number(s.bookedNum) : null,
+            // 这份数字有多旧（抓取快照），实时回源成功会被改成「刚刚」
+            bookedAgo: s.bookedNum != null ? timeAgo(s.bookedAt) : "",
           });
         });
 
@@ -421,6 +424,8 @@ Page({
       const v = fresh[i.id];
       if (v != null && v !== i.bookedNum) {
         i.bookedNum = v;
+        // 刚回源过 → 这份数字就是当下，别再标成「3 小时前」
+        i.bookedAgo = "刚刚";
         changed = true;
       }
     });

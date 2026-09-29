@@ -500,3 +500,9 @@
   color: #a8adc2;
   font-weight: 700;
 }
+/* 数据新鲜度：人数是抓取快照，得让用户知道这是几分钟前的数 */
+.hot-ago {
+  color: #a8adc2;
+  font-size: 20rpx;
+  font-weight: 400;
+}

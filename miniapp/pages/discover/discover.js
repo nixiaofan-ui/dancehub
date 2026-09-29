@@ -5,6 +5,7 @@ const { API_HOST } = require("../../utils/config");
 const { onNavTop } = require("../../utils/scroll-top");
 const CP = require("../../utils/city-picker-mixin");
 const { buildBrandGroups } = require("../../utils/brand");
+const { locateCity } = require("../../utils/locate");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
@@ -140,6 +141,18 @@ Page(
     followedIds: [],
     loading: false,
     brands: [],
+    /**
+     * 搜索的命中范围：null = 全国（默认）。
+     *
+     * 为什么搜索不再跟着城市走：用户知道舞室名、但不一定知道它在哪个城市，
+     * 「先切城市再搜」等于让人猜。现在默认全国搜，命中哪几个城市由
+     * cityCounts 列出来，点一下才收窄（写进这个字段）。
+     */
+    searchCityId: null,
+    cityCounts: [],
+    hitTotal: 0,
+    /** 本次结果是跨城的：卡片要带城市标签，且不做同城品牌合并 */
+    globalMode: false,
   }),
 
   async onLoad() {
@@ -170,18 +183,34 @@ Page(
   },
 
   async load() {
-    if (!this.data.cityId) return;
+    const kw = (this.data.keyword || "").trim();
+    // 有关键词时默认全国搜（searchCityId 非空 = 用户已收窄到某个城市）；
+    // 没有关键词就是「浏览某城市的门店列表」，此时才需要 cityId。
+    const scopeId = kw ? this.data.searchCityId : this.data.cityId;
+    const globalMode = !!kw && !scopeId;
+    if (!kw && !scopeId) return;
     // 先置 loading，避免首次进入时闪一下空状态
-    this.setData({ loading: true });
+    this.setData({ loading: true, globalMode });
     await api.ensureReady();
     try {
-      const params = { cityId: this.data.cityId };
-      if (this.data.keyword) params.keyword = this.data.keyword;
+      const params = {};
+      if (kw) params.keyword = kw;
+      if (scopeId) {
+        params.cityId = scopeId;
+      } else {
+        // 全国搜索：服务端限量返回，并额外回「每个城市命中几家」
+        params.limit = 200;
+        params.withCityCounts = 1;
+      }
       // 品牌接口失败不该挡住发现页 → 兜底空数组，最差退化成纯门店列表
-      const [rawStudios, follows] = await Promise.all([
+      const [res, follows] = await Promise.all([
         api.apiStudios(params),
         api.apiFollows(),
       ]);
+      // 全国搜索回的是 { items, cityCounts, total }，城市内搜索回的是数组
+      const rawStudios = Array.isArray(res) ? res : res.items || [];
+      const cityCounts = Array.isArray(res) ? [] : res.cityCounts || [];
+      const hitTotal = Array.isArray(res) ? rawStudios.length : res.total || 0;
       const followedIds = follows.map((f) => f.studio.id);
       const studios = rawStudios.map((s) => {
         const { brand, branch } = splitStudioName(s.name);
@@ -194,6 +223,8 @@ Page(
           groupLetter: s.initial || (s.name || "?").charAt(0),
           brand,
           branch,
+          // 跨城结果必须标明城市，否则「AB DANCE 绍兴店」看着像就在本城
+          cityName: (s.city && s.city.name) || "",
           styles: allStyles.slice(0, MAX_TAGS),
           extraStyles: Math.max(0, allStyles.length - MAX_TAGS),
         };
@@ -202,21 +233,27 @@ Page(
       // 而门店名本来就在手上、聚类又是纯函数 —— 本地算就不受发版节奏牵制。
       // 搜索时沿用上一次全量算好的结果（顶部品牌栏不该跟着关键词变），
       // 两端都算不出来才退回服务端接口，最差退化成纯门店列表。
-      let brandList = this.data.keyword
-        ? this.data.brands || []
-        : buildBrandGroups(studios);
-      if (!brandList.length) {
-        brandList = await api.apiBrands(this.data.cityId).catch(() => []);
+      // ⚠ 跨城结果不做品牌合并：「上海 AB DANCE」和「杭州 AB DANCE」
+      // 收成一行只会让人以为它们通卡。
+      let brandList = [];
+      if (!globalMode) {
+        brandList = this.data.keyword ? this.data.brands || [] : buildBrandGroups(studios);
+        if (!brandList.length) {
+          brandList = await api.apiBrands(scopeId).catch(() => []);
+        }
       }
       // 多店品牌收成一行（顶部那条横滑品牌栏另有入口，这里只是别让同品牌刷屏）
-      const rows = mergeBrandRows(studios, brandList);
+      const rows = globalMode ? studios : mergeBrandRows(studios, brandList);
       const { letters, sections } = buildSections(rows);
       // 扁平列表只留在实例上（关注状态回写用），视图只吃 sections，避免同一份数据被传两遍
       this._rows = rows;
-      this.setData({ brands: brandList, sections, letters, followedIds, loading: false }, () => {
-        // 视图渲染完再量索引条，否则拿到的位置是旧的
-        this.measureIndexBar();
-      });
+      this.setData(
+        { brands: brandList, sections, letters, followedIds, cityCounts, hitTotal, loading: false },
+        () => {
+          // 视图渲染完再量索引条，否则拿到的位置是旧的
+          this.measureIndexBar();
+        },
+      );
     } catch (e) {
       this.setData({ loading: false });
       toast(this, e.message);
@@ -261,8 +298,57 @@ Page(
    * chip 条上既不高亮也不出现，看着像没生效。
    */
   applyCity(cityId) {
-    this.setData(this.syncCityView(this.data.region, cityId, this.data.cities));
+    const patch = this.syncCityView(this.data.region, cityId, this.data.cities);
+    // 搜索状态下切城市 = 把搜索范围收窄到这个城市。
+    // 否则带关键词的请求根本不传 cityId，用户会以为「切了城市没反应」。
+    if (this.data.keyword) patch.searchCityId = cityId;
+    this.setData(patch);
     this.load();
+  },
+
+  /** 全国搜索结果顶部那条城市条：点一下收窄到该城市，再点一下取消 */
+  tapHitCity(e) {
+    const id = Number(e.currentTarget.dataset.id);
+    this.setData({ searchCityId: this.data.searchCityId === id ? null : id });
+    this.load();
+  },
+
+  clearSearchCity() {
+    if (!this.data.searchCityId) return;
+    this.setData({ searchCityId: null });
+    this.load();
+  },
+
+  /**
+   * 城市条上的「📍 定位」：不用先展开城市面板。
+   * 面板里的「用当前位置」也走这里（mixin 的 onPickLocate 会优先调页面的 tapLocate）。
+   */
+  async tapLocate() {
+    if (this.data.locating) return;
+    this.setData({ locating: true });
+    try {
+      const r = await locateCity({ useCache: false });
+      if (r.code === "ok" && r.city) {
+        const cities = app.globalData.cities || [];
+        app.setCity(r.city.region, r.city.id, "locate");
+        this.setData(this.syncCityView(r.city.region, r.city.id, cities));
+        if (this.data.keyword) this.setData({ searchCityId: r.city.id });
+        this.load();
+        wx.showToast({ title: "已定位到" + r.city.name, icon: "none" });
+        return;
+      }
+      wx.showToast({
+        title:
+          r.code === "denied"
+            ? "没给定位权限，可手动选城市"
+            : r.code === "no-match"
+              ? "你所在的城市还没接入"
+              : "定位失败，可手动选城市",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ locating: false, cityPickerVisible: false });
+    }
   },
 
   onSearch(e) {
@@ -306,7 +392,8 @@ Page(
   },
 
   clearKeyword() {
-    this.setData({ keyword: "" });
+    // 关键词没了，城市收窄也该一起解掉 —— 否则回到列表态还盯着某个城市
+    this.setData({ keyword: "", searchCityId: null, cityCounts: [], hitTotal: 0 });
     this.load();
   },
 

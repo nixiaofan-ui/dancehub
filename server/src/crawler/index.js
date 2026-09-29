@@ -27,6 +27,8 @@ import {
   getCrawlerConfig,
   listCrawlerConfigs,
 } from "./configs.js";
+// 复用「门店名 → 抓取配置」的匹配逻辑，避免这里再抄一份前缀匹配规则
+import { findConfig as findStudioCrawlConfig } from "../lib/live-booking.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STATE_FILE = path.resolve(__dirname, "../../.crawl-state.json"); // 仅一次性迁移用
@@ -42,6 +44,23 @@ const TICK_BUDGET_MS = Number(process.env.CRAWL_BUDGET_MS || 15 * 60 * 1000); //
  * 因此只对第一个日期抓一次。
  */
 const DATELESS_MODES = new Set(["oneMillion", "avex", "justjerk", "rawgraphy", "csdsp"]);
+
+/**
+ * 「热刷新」：只抓今天+明天，间隔远短于常规轮次。
+ *
+ * 为什么需要：常规一轮 6 小时，而预约人数在开抢后几十分钟就会变。
+ * 用户拿官方小程序一对，我们永远是几小时前的快照。全平台 1237 个配置
+ * 全部提到 20 分钟一轮既不现实（上游会限流）也没必要（冷门店没人看），
+ * 所以单独挑一批「有人在看」的店高频刷。
+ *
+ * 只抓今天+明天：未来的课还没开放预约，人数不会动；过期课更没人看。
+ */
+const HOT_REFRESH_MS = Number(process.env.CRAWL_HOT_MS || 20 * 60 * 1000);
+/** 一轮热刷新最多几家店的配置 */
+const HOT_LIMIT = Number(process.env.CRAWL_HOT_LIMIT || 40);
+const HOT_BUDGET_MS = Number(process.env.CRAWL_HOT_BUDGET_MS || 5 * 60 * 1000);
+/** configId -> 上次热刷时间戳（与常规 lastSuccessAt 分开记，不能互相顶掉） */
+const hotRefreshed = new Map();
 
 const statusMap = new Map(); // configId -> { state, lastRunAt, report, error }
 const running = new Set(); // 正在抓取的 configId，防重入
@@ -193,6 +212,107 @@ export async function runAllCrawls({ dryRun = false } = {}) {
   return results;
 }
 
+/** UTC 午夜，offsetDays 天后 */
+function utcDay(offsetDays = 0) {
+  const d = new Date();
+  return new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) + offsetDays * 86400000,
+  );
+}
+
+/**
+ * 挑出值得高频刷新的店：被关注数多的优先（说明有人在看），其次今天/明天课多的。
+ * 返回去重后的 configId 列表（同品牌多分店通常共用一份配置）。
+ */
+async function pickHotConfigIds(limit) {
+  const days = [utcDay(0), utcDay(1)];
+  const [byStudio, follows] = await Promise.all([
+    prisma.schedule.groupBy({
+      by: ["studioId"],
+      where: { scheduleDate: { in: days } },
+      _count: { _all: true },
+    }),
+    prisma.follow.groupBy({ by: ["studioId"], _count: { _all: true } }),
+  ]);
+  if (!byStudio.length) return [];
+
+  const fans = new Map(follows.map((f) => [f.studioId, f._count._all]));
+  const ranked = byStudio
+    .map((r) => ({
+      id: r.studioId,
+      lessons: r._count._all,
+      fans: fans.get(r.studioId) || 0,
+    }))
+    .sort((a, b) => b.fans - a.fans || b.lessons - a.lessons)
+    .slice(0, limit);
+
+  const studios = await prisma.studio.findMany({
+    where: { id: { in: ranked.map((r) => r.id) } },
+    include: { city: true },
+  });
+  const ids = [];
+  const seen = new Set();
+  for (const s of studios) {
+    const cfg = findStudioCrawlConfig(s.name, s.city?.name || "");
+    if (!cfg || !cfg.enabled || seen.has(cfg.id)) continue;
+    seen.add(cfg.id);
+    ids.push(cfg.id);
+  }
+  return ids;
+}
+
+/**
+ * 热刷新一轮：串行跑，成功与否都记自己的时间戳。
+ *
+ * ⚠ 不能复用 runCrawl：它会写 lastSuccessAt / statusMap，
+ * 而热刷新只抓了今天+明天，冒充「整轮成功」会把常规 7 天抓取往后推。
+ */
+export async function maybeHotRefresh() {
+  if (String(process.env.CRAWL_HOT ?? "1") === "0") return;
+  let ids = [];
+  try {
+    ids = await pickHotConfigIds(HOT_LIMIT);
+  } catch (e) {
+    console.warn("[crawler] 热刷新选店失败:", e.message);
+    return;
+  }
+  const now = Date.now();
+  const queue = ids.filter((id) => {
+    if (running.has(id)) return false;
+    const last = hotRefreshed.get(id) || 0;
+    return now - last >= HOT_REFRESH_MS;
+  });
+  if (!queue.length) return;
+
+  console.log(
+    `[crawler] 热刷新：${queue.length} 个配置（间隔 ${Math.round(HOT_REFRESH_MS / 60000)} 分钟，只抓今天+明天）`,
+  );
+  const deadline = Date.now() + HOT_BUDGET_MS;
+  for (const id of queue) {
+    if (Date.now() > deadline) {
+      console.warn("[crawler] 热刷新超过时间预算，剩余下一轮继续");
+      break;
+    }
+    running.add(id);
+    try {
+      const config = getCrawlerConfig(id);
+      const dates = DATELESS_MODES.has(config.mode) ? [utcDay(0)] : [utcDay(0), utcDay(1)];
+      const rows = [];
+      for (const date of dates) {
+        const raw = await crawl(config, date);
+        rows.push(...raw.map((r) => ({ ...r, _date: date })));
+      }
+      const report = await importSchedules(config, rows);
+      hotRefreshed.set(id, Date.now());
+      console.log(`[crawler] 热刷新 ${id}：${report.total} 条`);
+    } catch (e) {
+      console.error(`[crawler] 热刷新 ${id} 失败:`, e.message);
+    } finally {
+      running.delete(id);
+    }
+  }
+}
+
 /**
  * 心跳：到期的配置补跑。
  *
@@ -206,7 +326,11 @@ async function tick(reason = "heartbeat") {
   const queue = crawlerConfigs.filter(
     (c) => c.enabled && !running.has(c.id) && isDue(c, now),
   );
-  if (!queue.length) return;
+  if (!queue.length) {
+    // 没有到期配置不代表没事做：热刷新是另一套节奏（20 分钟），别被这里挡住
+    await maybeHotRefresh();
+    return;
+  }
 
   const deadline = Date.now() + TICK_BUDGET_MS;
   let cursor = 0;
@@ -250,6 +374,9 @@ async function tick(reason = "heartbeat") {
       `[crawler] 本轮超过时间预算 ${TICK_BUDGET_MS / 60000} 分钟，剩余配置下一轮继续`,
     );
   }
+
+  // 常规补跑结束后顺带热刷新一轮（有人正在看的店，人数要新鲜）
+  await maybeHotRefresh();
 }
 
 /**
