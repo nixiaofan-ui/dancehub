@@ -47,20 +47,19 @@
   <scroll-view scroll-x class="tabs" enhanced show-scrollbar="{{false}}">
     <view class="tabs-inner">
       <view class="tab {{tab === 'follows' ? 'on' : ''}}" data-tab="follows" bindtap="switchTab">关注</view>
-      <view class="tab {{tab === 'favs' ? 'on' : ''}}" data-tab="favs" bindtap="switchTab">
-        常看的老师<text wx:if="{{favs.length}}" class="tab-n">{{favs.length}}</text>
+      <view class="tab {{tab === 'coaches' ? 'on' : ''}}" data-tab="coaches" bindtap="switchTab">
+        我的老师<text wx:if="{{coaches.length}}" class="tab-n">{{coaches.length}}</text>
       </view>
       <view class="tab {{tab === 'bookings' ? 'on' : ''}}" data-tab="bookings" bindtap="switchTab">预约记录</view>
       <view class="tab {{tab === 'reminders' ? 'on' : ''}}" data-tab="reminders" bindtap="switchTab">提醒设置</view>
-      <view class="tab {{tab === 'blocked' ? 'on' : ''}}" data-tab="blocked" bindtap="switchTab">
-        不看的老师<text wx:if="{{blocked.length}}" class="tab-n">{{blocked.length}}</text>
-      </view>
     </view>
   </scroll-view>
 
-  <!-- 常看的老师（爱师）：课表里会优先看到他们的课 -->
-  <view wx:if="{{tab === 'favs'}}">
-    <view wx:if="{{favs.length === 0}}" class="empty">
+  <!-- 老师的两种偏好合在一处：本质是同一件事的两端（往前排 / 收起来），
+       拆成两个 tab 反而互相看不见，改个偏好还得先想清楚要去哪一栏。
+       两个开关互斥：同时开着等于没设，所以开一个会自动解另一个 -->
+  <view wx:if="{{tab === 'coaches'}}">
+    <view wx:if="{{coaches.length === 0}}" class="empty">
       <view class="dancer-lg empty-dancer">
         <view class="d-head"></view>
         <view class="d-torso"></view>
@@ -69,38 +68,32 @@
         <view class="d-limb d-leg-l"></view>
         <view class="d-limb d-leg-r"></view>
       </view>
-      <view class="empty-title">还没有常看的老师</view>
-      <view class="empty-sub">在课表里点教练名，把本命老师标成常看</view>
+      <view class="empty-title">还没标记过老师</view>
+      <view class="empty-sub">在课表里点教练名，可以设成常看或屏蔽</view>
     </view>
-    <view wx:for="{{favs}}" wx:key="*this" class="record-card">
-      <view class="record-head" hover-class="press" data-name="{{item}}" bindtap="goCoach">
-        <text class="record-course">★ {{item}}</text>
+    <view wx:for="{{coaches}}" wx:key="name" class="record-card {{item.blocked ? 'card-dim' : ''}}">
+      <view class="record-head" hover-class="press" data-name="{{item.name}}" bindtap="goCoach">
+        <text class="record-course">{{item.fav ? '★ ' : ''}}{{item.name}}</text>
+        <text wx:if="{{item.fav}}" class="coach-tag tag-fav">常看</text>
+        <text wx:if="{{item.blocked}}" class="coach-tag tag-block">不看</text>
       </view>
-      <view class="record-meta">课表里会优先看到这位老师</view>
-      <button class="close-remind" data-name="{{item}}" bindtap="unfavCoach">取消常看</button>
-    </view>
-  </view>
-
-  <!-- 不想看的老师：屏蔽必须能撤销，否则就是单向黑名单 -->
-  <view wx:if="{{tab === 'blocked'}}">
-    <view wx:if="{{blocked.length === 0}}" class="empty">
-      <view class="dancer-lg empty-dancer">
-        <view class="d-head"></view>
-        <view class="d-torso"></view>
-        <view class="d-limb d-arm-l"></view>
-        <view class="d-limb d-arm-r"></view>
-        <view class="d-limb d-leg-l"></view>
-        <view class="d-limb d-leg-r"></view>
+      <view class="record-meta">
+        {{item.blocked ? '课表里已隐藏这位老师的课' : '课表里会优先看到这位老师'}}
       </view>
-      <view class="empty-title">没有屏蔽任何老师</view>
-      <view class="empty-sub">在课表里点教练名，可以把他藏起来</view>
-    </view>
-    <view wx:for="{{blocked}}" wx:key="*this" class="record-card">
-      <view class="record-head">
-        <text class="record-course">{{item}}</text>
+      <view class="coach-acts">
+        <view
+          class="coach-act {{item.fav ? 'act-fav' : ''}}"
+          hover-class="press"
+          data-name="{{item.name}}"
+          bindtap="toggleCoachFav"
+        >★ 常看</view>
+        <view
+          class="coach-act {{item.blocked ? 'act-block' : ''}}"
+          hover-class="press"
+          data-name="{{item.name}}"
+          bindtap="toggleCoachBlock"
+        >✕ 不看</view>
       </view>
-      <view class="record-meta">课表里已隐藏这位老师的课</view>
-      <button class="close-remind" data-name="{{item}}" bindtap="unblockCoach">恢复显示</button>
     </view>
   </view>
 

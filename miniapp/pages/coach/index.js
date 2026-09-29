@@ -156,37 +156,71 @@ Page({
   /**
    * 屏蔽 / 取消屏蔽。
    * 本地先改：列表应立即有反馈，不能让用户等网络往返。
+   *
+   * ⚠ 与「常看」互斥：一个要往前排、一个要藏起来，同时开着等于没设
+   * （foldBlocked 优先于 fav 置顶，实际表现就是屏蔽赢）。所以这里开一个
+   * 会自动解另一个，与「我的 · 我的老师」那一栏的行为保持一致。
    */
   async toggleBlock() {
     const name = this.data.name;
     const next = !this.data.blocked;
-    this.setData({ blocked: next });
-    if (next) block(name);
-    else unblock(name);
+    const droppedFav = next && this.data.fav;
+    this.setData({ blocked: next, fav: droppedFav ? false : this.data.fav });
+    if (next) {
+      block(name);
+      if (droppedFav) unfav(name);
+    } else {
+      unblock(name);
+    }
     try {
-      if (next) await api.apiBlock(name);
-      else await api.apiUnblock(name);
+      if (next) {
+        await api.apiBlock(name);
+        if (droppedFav) await api.apiUnfavCoach(name);
+      } else {
+        await api.apiUnblock(name);
+      }
     } catch (e) {
       // 云端失败不影响本地 —— 只是换手机后会丢，不该因此回滚用户当前的操作
       console.error("[dancehub] 屏蔽同步失败:", e);
     }
-    toast(this, next ? `不再显示「${name}」的课` : `已恢复「${name}」的课`, "success");
+    toast(
+      this,
+      next
+        ? `不再显示「${name}」的课` + (droppedFav ? "，已移出常看" : "")
+        : `已恢复「${name}」的课`,
+      "success",
+    );
   },
 
-  /** 标记 / 取消「常看」（爱师）。同样是本地先改、云端兜底同步。 */
+  /** 标记 / 取消「常看」（爱师）。同样是本地先改、云端兜底同步，同样与屏蔽互斥。 */
   async toggleFav() {
     const name = this.data.name;
     if (!name) return;
     const next = !this.data.fav;
-    this.setData({ fav: next });
-    if (next) fav(name);
-    else unfav(name);
+    const unblocked = next && this.data.blocked;
+    this.setData({ fav: next, blocked: unblocked ? false : this.data.blocked });
+    if (next) {
+      fav(name);
+      if (unblocked) unblock(name);
+    } else {
+      unfav(name);
+    }
     try {
-      if (next) await api.apiFavCoach(name);
-      else await api.apiUnfavCoach(name);
+      if (next) {
+        await api.apiFavCoach(name);
+        if (unblocked) await api.apiUnblock(name);
+      } else {
+        await api.apiUnfavCoach(name);
+      }
     } catch (e) {
       console.error("[dancehub] 常看老师同步失败:", e);
     }
-    toast(this, next ? `已把「${name}」设为常看` : `已移出常看`, "success");
+    toast(
+      this,
+      next
+        ? `已把「${name}」设为常看` + (unblocked ? "，不再屏蔽" : "")
+        : `已移出常看`,
+      "success",
+    );
   },
 });

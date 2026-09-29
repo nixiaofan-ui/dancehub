@@ -271,6 +271,53 @@
   line-height: 1.6;
   font-weight: 700;
 }
+/* 老师的两种偏好：常看 / 不看 合在同一张卡片上
+   —— 名字右边的小标签是「当前状态」，下面两个按钮是「改状态」，点亮的那个即当前值 */
+.card-dim {
+  border-left-color: #3a3f63;
+}
+.coach-tag {
+  font-size: 20rpx;
+  font-weight: 900;
+  padding: 4rpx 14rpx;
+  border-radius: 18rpx;
+  margin-left: 10rpx;
+  flex-shrink: 0;
+}
+.tag-fav {
+  color: #0e0e1c;
+  background: #ffd166;
+}
+.tag-block {
+  color: #ffffff;
+  background: #6b7089;
+}
+.coach-acts {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 14rpx;
+}
+.coach-act {
+  flex: 1;
+  text-align: center;
+  font-size: 24rpx;
+  color: #a8adc2;
+  background: #1a1a2e;
+  border: 2rpx solid #2b3050;
+  border-radius: 12rpx;
+  padding: 12rpx 0;
+  font-weight: 700;
+}
+.coach-act.act-fav {
+  color: #0e0e1c;
+  background: #ffd166;
+  border-color: #ffd166;
+}
+.coach-act.act-block {
+  color: #ffffff;
+  background: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.6);
+}
 /* 取消预约：同上，但用红色强调是破坏性操作 */
 .cancel-book {
   margin-top: 12rpx;

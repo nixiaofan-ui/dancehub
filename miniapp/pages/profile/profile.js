@@ -3,8 +3,8 @@ const api = require("../../services/api");
 const { BOOKING_STATUS_LABEL, PLATFORM_LABEL } = require("../../utils/constants");
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
-const { getBlocked, unblock } = require("../../utils/blocked");
-const { getFavCoaches, unfav } = require("../../utils/fav-coaches");
+const { getBlocked, unblock, block } = require("../../utils/blocked");
+const { getFavCoaches, unfav, fav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 
@@ -23,6 +23,8 @@ Page({
     loading: false,
     blocked: [],
     favs: [],
+    // 上面两份名单合成的一张老师表：{name, fav, blocked}
+    coaches: [],
     // 我录过课的城市（含库外新建的）
     myCities: [],
   },
@@ -79,57 +81,118 @@ Page({
    * 本机名单为准，云端那份只在有网时补进来。
    * 用户在这恢复显示后要立刻看到列表变化，等接口往返太慢。
    */
+  /**
+   * 「常看」和「不看」是同一件事的两端：一个让他的课往前排，一个把他的课收起来。
+   * 所以名单合在一处读、合在一处展示 —— 拆成两个 tab 反而互相看不见，
+   * 改个偏好还得先想清楚要去哪一栏。
+   */
   loadBlocked() {
     const local = getBlocked();
-    this.setData({ blocked: local });
+    this.setData({ blocked: local }, () => this.buildCoaches());
     api.ensureReady()
       .then(() => api.apiBlocked())
       .then((remote) => {
         const merged = [...new Set(local.concat(remote || []))];
-        this.setData({ blocked: merged });
+        this.setData({ blocked: merged }, () => this.buildCoaches());
       })
       .catch(() => {});
-  },
-
-  async unblockCoach(e) {
-    const name = e.currentTarget.dataset.name;
-    if (!name) return;
-    unblock(name);
-    this.loadBlocked();
-    try {
-      await api.apiUnblock(name);
-    } catch (err) {
-      // 本地已经恢复显示了，云端同步失败不当成错误打断用户
-      console.error("[dancehub] 取消屏蔽同步失败:", err);
-    }
-    toast(this, `已恢复「${name}」的课`, "success");
   },
 
   /** 常看的老师：与屏蔽名单同一套读法，本地优先、云端补并集 */
   loadFavs() {
     const local = getFavCoaches();
-    this.setData({ favs: local });
+    this.setData({ favs: local }, () => this.buildCoaches());
     api
       .ensureReady()
       .then(() => api.apiFavCoaches())
       .then((remote) => {
         const merged = [...new Set(local.concat(remote || []))];
-        this.setData({ favs: merged });
+        this.setData({ favs: merged }, () => this.buildCoaches());
       })
       .catch(() => {});
   },
 
-  async unfavCoach(e) {
+  /**
+   * 把两份名单合成一个老师列表，每人一行带两个开关。
+   * 排序：常看的在前、被屏蔽的在后（同档保持名单本身顺序），
+   * 这样一眼扫下来先看的是自己真正在追的人。
+   */
+  buildCoaches() {
+    const favs = this.data.favs || [];
+    const blocked = this.data.blocked || [];
+    const names = [...new Set(favs.concat(blocked))];
+    const rows = names.map((name) => ({
+      name,
+      fav: favs.indexOf(name) >= 0,
+      blocked: blocked.indexOf(name) >= 0,
+    }));
+    const weight = (r) => (r.fav ? 2 : 0) + (r.blocked ? 1 : 0);
+    rows.sort((a, b) => weight(b) - weight(a));
+    this.setData({ coaches: rows });
+  },
+
+  /** 改完本地名单后重读一次再重建列表：工具函数是权威，别在 data 上自己加减 */
+  syncCoachLists() {
+    this.setData(
+      { blocked: getBlocked(), favs: getFavCoaches() },
+      () => this.buildCoaches(),
+    );
+  },
+
+  /**
+   * 切「常看」。常看和「不看」不能同时成立 —— 一个要往前排、一个要藏起来，
+   * 同时开着等于没设，所以开一个会自动解另一个（课表的实际表现也确实如此：
+   * foldBlocked 优先于 fav 置顶）。
+   */
+  async toggleCoachFav(e) {
     const name = e.currentTarget.dataset.name;
-    if (!name) return;
-    unfav(name);
-    this.loadFavs();
-    try {
-      await api.apiUnfavCoach(name);
-    } catch (err) {
-      console.error("[dancehub] 取消常看同步失败:", err);
+    const row = (this.data.coaches || []).find((r) => r.name === name);
+    if (!row) return;
+    const next = !row.fav;
+    if (next) {
+      fav(name);
+      if (row.blocked) unblock(name);
+    } else {
+      unfav(name);
     }
-    toast(this, `已把「${name}」移出常看`, "success");
+    this.syncCoachLists();
+    try {
+      if (next) {
+        await api.apiFavCoach(name);
+        if (row.blocked) await api.apiUnblock(name);
+      } else {
+        await api.apiUnfavCoach(name);
+      }
+    } catch (err) {
+      console.error("[dancehub] 常看同步失败:", err);
+    }
+    toast(this, next ? `已把「${name}」设为常看` : `已把「${name}」移出常看`, "success");
+  },
+
+  /** 切「不看」，同样与常看互斥 */
+  async toggleCoachBlock(e) {
+    const name = e.currentTarget.dataset.name;
+    const row = (this.data.coaches || []).find((r) => r.name === name);
+    if (!row) return;
+    const next = !row.blocked;
+    if (next) {
+      block(name);
+      if (row.fav) unfav(name);
+    } else {
+      unblock(name);
+    }
+    this.syncCoachLists();
+    try {
+      if (next) {
+        await api.apiBlock(name);
+        if (row.fav) await api.apiUnfavCoach(name);
+      } else {
+        await api.apiUnblock(name);
+      }
+    } catch (err) {
+      console.error("[dancehub] 屏蔽同步失败:", err);
+    }
+    toast(this, next ? `不再显示「${name}」的课` : `已恢复「${name}」的课`, "success");
   },
 
   async loadAll() {
