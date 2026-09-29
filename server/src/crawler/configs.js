@@ -16,6 +16,7 @@ const AUTO_CONFIG_FILES = [
   "studios.jiahe.json",
   "studios.csdsp.json",
   "studios.feiyuntoo.json",
+  "studios.newdance.json",
 ];
 
 /**
@@ -25,6 +26,8 @@ const AUTO_CONFIG_FILES = [
  * - studios.topcities.json  由 capture/generate_topcities_configs.py 生成（全国 TOP10 城市）
  * - studios.rawgraphy.json  由 capture/generate_rawgraphy_configs.py 生成（韩国 rawgraphy 平台）
  * - studios.aiwugong.json   由 capture/scan_aiwugong_brands.mjs 生成（爱舞功/舞十平台）
+ * - studios.newdance.json   由 capture/generate_newdance_configs.py 生成（菲云全平台补扫，
+ *                            补的是 TOP10 之外的城市：重庆/长沙/苏州/西安/石家庄…）
  * 文件不存在或格式错误时静默跳过，不影响手写配置。
  */
 function loadAutoConfigs() {
