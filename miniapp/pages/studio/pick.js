@@ -22,6 +22,8 @@ Page({
     const g = app.globalData;
     const city = (g.cities || []).find((c) => c.id === g.cityId);
     this.setData({ cityName: city ? city.name : "" });
+    // 勾选态只有一个真源（Set，保留选择顺序，对比时的门店顺序就是用户的勾选顺序）
+    this._picked = new Set();
     await api.ensureReady();
     this.load();
   },
@@ -31,7 +33,7 @@ Page({
     try {
       const list = await api.apiStudios({ cityId: app.globalData.cityId });
       this._all = list || [];
-      this.setData({ studios: this.filter(this._all, this.data.keyword), loading: false });
+      this.setData({ studios: this.rows(this.data.keyword), loading: false });
     } catch (e) {
       this.setData({ loading: false });
       toast(this, e.message);
@@ -44,22 +46,40 @@ Page({
     return list.filter((s) => String(s.name || "").toLowerCase().indexOf(k) >= 0);
   },
 
+  /**
+   * 渲染行 = 过滤后的门店 + 勾选态。
+   *
+   * ⚠ 勾选态必须在这里算好写进数据。早先模板里写的是
+   *   `class="row {{picked.indexOf(item.id) >= 0 ? 'on' : ''}}"` ——
+   *   WXML 表达式对数组方法的支持不完整，indexOf 实际不生效，
+   *   结果勾了不打勾、不变色，用户以为点了没反应（2026-09-29 老板反馈的就是这个）。
+   *   weekly 页的门店 chip 早就是「JS 里算 on」的写法，这里对齐。
+   */
+  rows(kw) {
+    const picked = this._picked || new Set();
+    return this.filter(this._all || [], kw).map((s) => ({ ...s, on: picked.has(s.id) }));
+  },
+
   onSearch(e) {
     const keyword = e.detail.value;
-    this.setData({ keyword, studios: this.filter(this._all || [], keyword) });
+    this.setData({ keyword, studios: this.rows(keyword) });
   },
 
   toggle(e) {
     const id = Number(e.currentTarget.dataset.id);
-    const picked = this.data.picked.slice();
-    const at = picked.indexOf(id);
-    if (at >= 0) picked.splice(at, 1);
-    else picked.push(id);
-    this.setData({ picked });
+    if (this._picked.has(id)) this._picked.delete(id);
+    else this._picked.add(id);
+    const on = this._picked.has(id);
+    // 只改被点的那一行：整表重排会让长列表滚动位置跳动
+    this.setData({
+      picked: [...this._picked],
+      studios: this.data.studios.map((s) => (s.id === id ? { ...s, on } : s)),
+    });
   },
 
   clear() {
-    this.setData({ picked: [] });
+    this._picked.clear();
+    this.setData({ picked: [], studios: this.data.studios.map((s) => ({ ...s, on: false })) });
   },
 
   /** 少于两家没法「对比」——一家直接看它自己的课表即可 */

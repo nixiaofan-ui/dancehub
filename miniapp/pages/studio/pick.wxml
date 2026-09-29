@@ -24,13 +24,13 @@
   <view
     wx:for="{{studios}}"
     wx:key="id"
-    class="row {{picked.indexOf(item.id) >= 0 ? 'on' : ''}}"
+    class="row {{item.on ? 'on' : ''}}"
     hover-class="press"
     data-id="{{item.id}}"
     bindtap="toggle"
   >
     <view class="row-name">{{item.name}}</view>
-    <view class="row-box">{{picked.indexOf(item.id) >= 0 ? '✓' : ''}}</view>
+    <view class="row-box">{{item.on ? '✓' : ''}}</view>
   </view>
 
   <view class="footer">

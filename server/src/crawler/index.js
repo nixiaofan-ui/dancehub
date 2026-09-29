@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 import { prisma } from "../lib/prisma.js";
 import { crawl } from "./engine.js";
 import { importSchedules } from "./importer.js";
+import { dedupeStudios } from "../lib/dedupe-studios.js";
 import {
   crawlerConfigs,
   getCrawlerConfig,
@@ -313,6 +314,50 @@ export async function maybeHotRefresh() {
   }
 }
 
+/** 启用中配置的「目标店名」集合 —— 判断重复门店里哪一条还在被更新，靠它 */
+export function enabledStudioNames() {
+  const names = new Set();
+  for (const c of crawlerConfigs) {
+    if (c.enabled && c.studio && c.studio.name) names.add(c.studio.name);
+  }
+  return names;
+}
+
+/**
+ * 重复门店自愈。
+ *
+ * 什么时候会产生重复：① 同一个目标被两份配置各建一条（D-DAY 舞蹈：一个 box 被
+ * auto 和 topcities 各扫到一次，店名还差一个「市」字）；② 新配置上线的瞬间
+ * 两个容器实例同时补跑，findFirst 都说「没有」→ 各插一条同名记录。
+ * 两种都只在库里留垃圾，不会自己消失，所以每次 tick 前先清一遍。
+ *
+ * 频率：启动时必跑，之后每小时最多一次（合并要读关注/课程，没必要每 5 分钟做）。
+ */
+let lastDedupeAt = 0;
+const DEDUPE_INTERVAL_MS = 3600_000;
+
+export async function maybeDedupeStudios(reason = "tick") {
+  const force = reason === "startup";
+  if (!force && Date.now() - lastDedupeAt < DEDUPE_INTERVAL_MS) return null;
+  lastDedupeAt = Date.now();
+  try {
+    const res = await dedupeStudios({
+      log: (m) => console.log(m),
+      targetNames: enabledStudioNames(),
+    });
+    if (res.groups) {
+      console.log(
+        `[crawler] 重复门店自愈（${reason}）：发现 ${res.groups} 组，` +
+          `隐藏 ${res.hidden} 条、迁移关注 ${res.movedFollows} 条、清理旧课 ${res.deletedSchedules} 节`,
+      );
+    }
+    return res;
+  } catch (e) {
+    console.warn(`[crawler] 重复门店自愈失败: ${e.message}`);
+    return null;
+  }
+}
+
 /**
  * 心跳：到期的配置补跑。
  *
@@ -320,8 +365,11 @@ export async function maybeHotRefresh() {
  * 下次到期判断，也增加被目标平台限流的窗口。这里开 3 个并发（约 3 分钟），
  * 并用 TICK_BUDGET_MS 兜底——超预算就把剩下的留给下一轮，它们仍然到期，
  * 不会漏抓（CrawlState 记的是「上次成功时间」，没抓成功就还是 due）。
- */
-async function tick(reason = "heartbeat") {
+ */async function tick(reason = "heartbeat") {
+  // 先自愈「同一家店被插了两条」再去抓：抓取时若两家同名门店都在库里，
+  // 课程会分叉到两条记录上，用户看到的课表就是两家的并集（多出来的课约不到）
+  await maybeDedupeStudios(reason);
+
   const now = Date.now();
   const queue = crawlerConfigs.filter(
     (c) => c.enabled && !running.has(c.id) && isDue(c, now),

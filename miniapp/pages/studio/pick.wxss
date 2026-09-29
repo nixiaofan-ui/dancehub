@@ -50,8 +50,8 @@
   border: 2rpx solid transparent;
 }
 .row.on {
-  border-color: rgba(0, 245, 212, 0.6);
-  background: rgba(0, 245, 212, 0.1);
+  border-color: #00f5d4;
+  background: rgba(0, 245, 212, 0.14);
 }
 .row-name {
   font-size: 28rpx;
@@ -59,6 +59,9 @@
   color: #ffffff;
   flex: 1;
   padding-right: 16rpx;
+}
+.row.on .row-name {
+  color: #00f5d4;
 }
 .row-box {
   width: 40rpx;
@@ -71,9 +74,13 @@
   color: #00f5d4;
   font-weight: 900;
   font-size: 26rpx;
+  flex: none;
 }
+/* 勾上：实心块 + 深色对勾，远看也能一眼扫出勾了哪几家 */
 .row.on .row-box {
+  background: #00f5d4;
   border-color: #00f5d4;
+  color: #1a1a2e;
 }
 .tip {
   text-align: center;

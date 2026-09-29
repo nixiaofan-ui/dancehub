@@ -4,6 +4,7 @@
  * - schedule 按「studio + date + courseName + startTime」upsert（存在则更新）
  */
 import { prisma } from "../lib/prisma.js";
+import { canonStudioName } from "../lib/dedupe-studios.js";
 import { invalidateTimelineCache } from "../services/schedule.service.js";
 import { mapRawToSchedule } from "./mapper.js";
 
@@ -29,23 +30,13 @@ function resolvePlatform(studioRef) {
 }
 
 export async function findOrCreateStudio(studioRef, extra = {}) {
-  const existing = await prisma.studio.findFirst({ where: { name: studioRef.name } });
+  const existing = await resolveExistingStudio(studioRef);
   // 跳转小程序 appId / 官网地址等新字段：已有店也补写
   // （只在新值非空且不同才更新，减少无谓写入）
   const patch = {};
   if (!existing) {
     const city = await findOrCreateCity(studioRef.region, studioRef.city);
-    return prisma.studio.create({
-      data: {
-        name: studioRef.name,
-        cityId: city.id,
-        address: studioRef.address || null,
-        platform: resolvePlatform(studioRef),
-        status: true,
-        bookingMiniAppId: extra.bookingMiniAppId || null,
-        officialUrl: studioRef.officialUrl || null,
-      },
-    });
+    return createStudioOnce(studioRef, extra, city);
   }
 
   if (extra.bookingMiniAppId && existing.bookingMiniAppId !== extra.bookingMiniAppId) {
@@ -70,6 +61,109 @@ export async function findOrCreateStudio(studioRef, extra = {}) {
     return prisma.studio.update({ where: { id: existing.id }, data: patch });
   }
   return existing;
+}
+
+/**
+ * 找「已经存在的同一家店」。
+ *
+ * 第一优先：店名完全一致（历史行为，绝大多数配置都命中这条）。
+ * 兜底：同城 + **归一化同名**（只留字母数字汉字并去掉「市」）。
+ *
+ * 为什么需要兜底：配置生成器早期有「取的市字多一位」的 bug，同一个 iWOD box
+ * 被两个脚本扫到时生成了「D-DAY 舞蹈（市秦淮）」和「D-DAY 舞蹈（秦淮）」两个名字，
+ * 精确匹配落空 → 又建了一条门店，于是用户在对比页看到两家同名门店，
+ * 课表是两个库的并集（同屏出现上游根本没有的课）。这 105 个「（市XX）」店名
+ * 就是这么来的（2026-09-29 老板在南京 D-DAY 发现）。
+ *
+ * ⚠ 只复用、**不改名**：改名会让历史数据与配置再次对不上（G-STEPS 城市校准
+ * 那次踩过：只改 cityId 不改名 → 下一轮抓取又建一条空壳店）。
+ */
+async function resolveExistingStudio(studioRef) {
+  const name = String(studioRef.name || "").trim();
+  if (!name) return null;
+
+  // ① 同名且可见
+  const exact = await prisma.studio.findFirst({ where: { name, status: true } });
+  if (exact) return exact;
+
+  const city = await findOrCreateCity(studioRef.region, studioRef.city);
+  const siblings = await prisma.studio.findMany({
+    where: { cityId: city.id },
+    select: { id: true, name: true, status: true },
+  });
+  const want = canonStudioName(name);
+  const sameCanon = siblings.filter((s) => canonStudioName(s.name) === want);
+
+  // ② 归一化同名且可见 —— 最常见的就是「（市秦淮）」撞上「（秦淮）」
+  const visible = sameCanon.find((s) => s.status);
+  if (visible) {
+    if (visible.name !== name) {
+      console.warn(
+        `[importer] 「${name}」与库内 #${visible.id}「${visible.name}」视为同一家店，复用而非新建`,
+      );
+    }
+    return visible;
+  }
+
+  // ③ 只剩被隐藏的记录（上一轮 dedupe 合并掉的重复项）→ 复用，别新建第三条。
+  //    这里不再把它改回可见：同城已经没有其他可见的同族门店，说明它自己才是活的，
+  //    dedupe 只会在「有可见的同族门店」时才隐藏东西，所以这里唤醒是安全的；
+  //    反之（有可见同族）已经在上一步返回了，不会出现两条互相唤醒来回翻的状态。
+  const hidden = sameCanon.find((s) => s.name === name) || sameCanon[0];
+  if (hidden) {
+    await prisma.studio
+      .update({ where: { id: hidden.id }, data: { status: true } })
+      .catch(() => {});
+    console.warn(`[importer] 「${name}」复用此前被合并隐藏的 #${hidden.id}，已重新置为可见`);
+    return hidden;
+  }
+  return null;
+}
+
+/**
+ * 建店 —— 并且保证「同一家店只会留下一条」。
+ *
+ * 并发场景：新配置上线的瞬间，新旧两个容器实例都会补跑同一份配置，
+ * 两边 findFirst 都说「没有这家店」→ 各插一条同名记录（2026-09-29 抓到 8 组，
+ * 时间戳精确到同一秒）。这里在 create 之后复查一次同名记录：谁 id 大谁把自己
+ * 撤掉，两边结论一致，结果是幂等的。
+ */
+async function createStudioOnce(studioRef, extra, city) {
+  const created = await prisma.studio.create({
+    data: {
+      name: studioRef.name,
+      cityId: city.id,
+      address: studioRef.address || null,
+      platform: resolvePlatform(studioRef),
+      status: true,
+      bookingMiniAppId: extra.bookingMiniAppId || null,
+      officialUrl: studioRef.officialUrl || null,
+    },
+  });
+
+  const twins = await prisma.studio.findMany({
+    where: { cityId: city.id, name: studioRef.name },
+    select: { id: true },
+  });
+  if (twins.length < 2) return created;
+
+  const keepId = Math.min(...twins.map((t) => t.id));
+  if (keepId === created.id) return created;
+
+  // 只在「这条新记录还没挂任何数据」时撤掉它，避免删掉刚写进去的课
+  const [schedules, coaches, follows] = await Promise.all([
+    prisma.schedule.count({ where: { studioId: created.id } }),
+    prisma.coach.count({ where: { studioId: created.id } }),
+    prisma.follow.count({ where: { studioId: created.id } }),
+  ]);
+  if (schedules || coaches || follows) return created;
+
+  await prisma.studio.delete({ where: { id: created.id } }).catch(() => {});
+  const kept = await prisma.studio.findUnique({ where: { id: keepId } });
+  if (kept) {
+    console.warn(`[importer] 并发建店：撤掉重复的 #${created.id}，复用 #${kept.id}「${kept.name}」`);
+  }
+  return kept || created;
 }
 
 export async function findOrCreateCoach(studioId, name) {

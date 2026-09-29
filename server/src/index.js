@@ -2,7 +2,7 @@ import "dotenv/config";
 import { createApp } from "./app.js";
 import { redis } from "./lib/redis.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
-import { startCrawlScheduler, probeOutbound } from "./crawler/index.js";
+import { startCrawlScheduler, probeOutbound, maybeDedupeStudios } from "./crawler/index.js";
 import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
@@ -45,6 +45,15 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       ensureJiaheStores({ log: (m) => console.log(m) }).catch((err) =>
         console.warn(`[dancehub] 嘉禾门店补齐失败: ${err.message}`)
+      )
+    )
+    // 重复门店自愈（幂等）：同一个抓取目标被两份配置/两个实例各建了一条门店，
+    // 用户会在对比页看到「两家同名门店」，课表是两个库的并集（多出来的课约不到）。
+    // 2026-09-29 南京 D-DAY 舞蹈 就是这么被老板发现的 —— 云端库没法从本机改，
+    // 所以挂在启动流程里自愈，代价只有几条 SQL。
+    .then(() =>
+      maybeDedupeStudios("startup").catch((err) =>
+        console.warn(`[dancehub] 重复门店自愈失败: ${err.message}`)
       )
     );
 
