@@ -28,6 +28,11 @@ const inflight = new Map();
 /** studioId -> { at: number, rows: 原始条目[] } */
 const cache = new Map();
 
+/** 批量刷新节流（ms）：同一家店同一天 2 分钟内只回源一次 */
+const DAY_TTL_MS = 2 * 60 * 1000;
+/** "studioId|YYYY-MM-DD" -> 上次回源时间 */
+const dayRefreshed = new Map();
+
 /** toString("HH:mm")，和 engine 里time 字段格式对齐 */
 const hhmm = (startTime) => {
   if (!startTime) return "";
@@ -106,26 +111,8 @@ export async function getLiveBooking(schedule) {
     const rows = await withTimeout(loadStudioRows(schedule.studio), UPSTREAM_TIMEOUT_MS);
     if (!Array.isArray(rows) || !rows.length) return fallback;
 
-    const start = hhmm(schedule.startTime);
-    const wantName = String(schedule.courseName || "").trim();
     const studioName = String(schedule.studio?.name || "");
-
-    // 先按课名 + 开始时间匹配；同名不同点时课名可能带分店前缀，放宽到只比时间 + 包含关系
-    const hit =
-      rows.find(
-        (r) =>
-          String(r.courseName || "").trim() === wantName &&
-          hhmm(parseTimeRange(r.time).startTime) === start &&
-          rowMatchesStudio(r, studioName),
-      ) ||
-      rows.find(
-        (r) =>
-          hhmm(parseTimeRange(r.time).startTime) === start &&
-          rowMatchesStudio(r, studioName) &&
-          (String(r.courseName || "").includes(wantName) ||
-            wantName.includes(String(r.courseName || "").trim())),
-      );
-
+    const hit = matchRow(rows, schedule, studioName);
     if (!hit) return fallback;
 
     let bookedNum = hit._bookedNum != null ? Number(hit._bookedNum) : null;
@@ -148,6 +135,90 @@ export async function getLiveBooking(schedule) {
   } catch {
     // 回源失败（超时 / 平台抽风 / 该店未接入）：静默降级到旧值
     return fallback;
+  }
+}
+
+/**
+ * 在回源结果里找出「库里这节课」对应的那一条。
+ * 先按课名 + 开始时间精确匹配；同名不同点时课名可能带分店前缀，放宽到只比时间 + 包含关系。
+ */
+function matchRow(rows, schedule, studioName) {
+  const start = hhmm(schedule.startTime);
+  const wantName = String(schedule.courseName || "").trim();
+  return (
+    rows.find(
+      (r) =>
+        String(r.courseName || "").trim() === wantName &&
+        hhmm(parseTimeRange(r.time).startTime) === start &&
+        rowMatchesStudio(r, studioName),
+    ) ||
+    rows.find(
+      (r) =>
+        hhmm(parseTimeRange(r.time).startTime) === start &&
+        rowMatchesStudio(r, studioName) &&
+        (String(r.courseName || "").includes(wantName) ||
+          wantName.includes(String(r.courseName || "").trim())),
+    ) ||
+    null
+  );
+}
+
+/**
+ * 批量刷新「一家店某一天」所有课的预约人数。
+ *
+ * 详情页的 getLiveBooking 一次只解决一节，而周课表/首页一屏就是十几节 ——
+ * 逐节调那个接口会打出几十个请求（每个都触发一次回源），既慢又容易被平台限流。
+ * 这里复用同一份回源结果（loadStudioRows 本身有缓存），一次网络请求刷新整店当天。
+ *
+ * 节流 2 分钟：课表页反复切日期/下拉不该反复打上游。
+ *
+ * @returns {Promise<{ live: boolean, items: {id:number, bookedNum:number}[], throttled?: boolean }>}
+ *   live=false 表示没能回源（未接入该平台/超时/被节流），前端保持库里旧值即可
+ */
+export async function refreshStudioDay(studio, date) {
+  const empty = { live: false, items: [] };
+  if (!studio || !date) return empty;
+
+  const day = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+  const key = `${studio.id}|${day.toISOString().slice(0, 10)}`;
+  const now = Date.now();
+  const last = dayRefreshed.get(key);
+  if (last && now - last < DAY_TTL_MS) return { ...empty, throttled: true };
+
+  try {
+    const rows = await withTimeout(loadStudioRows(studio), UPSTREAM_TIMEOUT_MS);
+    if (!Array.isArray(rows) || !rows.length) return empty;
+
+    const schedules = await prisma.schedule.findMany({
+      where: { studioId: studio.id, scheduleDate: day },
+      select: { id: true, courseName: true, startTime: true, bookedNum: true },
+    });
+    if (!schedules.length) return empty;
+
+    const studioName = String(studio.name || "");
+    const items = [];
+    const writes = [];
+    for (const s of schedules) {
+      const hit = matchRow(rows, s, studioName);
+      if (!hit) continue;
+      const num = hit._bookedNum != null ? Number(hit._bookedNum) : null;
+      if (num == null || Number.isNaN(num)) continue;
+      items.push({ id: s.id, bookedNum: num });
+      if (num !== s.bookedNum) {
+        writes.push(
+          prisma.schedule.update({ where: { id: s.id }, data: { bookedNum: num } }),
+        );
+      }
+    }
+    // 落库：顺手把新鲜值写回，下一次即使回源失败，列表读到的也是几分钟前的真值
+    if (writes.length) await Promise.all(writes).catch(() => {});
+
+    dayRefreshed.set(key, now);
+    return { live: true, items, checkedAt: new Date().toISOString() };
+  } catch {
+    return empty;
   }
 }
 

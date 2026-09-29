@@ -7,6 +7,9 @@ const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 const { foldBlocked } = require("../../utils/blocked");
 
+/** 实时刷人数时最多回源几家店：全选十几家分店逐店拉，等待时间比数字本身更烦人 */
+const MAX_LIVE_STORES = 4;
+
 const WEEK_LABEL = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 const LV_LABEL = {
@@ -58,6 +61,8 @@ Page({
     this.bookedIds = new Set();
     // 门店勾选只初始化一次，翻周不能把用户的勾选重置掉
     this._storesInited = false;
+    // 「门店|日期」→ 本会话已经回源刷过预约人数，避免反复切日期重复打上游
+    this._liveFetched = {};
 
     // 多店入口：/pages/studio/weekly?ids=1,2,3&title=品牌名
     // 单店入口：/pages/studio/weekly?id=1 —— 保持原逻辑不变
@@ -349,6 +354,77 @@ Page({
       bookedCount: dayItems.filter((i) => i.booked).length,
       weekBookedCount: weekDays.reduce((n, d) => n + d.bookedCount, 0),
     });
+
+    // 渲染完再异步换真数：先出课表（可能带着几小时前的快照人数），刷新回来就地替换
+    this.refreshLiveNumbers(selectedKey);
+  },
+
+  /**
+   * 预约人数实时刷新。
+   *
+   * 库里的人数来自定时抓取，是一份「快照」—— 云端 6 小时一轮，所以热门课开抢后
+   * 数字会明显滞后：用户在舞室官方小程序里看到 10 人，我们这儿还写着 11 人，
+   * 会以为这个数字是编的（2026-09-29 老板就是这么发现的）。
+   *
+   * 服务端按「门店 + 日期」回源，一次请求刷完整店当天，这里逐店调、就地回填。
+   * 失败就保持库里的旧值，不弹任何提示 —— 数字旧一点，总好过报错打断看课表。
+   */
+  refreshLiveNumbers(key) {
+    if (!key || !this.weekMonday || !this.weeksCache) return;
+    const grouped = this.weeksCache[dateKey(this.weekMonday)] || {};
+    const items = grouped[key] || [];
+    if (!items.length) return;
+
+    let targets;
+    if (this.multiMode) {
+      // 一屏可能勾了十几家（全选），只刷课最多的几家，其余等切到别的日期再说
+      const byStore = new Map();
+      items.forEach((i) => {
+        if (i.studioId) byStore.set(i.studioId, (byStore.get(i.studioId) || 0) + 1);
+      });
+      targets = [...byStore.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, MAX_LIVE_STORES)
+        .map((e) => e[0]);
+    } else {
+      targets = [this.studioId || (items[0] && items[0].studioId)].filter(Boolean);
+    }
+    if (!targets.length) return;
+
+    targets.forEach((sid) => {
+      const ck = sid + "|" + key;
+      if (this._liveFetched[ck]) return;
+      this._liveFetched[ck] = true;
+      api
+        .apiStudioDayLive(sid, key)
+        .then((res) => {
+          if (!res || !res.live || !res.items || !res.items.length) return;
+          this.applyLiveNumbers(key, res.items);
+        })
+        .catch(() => {
+          // 未登录 / 平台没接入 / 超时：保持旧值，下次进页面再试
+          this._liveFetched[ck] = false;
+        });
+    });
+  },
+
+  /** 把回源回来的真实已约人数写回缓存，必要时重渲染当前那一天 */
+  applyLiveNumbers(key, items) {
+    const grouped = this.weeksCache[dateKey(this.weekMonday)];
+    if (!grouped || !grouped[key]) return;
+    const fresh = {};
+    items.forEach((it) => {
+      fresh[it.id] = it.bookedNum;
+    });
+    let changed = false;
+    grouped[key].forEach((i) => {
+      const v = fresh[i.id];
+      if (v != null && v !== i.bookedNum) {
+        i.bookedNum = v;
+        changed = true;
+      }
+    });
+    if (changed && (this.data.selectedKey || todayKey()) === key) this.applyWeekData();
   },
 
   /** 某一天的课按「是否被屏蔽」分成两组 */

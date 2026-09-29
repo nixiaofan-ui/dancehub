@@ -4,7 +4,7 @@ import { requireAdmin } from "../middleware/admin.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
-import { getLiveBooking } from "../lib/live-booking.js";
+import { getLiveBooking, refreshStudioDay } from "../lib/live-booking.js";
 import {
   listSchedules,
   createSchedule,
@@ -118,6 +118,33 @@ router.get(
       bookedNum: schedule.bookedNum,
       liveCheckedAt: schedule.updatedAt,
     });
+  }),
+);
+
+/**
+ * 批量实时刷新「一家店某一天」全部课的预约人数。
+ *
+ * 定时抓取出来的数字是快照（云端 6 小时一轮），热门课开抢后 11 人可能已经是
+ * 几小时前的旧数。详情页走 /:id/live-booking 逐个回源没问题，
+ * 但周课表/首页一屏十几节，必须一次刷完 —— 所以有这条按店按天的接口。
+ * 回源失败/未接入该平台时返回 live=false，前端保持库里旧值，不报错。
+ */
+router.get(
+  "/live-booking",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const studioId = Number(req.query.studioId);
+    const date = String(req.query.date || "").slice(0, 10);
+    if (!studioId || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return fail(res, 400, "缺少 studioId 或 date");
+    }
+    const studio = await prisma.studio.findUnique({
+      where: { id: studioId },
+      include: { city: true },
+    });
+    if (!studio) return fail(res, 404, "门店不存在");
+    const live = await refreshStudioDay(studio, new Date(`${date}T00:00:00Z`));
+    ok(res, live);
   }),
 );
 

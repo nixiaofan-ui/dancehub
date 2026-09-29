@@ -103,10 +103,104 @@ export async function upsertSchedule(entry) {
 }
 
 /**
+ * 幂等键：与 upsertSchedule 的匹配口径保持一致（门店 + 日期 + 课名 + 开始时分）。
+ * 用「课程指纹」而不是自增 id 来记「本轮抓到过什么」，
+ * 这样即使 upsert 中途跳过了某条，也不会把库里那节课误判成已消失。
+ */
+function fingerprint(studioId, scheduleDate, courseName, startTime) {
+  const day = scheduleDate.toISOString().slice(0, 10);
+  const hh = String(startTime.getUTCHours()).padStart(2, "0");
+  const mm = String(startTime.getUTCMinutes()).padStart(2, "0");
+  return `${studioId}|${day}|${courseName}|${hh}:${mm}`;
+}
+
+/**
+ * 清理「上游已经没有了、但库里还留着」的课。
+ *
+ * 为什么必须清：抓取一直只做 upsert，从不删除。舞室改课表（换老师、改课名、
+ * 直接把课挪走）之后，旧记录会永远留在库里。2026-09-29 实测 MAX POWER 陆家嘴店
+ * 9/29 12:00 这个时段：上游只有 1 节课，我们库里挤了 6 节 —— 用户点进去看课表，
+ * 多出来那 5 节在官方的约课系统里根本约不到，比没接还糟。
+ *
+ * 判定范围严格收窄，只动「本轮确实抓到过课的 门店+日期」：
+ *   - 本轮该门店该日期一节课都没抓到 → 整组跳过（接口抽风返回空时不会清库）
+ *   - 用户手录的课（ownerId 非空）→ 永远不碰
+ *   - 有预约 / 有提醒的课 → 保留（删了会连带删掉用户自己的记录）
+ *   - 骤减保护：库里有 8 节以上而本轮只抓到不足三成 → 疑似平台改版/分页没翻完，
+ *     跳过并告警，宁可留脏数据也不做批量误删
+ *
+ * @returns {Promise<{ pruned: number, groups: number, skippedGroups: string[] }>}
+ */
+async function pruneVanished(seen) {
+  // 应急开关：CRAWL_PRUNE=0 可整体关掉清理（默认开）。
+  // 万一某个平台的接口悄悄改了分页/字段，导致抓到的课骤减，不用回滚代码就能先止血。
+  if (String(process.env.CRAWL_PRUNE ?? "1") === "0") {
+    return { pruned: 0, groups: 0, skippedGroups: ["已通过 CRAWL_PRUNE=0 关闭"] };
+  }
+
+  // 门店 → 本轮抓到过课的日期集合
+  const byStudio = new Map();
+  for (const key of seen.keys()) {
+    const [sid, day] = key.split("|");
+    if (!byStudio.has(sid)) byStudio.set(sid, new Set());
+    byStudio.get(sid).add(day);
+  }
+
+  let pruned = 0;
+  let groups = 0;
+  const skippedGroups = [];
+
+  for (const [sid, days] of byStudio) {
+    const studioId = Number(sid);
+    const dates = [...days].map((d) => new Date(`${d}T00:00:00Z`));
+    const existing = await prisma.schedule.findMany({
+      where: { studioId, ownerId: null, scheduleDate: { in: dates } },
+      select: { id: true, courseName: true, scheduleDate: true, startTime: true },
+    });
+    if (!existing.length) continue;
+
+    // 逐天判断，避免某天数据异常连累同店其他日期
+    for (const day of days) {
+      const date = new Date(`${day}T00:00:00Z`);
+      const sameDay = existing.filter(
+        (e) => e.scheduleDate.toISOString().slice(0, 10) === day,
+      );
+      const kept = sameDay.filter((e) =>
+        seen.has(fingerprint(studioId, date, e.courseName, e.startTime)),
+      );
+      const stale = sameDay.filter((e) => !kept.includes(e));
+      if (!stale.length) continue;
+      if (sameDay.length >= 8 && kept.length < sameDay.length * 0.3) {
+        skippedGroups.push(`${studioId}@${day} 库里${sameDay.length}节仅存活${kept.length}节`);
+        continue;
+      }
+
+      const res = await prisma.schedule.deleteMany({
+        where: {
+          id: { in: stale.map((e) => e.id) },
+          ownerId: null,
+          bookings: { none: {} },
+          reminders: { none: {} },
+        },
+      });
+      pruned += res.count;
+      groups += 1;
+    }
+  }
+
+  if (skippedGroups.length) {
+    console.warn(
+      `[importer] 骤减保护触发，跳过 ${skippedGroups.length} 组清理：${skippedGroups.slice(0, 5).join("；")}`,
+    );
+  }
+  return { pruned, groups, skippedGroups };
+}
+
+/**
  * 批量导入
  * @param config 抓取配置（含 studio 引用）
  * @param rows 原始条目，每条需带 _date（Date 类型）；可带 _studioName 覆盖默认 studio
- * @returns {{ studios, created, updated, skipped, total }} 汇总（多门店时按门店细分）
+ * @returns {{ studios, created, updated, skipped, total, pruned }} 汇总（多门店时按门店细分）
  */
 export async function importSchedules(config, rows, ensureStudios = []) {
   /**
@@ -143,6 +237,8 @@ export async function importSchedules(config, rows, ensureStudios = []) {
   const created = {};
   const updated = {};
   let skipped = 0;
+  /** 本轮抓到过的课程指纹，供 pruneVanished 判断哪些课已经在上游消失 */
+  const seen = new Set();
 
   for (const [studioName, groupRows] of groups) {
     // iWOD / 爱舞功系店铺的约课小程序 appId → Studio.bookingMiniAppId（预约跳转用）
@@ -177,11 +273,15 @@ export async function importSchedules(config, rows, ensureStudios = []) {
         skipped += 1;
         continue;
       }
+      seen.add(fingerprint(studio.id, entry.scheduleDate, entry.courseName, entry.startTime));
       const res = await upsertSchedule(entry);
       if (res.action === "created") created[studioName] = (created[studioName] || 0) + 1;
       else updated[studioName] = (updated[studioName] || 0) + 1;
     }
   }
+
+  // 先按「本轮看到的课」清理幽灵课，再失效时间轴缓存（顺序反了会把旧数据缓存进去）
+  const prune = await pruneVanished(seen);
 
   await invalidateTimelineCache();
   return {
@@ -189,6 +289,7 @@ export async function importSchedules(config, rows, ensureStudios = []) {
     created,
     updated,
     skipped,
+    pruned: prune.pruned,
     total: rows.length,
   };
 }

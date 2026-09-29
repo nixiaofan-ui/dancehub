@@ -68,6 +68,9 @@ const apiScheduleDetail = (id) => req.get(`/schedules/${id}`);
 const apiScheduleVideoPreview = (id) => req.get(`/schedules/${id}/video-preview`);
 // 实时回源舞室官方系统取当前真实已约人数（失败会静默降级到库里的旧值）
 const apiLiveBooking = (id) => req.get(`/schedules/${id}/live-booking`);
+// 周课表/首页用：一次刷完整店当天的预约人数（上面那个一次只解决一节，列表里逐节调太多）
+const apiStudioDayLive = (studioId, date) =>
+  req.get("/schedules/live-booking", { studioId, date });
 
 const apiFollows = () => req.get("/follows");
 const apiFollow = (studioId) => {
@@ -160,6 +163,7 @@ module.exports = {
   apiScheduleDetail,
   apiScheduleVideoPreview,
   apiLiveBooking,
+  apiStudioDayLive,
   apiFollows,
   apiFollow,
   apiUnfollow,
