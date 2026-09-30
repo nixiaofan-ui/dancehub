@@ -13,6 +13,175 @@
   padding: 24rpx;
   margin-bottom: 20rpx;
 }
+
+/* ── 放课提醒（门店粒度） ──
+   橙色系：和「开课提醒」的青色分开，这是两件事，别让用户看混 */
+.watch-row {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 107, 53, 0.08);
+  border: 2rpx solid rgba(255, 107, 53, 0.35);
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+.watch-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #ff6b35;
+  margin-right: 18rpx;
+  flex-shrink: 0;
+}
+.watch-txt {
+  flex: 1;
+  min-width: 0;
+}
+.watch-title {
+  font-size: 27rpx;
+  font-weight: 900;
+  color: #ff8a5c;
+  line-height: 1.35;
+}
+.watch-sub {
+  font-size: 21rpx;
+  color: #6b7391;
+  line-height: 1.4;
+  margin-top: 4rpx;
+}
+.watch-arrow {
+  font-size: 34rpx;
+  color: #ff8a5c;
+  margin-left: 12rpx;
+}
+
+/* 放课提醒弹层（复用详情页弹层那套观感，但类名隔开，两个页面各自维护） */
+.wk-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.62);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+.wk-sheet {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1f2033;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 36rpx 32rpx calc(36rpx + env(safe-area-inset-bottom));
+}
+.wk-title {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.wk-sub {
+  font-size: 24rpx;
+  color: #7f88a3;
+  margin-top: 8rpx;
+}
+.wk-row {
+  display: flex;
+  margin-top: 24rpx;
+}
+/* ⚠ picker 里是原生控件，必须给明确高度：只写 padding 在真机上会被压成一条线 */
+.wk-pick {
+  height: 96rpx;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2rpx solid #2b3050;
+  border-radius: 18rpx;
+  padding: 0 24rpx;
+  margin-right: 20rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.wk-pick-label {
+  font-size: 21rpx;
+  color: #6b7391;
+  line-height: 1.2;
+}
+.wk-pick-val {
+  font-size: 30rpx;
+  color: #ffffff;
+  font-weight: 900;
+  line-height: 1.3;
+  margin-top: 4rpx;
+}
+.wk-tip {
+  font-size: 22rpx;
+  color: #6b7391;
+  line-height: 1.6;
+  margin-top: 20rpx;
+}
+.wk-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22rpx;
+  padding: 20rpx 24rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 18rpx;
+}
+.wk-switch-txt {
+  flex: 1;
+  margin-right: 20rpx;
+}
+.wk-switch-title {
+  font-size: 27rpx;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.wk-switch-sub {
+  font-size: 21rpx;
+  color: #6b7391;
+  line-height: 1.4;
+  margin-top: 6rpx;
+}
+/* ⚠ iOS 日历权限必须选「完全访问」，只选「仅添加事件」不写入也不报错 → 提前写出来 */
+.wk-cal-hint {
+  font-size: 21rpx;
+  color: #ff9e6b;
+  line-height: 1.55;
+  margin-top: 14rpx;
+}
+.wk-actions {
+  display: flex;
+  margin-top: 28rpx;
+}
+.wk-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  font-weight: 900;
+  margin-right: 16rpx;
+}
+.wk-btn:last-child {
+  margin-right: 0;
+}
+.wk-btn.ghost {
+  background: transparent;
+  color: #a8adc2;
+  border: 2rpx solid #2b3050;
+}
+.wk-btn.del {
+  background: transparent;
+  color: #ff6b6b;
+  border: 2rpx solid rgba(255, 107, 107, 0.45);
+}
+.wk-btn.main {
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
+}
 .head-info {
   flex: 1;
   min-width: 0;

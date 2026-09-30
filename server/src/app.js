@@ -9,6 +9,7 @@ import scheduleRoutes from "./routes/schedule.routes.js";
 import followRoutes from "./routes/follow.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 import reminderRoutes from "./routes/reminder.routes.js";
+import studioWatchRoutes from "./routes/studio-watch.routes.js";
 import timelineRoutes from "./routes/timeline.routes.js";
 import blockedRoutes from "./routes/blocked.routes.js";
 import coachFollowRoutes from "./routes/coach-follow.routes.js";
@@ -34,6 +35,7 @@ export function createApp() {
   app.use("/api/follows", followRoutes);
   app.use("/api/bookings", bookingRoutes);
   app.use("/api/reminders", reminderRoutes);
+  app.use("/api/studio-watches", studioWatchRoutes);
   app.use("/api/timeline", timelineRoutes);
   app.use("/api/blocked", blockedRoutes);
   app.use("/api/coach-follows", coachFollowRoutes);

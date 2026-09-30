@@ -42,6 +42,61 @@
   </view>
 
   <!--
+    放课提醒：课表提前一周就放出来了，但真正能约是临近那几天的某个点。
+    这家店几点开抢只有老学员知道 —— 与其我们瞎猜，不如让用户定「星期几 + 时刻」。
+    ⚠ 真正每周都响的是手机日历的重复事件：微信订阅消息一次性消耗，
+      一周一次的推送第二周就会静默失效，那种"偶尔能收到"比收不到更糟。
+  -->
+  <view wx:if="{{!multiMode}}" class="watch-row" hover-class="press" bindtap="openWatch">
+    <view class="watch-dot"></view>
+    <view class="watch-txt">
+      <view class="watch-title">
+        {{watch ? '每周' + watch.weekdayLabel + ' ' + watch.hhmm + ' 提醒我去约课' : '设放课提醒'}}
+      </view>
+      <view class="watch-sub">
+        {{watch ? '手机日历每周重复响一次' : '这家店每周几点放课？到点提醒你'}}
+      </view>
+    </view>
+    <view class="watch-arrow">›</view>
+  </view>
+
+  <!-- 放课提醒设置：星期 + 时刻 -->
+  <view wx:if="{{watchOpen}}" class="wk-mask" bindtap="closeWatch">
+    <view class="wk-sheet" catchtap="noop">
+      <view class="wk-title">放课提醒</view>
+      <view class="wk-sub">{{studio ? studio.name : ''}}</view>
+      <view class="wk-row">
+        <picker mode="selector" range="{{weekdayRange}}" value="{{watchWeekday}}" bindchange="onWatchWeekday">
+          <view class="wk-pick">
+            <view class="wk-pick-label">星期</view>
+            <view class="wk-pick-val">{{watchWeekdayLabel}}</view>
+          </view>
+        </picker>
+        <picker mode="time" value="{{watchTime}}" bindchange="onWatchTime">
+          <view class="wk-pick">
+            <view class="wk-pick-label">时刻</view>
+            <view class="wk-pick-val">{{watchTime}}</view>
+          </view>
+        </picker>
+      </view>
+      <view class="wk-tip">微信推送是一次性的，所以这条走手机日历：设好之后每周重复响，不用续。</view>
+      <view class="wk-switch">
+        <view class="wk-switch-txt">
+          <view class="wk-switch-title">写进手机日历</view>
+          <view class="wk-switch-sub">不消耗推送额度，没网也会响</view>
+        </view>
+        <switch checked="{{watchSyncCal}}" bindchange="onWatchSyncCal" color="#00F5D4" />
+      </view>
+      <view wx:if="{{watchSyncCal}}" class="wk-cal-hint">{{calHint}}</view>
+      <view class="wk-actions">
+        <button class="wk-btn ghost" hover-class="press" bindtap="closeWatch">取消</button>
+        <button wx:if="{{watch}}" class="wk-btn del" hover-class="press" bindtap="removeWatch" disabled="{{watchBusy}}">关掉</button>
+        <button class="wk-btn main" hover-class="press" bindtap="saveWatch" disabled="{{watchBusy}}">{{watch ? '改时间' : '设好'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <!--
     舞种筛选：一家店一周几十节课，常常只想看某一类（「这家店的 Kpop 都在哪天」）。
     在门店条之后，两级串起来用：先选哪家分店，再选看什么舞种。
     统计的是整周的课，所以左右翻日期时筛选条不会变。

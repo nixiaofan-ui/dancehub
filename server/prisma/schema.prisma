@@ -76,6 +76,34 @@ model User {
   blocks     CoachBlock[]
   favCoaches CoachFollow[]
   schedules  Schedule[]
+  studioWatches StudioWatch[]
+}
+
+/// 门店放课节奏提醒：「这家店每周三中午放课，到点提醒我」。
+///
+/// 为什么不复用 Reminder：Reminder 的外键和唯一键都挂在某一节 Schedule 上，
+/// 而用户想蹲的是**还没放出来的**下周六的课 —— 那时候压根没有 scheduleId 可挂。
+/// 挂在门店上才是对的粒度：用户脑子里记的也是「这家店周几几点放课」这个节奏。
+///
+/// ⚠ 这条提醒只有手机日历在真正工作（每周重复事件，不消耗订阅额度）。
+///   服务端存一行只为「显示已设 / 能取消」—— 微信订阅消息是一次性的，
+///   一周一次的推送第二周就会静默失效，那种"偶尔能收到"比收不到更糟。
+model StudioWatch {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studioId  Int
+  studio    Studio   @relation(fields: [studioId], references: [id], onDelete: Cascade)
+  /// 0=周日 … 6=周六
+  weekday   Int
+  /// "12:00"，北京墙钟（与 Schedule.startTime 同一口径，前端直接显示）
+  hhmm      String   @db.VarChar(5)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// 一家店只有一条节奏提醒：再设一条是"改"，不是"加"
+  @@unique([userId, studioId])
+  @@index([userId])
 }
 
 /// 用户屏蔽的老师（产品文案叫「不想看」）。
@@ -140,6 +168,7 @@ model Studio {
   coaches          Coach[]
   schedules        Schedule[]
   follows          Follow[]
+  studioWatches    StudioWatch[]
 
   @@index([cityId])
 }

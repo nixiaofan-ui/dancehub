@@ -148,6 +148,31 @@ async function indexExists(table, index) {
   return Number(rows?.[0]?.c || 0) > 0;
 }
 
+/**
+ * StudioWatch（门店放课节奏提醒）
+ * 对应 schema.prisma 的 model StudioWatch
+ *
+ * 新表，存量库里没有 —— 用 CREATE TABLE IF NOT EXISTS，跑一万次也只有第一次生效。
+ */
+const STUDIO_WATCH_SQL = `
+CREATE TABLE IF NOT EXISTS \`StudioWatch\` (
+  \`id\` INT NOT NULL AUTO_INCREMENT,
+  \`userId\` INT NOT NULL,
+  \`studioId\` INT NOT NULL,
+  \`weekday\` INT NOT NULL,
+  \`hhmm\` VARCHAR(5) NOT NULL,
+  \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (\`id\`),
+  UNIQUE INDEX \`StudioWatch_userId_studioId_key\` (\`userId\`, \`studioId\`),
+  INDEX \`StudioWatch_userId_idx\` (\`userId\`),
+  CONSTRAINT \`StudioWatch_userId_fkey\`
+    FOREIGN KEY (\`userId\`) REFERENCES \`User\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT \`StudioWatch_studioId_fkey\`
+    FOREIGN KEY (\`studioId\`) REFERENCES \`Studio\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+`;
+
 /** Reminder.kind（抢课闹钟与开课提醒共存的前提） */
 const REMINDER_KIND_SQL = `
 ALTER TABLE \`Reminder\` ADD COLUMN \`kind\` VARCHAR(191) NOT NULL DEFAULT 'CLASS';
@@ -170,6 +195,7 @@ export async function ensureSchema() {
   await run("CoachBlock", COACH_BLOCK_SQL);
   await run("CoachFollow", COACH_FOLLOW_SQL);
   await run("StudioReport", STUDIO_REPORT_SQL);
+  await run("StudioWatch", STUDIO_WATCH_SQL);
   // 存量库已经有 Schedule 表，只缺这一列
   if (!(await columnExists("Schedule", "ownerId"))) {
     await run("Schedule.ownerId", SCHEDULE_OWNER_SQL);

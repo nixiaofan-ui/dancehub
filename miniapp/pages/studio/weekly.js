@@ -14,6 +14,7 @@ const {
   toggleAllActive,
   isAllOn,
 } = require("../../utils/style-filter");
+const cal = require("../../utils/calendar");
 
 /** 实时刷人数时最多回源几家店：全选十几家分店逐店拉，等待时间比数字本身更烦人 */
 const MAX_LIVE_STORES = 4;
@@ -67,6 +68,19 @@ Page({
     styleFilteredOut: false,
     // 被屏蔽的老师：课不直接消失，折叠成一行（点了展开才把课放回列表）
     foldedRows: [],
+    // 放课提醒（门店粒度）：课表提前一周就放出来了，但真正能约是临近那几天的某个点，
+    // 几点开抢只有老学员知道，所以让用户自己定「星期几 + 时刻」。
+    // ⚠ 真正每周都响的是**手机日历的重复事件**；服务端这行数据只为「显示已设 / 能取消」
+    //   —— 微信订阅消息一次性消耗，一周一的推送第二周就会静默失效。
+    watch: null, // {weekday, hhmm, weekdayLabel}
+    watchOpen: false,
+    watchWeekday: 3, // picker 的下标（0=周日），默认周三——多数舞室周中放下一周的课
+    watchWeekdayLabel: WEEK_CN[3],
+    watchTime: "12:00",
+    watchSyncCal: true,
+    watchBusy: false,
+    weekdayRange: WEEK_CN,
+    calHint: cal.CAL_HINT,
   },
 
   onLoad(query) {
@@ -610,9 +624,11 @@ Page({
   async loadStudio() {
     await api.ensureReady();
     try {
-      const [detail, follows] = await Promise.all([
+      const [detail, follows, watch] = await Promise.all([
         api.apiStudioDetail(this.studioId),
         api.apiFollows(),
+        // 失败不能连门店信息一起吞掉：提醒只是附加信息，所以单独 catch
+        api.apiStudioWatch(this.studioId).catch(() => null),
       ]);
       this.setData({
         studio: {
@@ -621,8 +637,94 @@ Page({
           platformLabel: PLATFORM_LABEL[detail.platform] || detail.platform,
         },
         followed: follows.some((f) => f.studio.id === this.studioId),
+        watch: watch
+          ? { weekday: watch.weekday, hhmm: watch.hhmm, weekdayLabel: watch.weekdayLabel }
+          : null,
       });
     } catch (e) {
+      toast(this, e.message);
+    }
+  },
+
+  /* ── 放课提醒（门店粒度） ──
+   * 与课程详情页的「约课提醒」是两个粒度，别混：
+   *   详情页 = 对着**某一节课**设「X 月 X 日 12:00 提醒我去抢」（一次性）
+   *   这里是 = 对着**这家店**设「每周三 12:00 提醒我」（每周重复）
+   * 用户脑子里记的通常是后者 —— 是这家店的放课节奏，而不是某一节课。
+   */
+  openWatch() {
+    const w = this.data.watch;
+    this.setData({
+      watchOpen: true,
+      // 设过就回填，别让人从头再选一遍
+      watchWeekday: w ? w.weekday : this.data.watchWeekday,
+      watchWeekdayLabel: w ? w.weekdayLabel : WEEK_CN[this.data.watchWeekday],
+      watchTime: w ? w.hhmm : "12:00",
+    });
+  },
+
+  closeWatch() {
+    this.setData({ watchOpen: false });
+  },
+  onWatchWeekday(e) {
+    const i = Number(e.detail.value);
+    this.setData({ watchWeekday: i, watchWeekdayLabel: WEEK_CN[i] || "" });
+  },
+  onWatchTime(e) {
+    this.setData({ watchTime: e.detail.value });
+  },
+  onWatchSyncCal(e) {
+    this.setData({ watchSyncCal: Boolean(e.detail.value) });
+  },
+  noop() {},
+
+  async saveWatch() {
+    if (this.data.watchBusy) return;
+    const { watchWeekday, watchTime } = this.data;
+    this.setData({ watchBusy: true });
+    try {
+      await api.apiAddStudioWatch(this.studioId, watchWeekday, watchTime);
+
+      // 真正每周响的那条在手机日历里。⚠ 日历失败绝不能连提醒一起废掉 ——
+      // 服务端那行只是"记着"，日历才是唯一每周都会响的通道，所以单独 try、单独报告。
+      let calNote = "";
+      if (this.data.watchSyncCal) {
+        try {
+          const r = await cal.addWeeklyWatchToCalendar({
+            weekday: watchWeekday,
+            hhmm: watchTime,
+            title: "去约课：" + ((this.data.studio && this.data.studio.name) || "舞室"),
+            desc: "DanceHub 提醒你：这家店该放课了",
+          });
+          calNote = r && r.added ? "，手机日历每周重复响" : "（日历没加成，只剩小程序里记着）";
+        } catch (err) {
+          calNote = "（日历没加成，只剩小程序里记着）";
+        }
+      }
+
+      this.setData({
+        watchBusy: false,
+        watchOpen: false,
+        watch: { weekday: watchWeekday, hhmm: watchTime, weekdayLabel: WEEK_CN[watchWeekday] },
+      });
+      toast(this, "已设每周" + WEEK_CN[watchWeekday] + " " + watchTime + " 提醒" + calNote, "success");
+    } catch (e) {
+      this.setData({ watchBusy: false });
+      toast(this, e.message);
+    }
+  },
+
+  async removeWatch() {
+    if (this.data.watchBusy) return;
+    this.setData({ watchBusy: true });
+    try {
+      await api.apiRemoveStudioWatch(this.studioId);
+      this.setData({ watchBusy: false, watchOpen: false, watch: null });
+      // ⚠ 微信**没有**删日历的接口：写进用户手机日历的那条重复事件我们删不掉。
+      //   必须说清楚，否则用户下周被响一次，会以为是我们没关干净。
+      toast(this, "已关掉。手机日历里那条要你自己删", "success");
+    } catch (e) {
+      this.setData({ watchBusy: false });
       toast(this, e.message);
     }
   },

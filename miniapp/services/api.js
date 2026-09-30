@@ -122,6 +122,24 @@ const apiRemoveReminder = (scheduleId, kind) => {
   return req.delete("/reminders/" + scheduleId + (kind ? "?kind=" + kind : ""));
 };
 /**
+ * 门店放课节奏提醒：「这家店每周三 12:00 放课，到点提醒我」。
+ * 粒度是门店，不是课 —— 用户想蹲的那节课那时候还没放出来，没有 scheduleId 可挂。
+ * weekday 0=周日 … 6=周六；hhmm 是北京墙钟 "12:00"。
+ *
+ * ⚠ 真正每周都响的是**手机日历的重复事件**（不消耗订阅额度）。
+ *   服务端这行数据只负责「显示已设 / 能取消」：微信订阅消息是一次性的，
+ *   一周一次的推送第二周就会静默失效，那种"偶尔能收到"比收不到更糟。
+ */
+const apiStudioWatch = (studioId) => req.get("/studio-watches", { studioId });
+const apiAddStudioWatch = (studioId, weekday, hhmm) => {
+  markDirty();
+  return req.post("/studio-watches", { studioId, weekday, hhmm });
+};
+const apiRemoveStudioWatch = (studioId) => {
+  markDirty();
+  return req.delete("/studio-watches/" + studioId);
+};
+/**
  * 订阅消息配置：拿课程提醒模板 ID，以及「服务端到底配没配」。
  * 没配时小程序端不该弹订阅授权 —— 用户授了也发不出去，等于骗授权。
  *
@@ -208,6 +226,9 @@ module.exports = {
   apiReminders,
   apiAddReminder,
   apiRemoveReminder,
+  apiStudioWatch,
+  apiAddStudioWatch,
+  apiRemoveStudioWatch,
   apiSubscribeConfig,
   apiCoachTimeline,
   apiCoachSearch,
