@@ -751,6 +751,11 @@
   border-radius: 6rpx;
   padding: 3rpx 10rpx;
 }
+/* 全国兜底结果上的城市标签：跨城信息必须显眼，否则用户会以为就在本城 */
+.coach-flag.city {
+  color: #8fd3ff;
+  background: rgba(80, 160, 255, 0.16);
+}
 .coach-sub {
   font-size: 21rpx;
   color: #8f97b4;

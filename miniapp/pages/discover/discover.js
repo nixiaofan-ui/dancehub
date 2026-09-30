@@ -260,9 +260,15 @@ Page(
       }
       // 教练搜索同批发出去：用户搜的是「一个名字」，门店和老师两个维度一起回，
       // 比先看到一堆店、再想起来还能搜老师顺畅。
-      // ⚠ 只搜当前城市：老师重名比店名普遍得多，放开全国重名会淹没真目标。
-      const coachPromise =
-        kw && scopeId ? api.apiCoachSearch(kw, scopeId).catch(() => null) : Promise.resolve(null);
+      // ⚠ 只要有关键词就发，不能要求「先选了城市」：发现页搜索默认就是全国搜
+      // （scopeId 为空），写成 kw && scopeId 的话，教练请求一次都不会发出去，
+      // 搜索框写着「搜索舞室 / 教练名称」却永远只回门店 —— 就是这个 bug。
+      // 城市口径：用户收窄过就用收窄的城市，否则用当前城市；服务端在本城
+      // 0 命中时会自动放宽到全国（回 nationwide=true），不用前端操心。
+      const coachCity = scopeId || this.data.cityId || 0;
+      const coachPromise = kw
+        ? api.apiCoachSearch(kw, coachCity).catch(() => null)
+        : Promise.resolve(null);
 
       // 品牌接口失败不该挡住发现页 → 兜底空数组，最差退化成纯门店列表
       const [res, follows, coachRes] = await Promise.all([
@@ -316,7 +322,7 @@ Page(
       this._studios = studios;
       this._brandList = brandList;
       const view = this.buildRows(this.applyDistrictFilter(studios));
-      const coaches = this.buildCoachGroups(coachRes, scopeId);
+      const coaches = this.buildCoachGroups(coachRes, coachCity);
       this.setData(
         {
           brands: brandList,
@@ -349,15 +355,22 @@ Page(
    * WXML 里不能拼字符串、也不能调方法，展示文案一律在这里算好。
    */
   buildCoachGroups(res, cityId) {
+    // 全国兜底：同城没搜到，服务端放宽到全国回来的结果 → 卡片必须标城市，
+    // 否则「雪霏 · MAX POWER」看着像就在本城，点进去才发现要跨城。
+    const nationwide = !!(res && res.nationwide);
     const groups = (res && res.groups ? res.groups : []).map((g) => ({
       name: g.name,
       avatarUrl: g.avatarUrl || "",
       initial: (g.name || "?").charAt(0),
       sub: coachSub(g),
       multiStudio: g.studioCount > 1,
+      // 跨城结果才显示；同城结果写城市是噪音
+      cityLabel: nationwide ? (g.cityNames || []).slice(0, 2).join(" / ") : "",
+      // 跳老师主页要用**这位老师所在**的城市（全国模式下各组可能不同城）
+      cityId: g.cityId || cityId || 0,
       studios: (g.studios || []).slice(0, MAX_COACH_STUDIOS).map((s) => ({
         studioId: s.studioId,
-        short: s.short,
+        short: nationwide && s.cityName ? `${s.cityName} · ${s.short}` : s.short,
         note: studioNote(s),
       })),
       extraStudios: Math.max(0, (g.studios || []).length - MAX_COACH_STUDIOS),
@@ -376,7 +389,7 @@ Page(
             .map((c) => `${c.name} ${c.count}`)
             .join(" · ")
         : "",
-      cityName: city ? city.name : "",
+      cityName: nationwide ? "全国" : city ? city.name : "",
     };
   },
 
@@ -385,7 +398,8 @@ Page(
     const idx = Number(e.currentTarget.dataset.index);
     const g = this.data.coachGroups[idx];
     if (!g) return;
-    goToCoach(g.name, this._coachCityId || this.data.cityId);
+    // 全国兜底的结果各组不同城 → 用组自己的城市，不能统一用搜索城市
+    goToCoach(g.name, g.cityId || this._coachCityId || this.data.cityId);
   },
 
   /** 本城没这位老师、别处有 → 切到命中最多那座城市再看 */
