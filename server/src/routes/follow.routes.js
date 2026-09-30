@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
+import { buildStyleMap } from "../services/studio-style.service.js";
 
 const router = Router();
 
@@ -19,6 +20,9 @@ router.get(
       },
       orderBy: { createdAt: "desc" },
     });
+    // 关注列表要能按舞种筛（「我关注的这些店里，哪几家有 Jazz」），
+    // 而舞种不在 Studio 表上，得按未来课表现算 —— 一次 groupBy 覆盖全部关注店。
+    const styleMap = await buildStyleMap(follows.map((f) => f.studioId));
     ok(
       res,
       follows.map((f) => ({
@@ -32,6 +36,7 @@ router.get(
           platform: f.studio.platform,
           city: f.studio.city?.name,
           region: f.studio.city?.region,
+          styles: styleMap.get(f.studio.id) || [],
         },
       })),
     );

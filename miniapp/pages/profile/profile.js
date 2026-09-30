@@ -9,6 +9,15 @@ const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 const { bookCourse } = require("../../utils/booking");
 const { todayKey, parseKey, WEEK } = require("../../utils/date");
+// 只取展示顺序：舞种本身是服务端按未来课表算好随关注接口下发的，
+// 前端不重新识别（课表没拉下来时前端也识别不出）。
+const { DISPLAY_ORDER } = require("../../utils/dance-style");
+
+/**
+ * 没有未来排课（或课名认不出舞种）的店归到「其它」。
+ * 不能把它们直接丢掉：默认全选时它们得在列表里，否则用户会觉得店凭空少了。
+ */
+const OTHER = "其它";
 
 Page({
   onNavTop,
@@ -19,7 +28,13 @@ Page({
   data: {
     region: "CN",
     tab: "follows",
+    // follows = 全部关注（舞种条计数用），followsView = 当前筛选后要渲染的
     follows: [],
+    followsView: [],
+    // 舞种筛选条（关注列表按「这家店有没有这个舞种」筛）
+    styleChips: [],
+    showStyleBar: false,
+    styleAllOn: true,
     bookings: [],
     reminders: [],
     // 「我的课表」：我录的课（/imports/mine）和我约的课（/bookings）合并去重后的结果。
@@ -219,16 +234,23 @@ Page({
         dateLabel: (b.schedule.scheduleDate + "").slice(0, 10),
         cityName: b.schedule.city || "",
       }));
-      this.setData({
-        follows: follows.map((f) => ({
-          ...f,
-          platformLabel: PLATFORM_LABEL[f.studio.platform] || f.studio.platform,
-          // 品牌名里带 emoji 的话 charAt(0) 会拿到半个字符，先剥掉
-          initial: String(f.studio.name || "?")
+      const followRows = follows.map((f) => ({
+        ...f,
+        platformLabel: PLATFORM_LABEL[f.studio.platform] || f.studio.platform,
+        // 品牌名里带 emoji 的话 charAt(0) 会拿到半个字符，先剥掉
+        initial:
+          String(f.studio.name || "?")
             .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, "")
             .trim()
             .charAt(0) || "?",
-        })),
+        // 卡片上最多平铺 3 个舞种，多了反而看不出重点
+        styleText: (f.studio.styles || []).slice(0, 3).join(" · "),
+      }));
+      this.allFollows = followRows;
+      this.syncFollowStyleChips(followRows);
+      this.setData({
+        follows: followRows,
+        followsView: this.filterFollowsByStyle(followRows),
         bookings: bookingRows,
         schedules: buildMySchedule(bookingRows, mine || []),
         reminders: reminders.map((r) => ({
@@ -257,6 +279,84 @@ Page({
     const id = e.currentTarget.dataset.id;
     if (!id) return;
     wx.navigateTo({ url: "/pages/studio/weekly?id=" + id });
+  },
+
+  // ── 关注列表的舞种筛选 ──────────────────────────────
+  // 这里筛的是**店**：一家店既教 Jazz 又教 Kpop，选任一都该留下它。
+  // 所以一家店要往它每个舞种各自的计数里投一票 —— 和首页「按课筛」的算法不同，
+  // 那边的单位是一节课，这边是一家店。
+
+  /** 取一家店的舞种标签；没有未来排课（或课名认不出）的归「其它」 */
+  stylesOf(item) {
+    const list = (item.studio && item.studio.styles) || [];
+    return list.length ? list : [OTHER];
+  },
+
+  /**
+   * ⚠ 计数用**未经过筛**的全量（allFollows），不跟着当前勾选变：
+   * 否则每点一下 chip，条上的数字就跟着跳，看起来像筛选条自己坏了。
+   */
+  syncFollowStyleChips(rows) {
+    const tally = new Map();
+    rows.forEach((r) => {
+      new Set(this.stylesOf(r)).forEach((l) => tally.set(l, (tally.get(l) || 0) + 1));
+    });
+    // 只有一个标签（或全都归到「其它」）时不显示：没有选择余地的开关是噪音
+    if (tally.size < 2) {
+      this.activeStyles = [];
+      this.setData({ styleChips: [], showStyleBar: false, styleAllOn: true });
+      return;
+    }
+    const orderOf = (l) => (l === OTHER ? 999 : DISPLAY_ORDER.indexOf(l));
+    const chips = [...tally.entries()]
+      .map((p) => ({ label: p[0], count: p[1] }))
+      .sort((a, b) => b.count - a.count || orderOf(a.label) - orderOf(b.label));
+
+    // 首次全选；之后保留上次勾选，但剔掉这次列表里已经没有的舞种
+    let active = (this.activeStyles || []).filter((l) => tally.has(l));
+    if (!active.length) active = chips.map((c) => c.label);
+    this.activeStyles = active;
+
+    const on = new Set(active);
+    this.setData({
+      styleChips: chips.map((c) => ({ ...c, on: on.has(c.label) })),
+      showStyleBar: true,
+      styleAllOn: on.size === chips.length,
+    });
+  },
+
+  filterFollowsByStyle(rows) {
+    const active = this.activeStyles;
+    if (!active || !active.length) return rows;
+    const on = new Set(active);
+    return rows.filter((r) => this.stylesOf(r).some((l) => on.has(l)));
+  },
+
+  tapStyleChip(e) {
+    const label = e.currentTarget.dataset.label;
+    const active = new Set(this.activeStyles || []);
+    if (active.has(label)) {
+      if (active.size === 1) return toast(this, "至少保留一个舞种");
+      active.delete(label);
+    } else {
+      active.add(label);
+    }
+    this.activeStyles = [...active];
+    this.setData({
+      styleChips: (this.data.styleChips || []).map((c) => ({ ...c, on: active.has(c.label) })),
+      styleAllOn: active.size === (this.data.styleChips || []).length,
+      followsView: this.filterFollowsByStyle(this.allFollows || []),
+    });
+  },
+
+  tapAllStyles() {
+    const chips = this.data.styleChips || [];
+    this.activeStyles = chips.map((c) => c.label);
+    this.setData({
+      styleChips: chips.map((c) => ({ ...c, on: true })),
+      styleAllOn: true,
+      followsView: this.filterFollowsByStyle(this.allFollows || []),
+    });
   },
 
   /** 课表录入：抓取覆盖不到的门店，让用户自己补一节 */

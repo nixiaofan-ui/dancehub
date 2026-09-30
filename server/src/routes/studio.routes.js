@@ -6,43 +6,12 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import { toDateKey, parseDateKey, visibleScope } from "../services/schedule.service.js";
 import { pickStyles } from "../services/dance-style.service.js";
+import { buildStyleMap } from "../services/studio-style.service.js";
 import { sortStudiosByName } from "../services/studio-sort.service.js";
 import { assignBrands, brandKey, cleanBrandLabel } from "../lib/studio-name.js";
 import { searchStudioIdsByNorm, normName, invalidateStudioIndex } from "../lib/studio-index.js";
 
 const router = Router();
-
-/** 当天 UTC 零点，用于匹配 @db.Date 的 scheduleDate */
-function todayUtc() {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
-
-/**
- * 聚合每家门店未来课表的课名，解析出代表舞种标签
- * @param {number[]} studioIds
- * @returns {Promise<Map<number, string[]>>}
- */
-async function buildStyleMap(studioIds) {
-  const map = new Map();
-  if (!studioIds.length) return map;
-
-  const rows = await prisma.schedule.groupBy({
-    by: ["studioId", "courseName"],
-    where: { studioId: { in: studioIds }, scheduleDate: { gte: todayUtc() } },
-    _count: { _all: true },
-  });
-
-  const byStudio = new Map();
-  for (const r of rows) {
-    if (!byStudio.has(r.studioId)) byStudio.set(r.studioId, []);
-    byStudio.get(r.studioId).push({ courseName: r.courseName, count: r._count._all });
-  }
-  for (const [id, list] of byStudio) {
-    map.set(id, pickStyles(list, 4));
-  }
-  return map;
-}
 
 /**
  * 归一化：只留字母 / 数字 / 汉字，统一小写。

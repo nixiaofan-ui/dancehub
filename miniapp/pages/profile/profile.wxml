@@ -99,6 +99,20 @@
 
   <!-- 关注 -->
   <view wx:if="{{tab === 'follows'}}">
+    <!-- 舞种筛选条：筛的是「店」——哪几家关注的舞室有这个舞种 -->
+    <view wx:if="{{showStyleBar}}" class="style-filter">
+      <scroll-view class="style-scroll" scroll-x enable-flex>
+        <view
+          wx:for="{{styleChips}}"
+          wx:key="label"
+          class="stf-chip {{item.on ? 'on' : ''}}"
+          data-label="{{item.label}}"
+          bindtap="tapStyleChip"
+        >{{item.label}}<text class="stf-n">{{item.count}}</text></view>
+      </scroll-view>
+      <view class="stf-all {{styleAllOn ? 'on' : ''}}" bindtap="tapAllStyles">全部</view>
+    </view>
+
     <view wx:if="{{follows.length === 0}}" class="empty">
       <view class="dancer-lg empty-dancer">
         <view class="d-head"></view>
@@ -111,8 +125,13 @@
       <view class="empty-title">还没关注任何舞室</view>
       <view class="empty-sub">去「发现」Pick 你的本命舞室</view>
     </view>
+    <!-- 筛完一家都不剩：说清楚是被筛没的，否则用户以为关注掉了 -->
+    <view wx:if="{{follows.length && followsView.length === 0}}" class="empty">
+      <view class="empty-title">没有符合条件的舞室</view>
+      <view class="empty-sub">你关注的 {{follows.length}} 家舞室里，没有这些舞种的排课</view>
+    </view>
     <view
-      wx:for="{{follows}}"
+      wx:for="{{followsView}}"
       wx:key="id"
       class="follow-card"
       hover-class="press"
@@ -123,6 +142,7 @@
       <view class="follow-info">
         <view class="follow-name">{{item.studio.name}}</view>
         <view class="follow-meta">{{item.studio.city}} · {{item.platformLabel}}</view>
+        <view wx:if="{{item.styleText}}" class="follow-styles">{{item.styleText}}</view>
       </view>
       <!-- catchtap：卡片本身可点进门店，取消按钮必须吃掉冒泡，否则点取消会连带跳走 -->
       <button class="unfollow" data-id="{{item.studio.id}}" catchtap="unfollow">取消</button>

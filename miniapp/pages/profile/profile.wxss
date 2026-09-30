@@ -204,6 +204,63 @@
   margin-top: 4rpx;
   font-weight: 700;
 }
+/* 这家店教什么的速览，和发现页卡片上的标签同一套色 */
+.follow-styles {
+  font-size: 22rpx;
+  color: #00f5d4;
+  margin-top: 6rpx;
+  font-weight: 700;
+  letter-spacing: 0.5rpx;
+}
+
+/* 舞种筛选条：与首页课表那条同款（青色，区别于橙色门店条） */
+.style-filter {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+.style-scroll {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+.stf-chip {
+  display: inline-block;
+  padding: 8rpx 22rpx;
+  margin-right: 12rpx;
+  background: #16213e;
+  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  border-radius: 28rpx;
+  font-size: 24rpx;
+  color: #aaaaaa;
+  font-weight: 700;
+}
+.stf-chip.on {
+  background: rgba(0, 245, 212, 0.14);
+  border-color: rgba(0, 245, 212, 0.5);
+  color: #00f5d4;
+  font-weight: 900;
+}
+.stf-n {
+  font-size: 20rpx;
+  margin-left: 8rpx;
+  opacity: 0.65;
+  font-weight: 700;
+}
+.stf-all {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #00f5d4;
+  border: 1rpx solid rgba(0, 245, 212, 0.45);
+  border-radius: 24rpx;
+  padding: 6rpx 20rpx;
+  margin-left: 12rpx;
+  font-weight: 700;
+}
+.stf-all.on {
+  background: rgba(0, 245, 212, 0.14);
+  font-weight: 900;
+}
 .unfollow {
   font-size: 26rpx;
   color: #ff6b35;
