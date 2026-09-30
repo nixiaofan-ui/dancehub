@@ -123,6 +123,16 @@
   font-size: 30rpx;
   font-weight: 900;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* 头像图铺满圆形底托。aspectFill 裁中间 —— 老师上传的照片长宽比各异，
+   直接铺会被压扁，裁成方的才像头像 */
+.coach-pic {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
 }
 
 /* 预约进度条 */

@@ -33,6 +33,8 @@ Page({
     detail: null,
     coachName: "",
     coachInitial: "",
+    // 老师头像（各平台 CDN 直链）。只有部分平台给，没有就退回首字母占位
+    coachAvatar: "",
     // 跳老师主页要带城市（老师主页按「同城同名老师」聚合）
     cityId: 0,
     diffClass: "all_levels",
@@ -101,6 +103,7 @@ Page({
         detail: d,
         coachName,
         coachInitial,
+        coachAvatar: (d.coach && d.coach.avatarUrl) || "",
         cityId: d.studio.cityId || 0,
         diffClass: (d.difficulty || "ALL_LEVELS").toLowerCase(),
         levelLabel: LV_LABEL[d.difficulty] || "LV?",
@@ -214,6 +217,11 @@ Page({
 
   // 点教练名 → 老师主页（教练为「待定」时内部直接忽略）
   goCoach: onTapCoach,
+
+  /** 头像加载失败（CDN 挂了 / 链接过期 / 链接含特殊字符）：退回首字母占位，别留个白圈 */
+  onCoachAvatarError() {
+    if (this.data.coachAvatar) this.setData({ coachAvatar: "" });
+  },
 
   async goBook() {
     const d = this.data.detail;

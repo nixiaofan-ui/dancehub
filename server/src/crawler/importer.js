@@ -170,12 +170,34 @@ async function createStudioOnce(studioRef, extra, city) {
   return kept || created;
 }
 
-export async function findOrCreateCoach(studioId, name) {
+/**
+ * 找（或建）这家店的教练。
+ *
+ * @param {number} studioId
+ * @param {string} name
+ * @param {string|null} avatarUrl 本次抓到的头像；null 表示「这平台不给头像」
+ *
+ * ⚠ 头像只在**库里还没有**时才写。上游偶发不返回（接口抖一下、字段改版）时
+ *   如果拿 null 覆盖，已有的头像会被一次性擦掉，而且很可能再也补不回来
+ *   —— 老师换头像的概率远低于接口抖动。这和 keepOldOnMissing 保护软字段同理。
+ */
+export async function findOrCreateCoach(studioId, name, avatarUrl = null) {
   const trimmed = (name || "").trim();
   if (!trimmed) return null;
   const existing = await prisma.coach.findFirst({ where: { studioId, name: trimmed } });
-  if (existing) return existing;
-  return prisma.coach.create({ data: { studioId, name: trimmed } });
+  if (existing) {
+    if (avatarUrl && !existing.avatarUrl) {
+      const updated = await prisma.coach.update({
+        where: { id: existing.id },
+        data: { avatarUrl },
+      });
+      return updated;
+    }
+    return existing;
+  }
+  return prisma.coach.create({
+    data: { studioId, name: trimmed, avatarUrl: avatarUrl || null },
+  });
 }
 
 /**
@@ -432,7 +454,7 @@ export async function importSchedules(config, rows, ensureStudios = []) {
     };
     const studio = await findOrCreateStudio(studioRef, extra);
     for (const row of groupRows) {
-      const coach = await findOrCreateCoach(studio.id, row.coach);
+      const coach = await findOrCreateCoach(studio.id, row.coach, row._coachAvatar);
       const entry = mapRawToSchedule(row, {
         studioId: studio.id,
         coachId: coach ? coach.id : null,

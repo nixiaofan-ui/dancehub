@@ -27,7 +27,18 @@
           {{coachName}}<text wx:if="{{coachName && coachName !== '待定'}}" class="coach-arrow">›</text>
         </view>
       </view>
-      <view class="coach-avatar">{{coachInitial}}</view>
+      <!-- 有头像就显示头像，没有（或加载失败）退回首字母占位。
+           头像来自各平台 CDN，域名不可控，binderror 兜底是必须的 -->
+      <view class="coach-avatar">
+        <image
+          wx:if="{{coachAvatar}}"
+          class="coach-pic"
+          src="{{coachAvatar}}"
+          mode="aspectFill"
+          binderror="onCoachAvatarError"
+        />
+        <text wx:else>{{coachInitial}}</text>
+      </view>
     </view>
 
     <view class="info-row">

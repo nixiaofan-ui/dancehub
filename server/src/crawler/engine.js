@@ -23,6 +23,21 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * 教练头像的取值：上游「没有头像」时不给空串，而是给一张**默认占位图**
+ * （菲体云 default/customer/default.png、爱舞功 default_avatar 之类）。
+ * 存进去的话每张卡都是同一张灰脸，比不显示更糟，所以这里统一当「没有」。
+ */
+export function pickImageUrl(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s || !/^https?:\/\//i.test(s)) return null;
+  if (/\/default[_\-/]|[_\-/]default\.(png|jpg|jpeg|webp)/i.test(s)) return null;
+  // 上游给的 URL 偶尔带裸的非法字符（菲体云老师图路径里就有 `}`，
+  // 形如 …/1621577440hx}5rio7.png），图片加载器会直接判为非法地址。
+  // 只把这几个字符转成 %XX，其余原样保留（不整体 encodeURI，避免动到签名参数）。
+  return s.replace(/[\s{}|\\^`"<>]/g, (ch) => encodeURIComponent(ch));
+}
+
+/**
  * 课名清洗（两个平台共用）：
  * 课程名首尾的「.」是舞室自己排版时留下的装饰符（如 ".SWAG"、"编舞."），直接展示会显得脏。
  * 只动首尾，**不改内部空格与标点** —— iWOD 的长课名里有刻意的双空格（"KIDS DANCE & PLAY  2-4 years old"），
@@ -308,6 +323,10 @@ async function crawlWithFityun(config, date) {
         capacity,
         status: Number(c.left) === 0 ? "已满" : "可预约",
         _bookedNum: bookedNum,
+        // ⚠ `icon` 是**老师头像**（cloud/teacher/…、paid_org/employee/…），
+        //   课程封面是另一个字段 `project_icon`。别拿错。
+        //   缺头像时上游会给默认图 default/course/… 或空串，统一按没有处理。
+        _coachAvatar: pickImageUrl(c.icon),
         _studioName: (br.name || config.studio?.name || "").trim(),
         // 菲体云课表带 roomname（教室名），透传进 remark 供详情页展示
         _roomName: String(c.roomname || c.room_name || "").trim(),
@@ -880,6 +899,10 @@ async function crawlWithFoxdance(config, date) {
         out.push({
           courseName,
           coach: String(c?.teacher?.name || "").trim(),
+          // styd 的 teacher 是对象，头像字段名各家不一，都试一遍
+          _coachAvatar: pickImageUrl(
+            c?.teacher?.avatar || c?.teacher?.avatar_url || c?.teacher?.pic,
+          ),
           time,
           capacity,
           status: max && used != null && used >= max ? "已满" : "可预约",
@@ -1090,6 +1113,8 @@ async function crawlWithAiwugong(config, date) {
         out.push({
           courseName,
           coach: String(c.teacher?.nickname || c.teacher?.name || "").trim(),
+          // 爱舞功的 teacher 是对象，头像就在 teacher.avatar
+          _coachAvatar: pickImageUrl(c.teacher?.avatar),
           time: String(c.time || "").replace("~", "-"),
           capacity: "",
           status: c.is_open_reserve === 0 || c.status_dec === "已满" ? "已满" : "可预约",
@@ -1199,7 +1224,9 @@ async function crawlWithOneMillion(config, _date) {
         _studioName: studioName,
         _roomName: s.branch_place?.name || "",
         _scheduleDate: startAt.toISOString().slice(0, 10),
+        // 1MILLION 只有老师头像这一个图，课程封面和教练头像共用它
         _photoUrl: s.teacher?.[0]?.teacher_meta?.img_face_url || "",
+        _coachAvatar: pickImageUrl(s.teacher?.[0]?.teacher_meta?.img_face_url),
       };
     });
 }
