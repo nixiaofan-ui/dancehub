@@ -111,7 +111,8 @@ check("标题带城市名", view.cityName, "北京");
 
 const ken = view.groups[0];
 check("头像透传", ken.avatarUrl, "https://cdn/ken.png");
-check("同名多店要标出来", ken.multiStudio, true);
+// 「同名 N 家店」徽标已删（和副标题重复）：多店信息由 sub 的「5 家店」承担，
+// 块头 coachTip 常驻「同名多店不合并」。这里钉住 sub 仍然把家数说清楚。
 check("副标题：家数 + 近期课量", ken.sub, "5 家店 · 近期 6 节");
 // ⚠ 门店 chip 只写店名、不写日期（日期挪到教练页），靠颜色区分能不能去上
 check(
@@ -127,8 +128,7 @@ check(
 check("多余的 1 家收成 +1", ken.extraStudios, 1);
 
 const anna = view.groups[1];
-check("单店不标同名", anna.multiStudio, false);
-check("只有历史课 → 副标题写历史", anna.sub, "己舞蹈 · 历史 4 节");
+check("单店副标题用店名（不再有「同名」徽标）", anna.sub, "己舞蹈 · 历史 4 节");
 check("没有头像时给首字母占位", anna.initial, "A");
 
 // 同城搜不到：服务端回 crossCity

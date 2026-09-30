@@ -212,6 +212,10 @@ const flatStudios = (page) =>
     const rrIdx = wxml.indexOf('class="report-row"');
     const rrCtx = rrIdx > 0 ? wxml.slice(Math.max(0, rrIdx - 200), rrIdx) : "";
     check("提报入口只在有门店结果时出现", rrCtx.indexOf("sections.length") > 0, true);
+    // 「同名 N 家店」徽标已删（副标题 coachSub 已有「5 家店」，三处重复）。
+    // ⛔ 别只加回徽标：buildCoachGroups 的 map 里不带 studioCount，
+    //   WXML 引用它会渲染成「同名 家店」（数字凭空消失，用户报过这个 bug）。
+    check("教练卡片不再引用 item.studioCount", wxml.indexOf("item.studioCount") < 0, true);
   }
 
   console.log(`\n${failed ? `✖ ${failed} 项失败` : "✔ 全部通过"}`);

@@ -367,7 +367,6 @@ Page(
       avatarUrl: g.avatarUrl || "",
       initial: (g.name || "?").charAt(0),
       sub: coachSub(g),
-      multiStudio: g.studioCount > 1,
       // 跨城结果才显示；同城结果写城市是噪音
       cityLabel: nationwide ? (g.cityNames || []).slice(0, 2).join(" / ") : "",
       // 跳老师主页要用**这位老师所在**的城市（全国模式下各组可能不同城）
