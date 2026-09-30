@@ -9,6 +9,41 @@ export function subscribeConfigured() {
   );
 }
 
+/**
+ * 把用户说的「2026-10-05 12:00」按**北京时间**解析成 Date。
+ *
+ * ⚠ 不能直接 new Date(text)：容器按 UTC 跑，那样得到的是 UTC 的 12:00，
+ *   落到用户手机上是晚上 8 点 —— 抢课闹钟差这 8 小时等于白设。
+ *   挂上 +08:00 把时区写死，容器时区怎么变都不受影响。
+ * 返回 null 表示格式不对，交给调用方报错（比默默存个 Invalid Date 强）。
+ */
+export function parseUserDateTime(text) {
+  const m = String(text || "")
+    .trim()
+    .match(/^(\d{4})-(\d{1,2})-(\d{1,2})[\sT]+(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const p = (n, w = 2) => String(n).padStart(w, "0");
+  const d = new Date(`${p(m[1], 4)}-${p(m[2])}-${p(m[3])}T${p(m[4])}:${p(m[5])}:00+08:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Date → 东八区的 "2026-10-05 12:00"。
+ * 给前端直接用，省得它在小程序里再转一次时区（容器是 UTC，直接 toISOString 会差 8 小时）。
+ */
+export function toLocalText(date) {
+  return new Date(date).toLocaleString("sv-SE", { timeZone: "Asia/Shanghai" }).slice(0, 16);
+}
+
+/**
+ * 提醒场景。抢课闹钟与开课提醒的差别不在"提前多久"，而在"谁定的时刻"：
+ * 放课时刻各家舞室都不一样、也没有任何平台接口给这个值，只能让用户自己填。
+ */
+export const REMIND_KINDS = ["CLASS", "SNIPE"];
+
+/** 抢课闹钟的作废窗口：晚于预定时刻这么久就别发了（详见 sendDueReminders） */
+export const SNIPE_EXPIRE_MS = 2 * 60 * 60 * 1000;
+
 /** 开课提醒提前量：课前 2 小时。 */
 export const REMIND_LEAD_MS = 2 * 60 * 60 * 1000;
 
@@ -87,7 +122,18 @@ export async function sendDueReminders() {
   });
 
   let sent = 0;
+  let skipped = 0;
   for (const r of due) {
+    // 抢课闹钟讲究的是准时：放名额那一刻过了，再收到「去抢」就是废通知，
+    // 甚至会让用户以为是我们推送不可靠。晚于预定时刻 2 小时的直接作废。
+    if (r.kind === "SNIPE" && now - new Date(r.remindAt) > SNIPE_EXPIRE_MS) {
+      await prisma.reminder.update({
+        where: { id: r.id },
+        data: { status: "CANCELLED" },
+      });
+      skipped += 1;
+      continue;
+    }
     try {
       if (r.user.openid.startsWith("dev:")) {
         // 开发模式：未接入真实 appid，模拟发送
@@ -98,7 +144,8 @@ export async function sendDueReminders() {
         await sendSubscribeMessage({
           openid: r.user.openid,
           templateId: r.subscribeTplId,
-          page: "pages/index/index",
+          // 直达这节课而不是首页：抢课场景下多一次点击就可能没了位置
+          page: `pages/course/detail?id=${r.schedule.id}`,
           data: buildClassReminderData(r),
         });
       }
@@ -119,5 +166,5 @@ export async function sendDueReminders() {
     }
   }
 
-  return { due: due.length, sent };
+  return { due: due.length, sent, skipped };
 }

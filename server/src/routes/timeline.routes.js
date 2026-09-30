@@ -30,7 +30,12 @@ router.get(
         select: { scheduleId: true, status: true },
       }),
       prisma.reminder.findMany({
-        where: { userId: req.userId, schedule: { scheduleDate: new Date(dateKey) } },
+        // 只认开课提醒：抢课闹钟语义不同，混进来会让列表里的提醒标记指错东西
+        where: {
+          userId: req.userId,
+          schedule: { scheduleDate: new Date(dateKey) },
+          kind: "CLASS",
+        },
         select: { scheduleId: true },
       }),
     ]);
@@ -105,7 +110,8 @@ router.get(
         select: { scheduleId: true, status: true },
       }),
       prisma.reminder.findMany({
-        where: { userId: req.userId, schedule: { scheduleDate: dateRange } },
+        // 只认开课提醒：抢课闹钟语义不同，混进来会让列表里的提醒标记指错东西
+        where: { userId: req.userId, schedule: { scheduleDate: dateRange }, kind: "CLASS" },
         select: { scheduleId: true },
       }),
     ]);

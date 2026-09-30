@@ -105,7 +105,54 @@
     <button class="action remind {{reminded ? 'on' : ''}}" hover-class="press" bindtap="toggleRemind" disabled="{{busy}}">
       {{reminded ? '已开启开课提醒' : '开启开课提醒'}}
     </button>
+    <!--
+      约课提醒：单独的入口，因为它的时刻来源跟开课提醒完全不同。
+      门店课表可能提前一周就出来了，但真正能约是临近那几天的某个点，
+      「几点开放预约」各家舞室自己定、没有平台接口给这个值，只能用户自己填。
+    -->
+    <button class="action snipe {{snipeRemindAt ? 'on' : ''}}" hover-class="press" bindtap="openSnipe" disabled="{{busy}}">
+      ⏰ {{snipeLabel}}
+    </button>
+    <button class="action cal" hover-class="press" bindtap="addToCalendar" disabled="{{busy}}">
+      📅 加入手机日历
+    </button>
     <button wx:if="{{bookingStatus}}" class="action danger" hover-class="press" bindtap="cancelBooking" disabled="{{busy}}">取消预约</button>
+  </view>
+
+  <!-- 约课提醒设置：日期 + 时刻两个原生 picker -->
+  <view wx:if="{{snipeOpen}}" class="sn-mask" bindtap="closeSnipe">
+    <view class="sn-sheet" catchtap="noop">
+      <view class="sn-title">⏰ 约课提醒</view>
+      <view class="sn-sub">{{detail.courseName}} · {{detail.studio.name}}</view>
+      <view class="sn-row">
+        <picker mode="date" value="{{snipeDate}}" start="{{todayKey}}" bindchange="onSnipeDate">
+          <view class="sn-pick">
+            <view class="sn-pick-label">日期</view>
+            <view class="sn-pick-val">{{snipeDate}}</view>
+          </view>
+        </picker>
+        <picker mode="time" value="{{snipeTime}}" bindchange="onSnipeTime">
+          <view class="sn-pick">
+            <view class="sn-pick-label">时刻</view>
+            <view class="sn-pick-val">{{snipeTime}}</view>
+          </view>
+        </picker>
+      </view>
+      <view class="sn-tip">到点会提醒你去约这节课。微信推送需要你点一下授权。</view>
+      <view class="sn-switch">
+        <view class="sn-switch-txt">
+          <view class="sn-switch-title">同时写进手机日历</view>
+          <view class="sn-switch-sub">微信推送是一次性的，日历不消耗额度、没网也会响</view>
+        </view>
+        <switch checked="{{snipeSyncCal}}" bindchange="onSnipeSyncCal" color="#00F5D4" />
+      </view>
+      <view wx:if="{{snipeSyncCal}}" class="sn-cal-hint">{{calHint}}</view>
+      <view class="sn-actions">
+        <button class="sn-btn ghost" hover-class="press" bindtap="closeSnipe">取消</button>
+        <button wx:if="{{snipeRemindAt}}" class="sn-btn del" hover-class="press" bindtap="removeSnipe" disabled="{{busy}}">关掉提醒</button>
+        <button class="sn-btn main" hover-class="press" bindtap="saveSnipe" disabled="{{busy}}">{{snipeRemindAt ? '改时间' : '设好'}}</button>
+      </view>
+    </view>
   </view>
 
   <!-- 课程预告视频（舞室官方系统里的预告片；菲体云系店铺抓得到） -->

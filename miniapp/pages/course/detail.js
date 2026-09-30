@@ -6,9 +6,10 @@ const { PLATFORM_LABEL, DIFF_LABEL } = require("../../utils/constants");
 const { requestSubscribe } = require("../../utils/subscribe");
 const { confirm } = require("../../utils/confirm");
 const { bookCourse } = require("../../utils/booking");
-const { parseKey } = require("../../utils/date");
+const { parseKey, todayKey } = require("../../utils/date");
 const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
+const cal = require("../../utils/calendar");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 const LV_LABEL = {
@@ -46,6 +47,21 @@ Page({
     platformLabel: "",
     bookingStatus: null,
     reminded: false,
+    // 约课提醒：已设时刻（服务端给的北京时间字符串 "2026-10-05 12:00"）。
+    // 为什么要有它：「能查到课」≠「约得上」—— 课表常常提前一周就放出来了，
+    // 但真正开放预约是临近那几天的某个点，热门课要卡着那个点去抢。
+    // 那个点各店自己定、没有任何平台接口给，只能让用户自己填。
+    snipeRemindAt: null,
+    snipeLabel: "",
+    // 设置提醒的弹层
+    snipeOpen: false,
+    snipeDate: "",
+    snipeTime: "12:00",
+    // 设提醒时顺手写一份到手机系统日历：订阅消息是一次性的（一次授权只能推一条），
+    // 日历不消耗额度、离线也响，是这个功能真正的兜底
+    snipeSyncCal: true,
+    calHint: cal.CAL_HINT,
+    todayKey: "",
     bookedCount: 0,
     capacity: 1,
     progress: 0,
@@ -64,7 +80,7 @@ Page({
 
   onLoad(query) {
     this.scheduleId = Number(query.id);
-    this.setData({ scheduleId: this.scheduleId });
+    this.setData({ scheduleId: this.scheduleId, todayKey: todayKey() });
     this.load();
   },
 
@@ -115,6 +131,8 @@ Page({
         bookLabel,
         bookingStatus: d.bookingStatus,
         reminded: d.reminded,
+        snipeRemindAt: d.snipeRemindAt || null,
+        snipeLabel: d.snipeRemindAt ? "约课提醒 " + String(d.snipeRemindAt).slice(5) : "设约课提醒",
         bookedCount: d.bookedCount,
         bookedNum,
         shownCount: shown,
@@ -311,6 +329,126 @@ Page({
       this.setData({ reminded, busy: false });
       toast(this, reminded ? opening || "已开启开课提醒" : "已关闭提醒");
       this.load();
+    } catch (e) {
+      this.setData({ busy: false });
+      toast(this, e.message);
+    }
+  },
+
+  /* ── 约课提醒 ──
+   * 为什么不并进「开课提醒」：两者时刻的来源根本不同。
+   * 开课提醒服务端算得出（课前 2 小时，规则统一）；而「几点开放预约」没有 ——
+   * 门店提前一周就把课表放出来了，但真正能约是临近那几天的某个点，热门课要卡着抢。
+   * 那个点各店自己定、任何平台接口都不给，只能让用户填。
+   * ⛔ 也别指望我们"推算"出来：能观测到的只有「这节课第一次被我们抓到」，
+   *   而抓取是 6 小时一轮 —— 推出来的钟点其实是我们的抓取钟点，当放课时刻会误导人。
+   */
+  openSnipe() {
+    const base = this.data.snipeRemindAt ? String(this.data.snipeRemindAt) : "";
+    // 设过就回填原值让人改，而不是让他从头再选一遍
+    this.setData({
+      snipeOpen: true,
+      snipeDate: base ? base.slice(0, 10) : this.data.todayKey,
+      snipeTime: base ? base.slice(11, 16) : "12:00",
+    });
+  },
+
+  closeSnipe() {
+    this.setData({ snipeOpen: false });
+  },
+  onSnipeDate(e) {
+    this.setData({ snipeDate: e.detail.value });
+  },
+  onSnipeTime(e) {
+    this.setData({ snipeTime: e.detail.value });
+  },
+  onSnipeSyncCal(e) {
+    this.setData({ snipeSyncCal: Boolean(e.detail.value) });
+  },
+  // 弹层内容区的点击不该冒泡到遮罩（否则一点就关）
+  noop() {},
+
+  async saveSnipe() {
+    if (this.data.busy) return;
+    const { snipeDate, snipeTime } = this.data;
+    const d = this.data.detail || {};
+    if (!snipeDate) return toast(this, "先选个日期");
+    const at = snipeDate + " " + snipeTime;
+    this.setData({ busy: true });
+    try {
+      // 约课提醒比开课提醒更依赖推送：那一下用户多半根本不在小程序里
+      const tplId = app.globalData.classReminderTplId;
+      const granted = tplId ? await requestSubscribe(tplId) : false;
+      await api.apiAddReminder(this.scheduleId, granted, { kind: "SNIPE", remindAt: at });
+
+      // 再顺手写一份到手机系统日历。⚠ 日历失败绝不能连提醒一起废掉：
+      // 订阅消息一次性消耗，日历才是"蹲点"最靠得住的那条通道，所以单独 try、单独报告。
+      let calNote = "";
+      if (this.data.snipeSyncCal) {
+        try {
+          const r = await cal.addWatchToCalendar({
+            dateKey: snipeDate,
+            hhmm: snipeTime,
+            title: "去约课：" + (d.courseName || "舞蹈课"),
+            desc:
+              (d.studio && d.studio.name ? d.studio.name + " · " : "") +
+              "DanceHub 提醒你到点去约课",
+          });
+          calNote = r && r.added ? "，也写进手机日历了" : "（日历没加成，只有微信提醒）";
+        } catch (e) {
+          calNote = "（日历没加成，只有微信提醒）";
+        }
+      }
+
+      this.setData({ busy: false, snipeOpen: false });
+      toast(
+        this,
+        (granted ? "已设 " + at + " 约课提醒" : "提醒已设（未授权推送，只能进小程序看）") + calNote,
+        granted ? "success" : undefined,
+      );
+      this.load();
+    } catch (e) {
+      this.setData({ busy: false });
+      toast(this, e.message);
+    }
+  },
+
+  async removeSnipe() {
+    if (this.data.busy) return;
+    this.setData({ busy: true });
+    try {
+      await api.apiRemoveReminder(this.scheduleId, "SNIPE");
+      this.setData({ busy: false, snipeOpen: false });
+      toast(this, "已关掉约课提醒", "success");
+      this.load();
+    } catch (e) {
+      this.setData({ busy: false });
+      toast(this, e.message);
+    }
+  },
+
+  /**
+   * 把这节课写进手机系统日历（已约的课尤其需要：提前 1 小时响，
+   * 不依赖我们推送、不消耗订阅额度，换手机也能同步过去）。
+   */
+  async addToCalendar() {
+    const d = this.data.detail;
+    if (!d || this.data.busy) return;
+    this.setData({ busy: true });
+    try {
+      const r = await cal.addCourseToCalendar({
+        dateKey: d.scheduleDate,
+        startTime: d.startTime,
+        endTime: d.endTime,
+        courseName: d.courseName,
+        studioName: d.studio && d.studio.name,
+        coachName: d.coach && d.coach.name,
+        roomName: this.data.roomName,
+        address: d.studio && d.studio.address,
+      });
+      this.setData({ busy: false });
+      if (r && r.denied) return toast(this, "没有日历权限，去「设置 → 微信 → 日历」打开");
+      toast(this, "已加入手机日历（提前 1 小时提醒）", "success");
     } catch (e) {
       this.setData({ busy: false });
       toast(this, e.message);

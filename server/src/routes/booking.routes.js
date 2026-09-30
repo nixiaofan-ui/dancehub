@@ -146,11 +146,9 @@ router.delete(
     });
     if (!existing) return fail(res, 404, "没有这条预约记录");
 
-    // 开课提醒跟着一起删：课都不去了，再弹一条「该上课了」纯粹是噪音。
-    // （以前是保留的，理由是「用户可能只是不想占位但仍想被提醒」—— 实际没人这么用，
-    //   反而留下一堆取消后照样推送的记录。真想被提醒，重新约一次即可。）
+    // 只删开课提醒：抢课闹钟是「提醒我去抢」，跟去不去上课无关，不该被牵连
     const reminder = await prisma.reminder.findUnique({
-      where: { userId_scheduleId: { userId: req.userId, scheduleId } },
+      where: { userId_scheduleId_kind: { userId: req.userId, scheduleId, kind: "CLASS" } },
     });
     if (reminder) {
       await prisma.reminder.delete({ where: { id: reminder.id } });

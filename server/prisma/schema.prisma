@@ -223,12 +223,19 @@ model Reminder {
   type       ReminderType   @default(LOCAL)
   subscribeTplId String?
   remindAt   DateTime
+  // 提醒场景。开课提醒的时刻由服务端算（课前 2 小时），抢课闹钟则由用户自己定
+  // —— 各家舞室几点放课没有统一规律，也没有任何平台接口给这个值，只能让用户填。
+  // CLASS = 开课前提醒（computeRemindAt 算）
+  // SNIPE = 抢课闹钟（remindAt 由用户指定，通常落在「预计放课」那天）
+  kind       String         @default("CLASS")
   status     ReminderStatus @default(PENDING)
   sentAt     DateTime?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
-  @@unique([userId, scheduleId])
+  // ⚠ 唯一键必须带上 kind：同一节课既要「提醒我去抢」又要「提醒我去上」是很正常的
+  // 需求，只按 (userId, scheduleId) 唯一时后者会把前者顶掉。
+  @@unique([userId, scheduleId, kind])
   @@index([scheduleId])
 }
 

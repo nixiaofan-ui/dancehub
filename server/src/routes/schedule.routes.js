@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
 import { getLiveBooking, refreshStudioDay } from "../lib/live-booking.js";
+import { toLocalText } from "../services/reminder.service.js";
 import {
   listSchedules,
   createSchedule,
@@ -85,17 +86,23 @@ router.get(
     });
     if (!schedule) return fail(res, 404, "课程不存在");
 
-    const [booking, reminder, bookedCount] = await Promise.all([
+    // ⚠ 一节课可以挂两种提醒（CLASS 开课提醒 / SNIPE 抢课闹钟），唯一键已放宽到
+    // 三元组，所以不能再 findUnique({userId_scheduleId})。分开取，别把闹钟的
+    // 存在当成「开课提醒已开」——那样用户点按钮去关，关掉的是另一条，还很懵。
+    const [booking, myReminders, bookedCount] = await Promise.all([
       prisma.booking.findUnique({
         where: { userId_scheduleId: { userId: req.userId, scheduleId: schedule.id } },
         select: { status: true },
       }),
-      prisma.reminder.findUnique({
-        where: { userId_scheduleId: { userId: req.userId, scheduleId: schedule.id } },
-        select: { type: true },
+      prisma.reminder.findMany({
+        where: { userId: req.userId, scheduleId: schedule.id },
+        select: { kind: true, status: true, remindAt: true },
       }),
       prisma.booking.count({ where: { scheduleId: schedule.id } }),
     ]);
+    const classReminder = myReminders.find((r) => r.kind === "CLASS");
+    // 只有还等着触发的闹钟才算「已设」；发过的留着是为了不重复 bombard
+    const snipe = myReminders.find((r) => r.kind === "SNIPE" && r.status === "PENDING");
 
     ok(res, {
       id: schedule.id,
@@ -132,7 +139,9 @@ router.get(
         cityId: schedule.studio.cityId,
       },
       bookingStatus: booking ? booking.status : null,
-      reminded: Boolean(reminder),
+      reminded: Boolean(classReminder),
+      // 抢课闹钟：给的是东八区字符串，前端直接显示，不用自己转时区
+      snipeRemindAt: snipe ? toLocalText(snipe.remindAt) : null,
       // ⚠ 这两个数字口径完全不同，别混：
       //   bookedCount = Booking 表计数 = **本小程序**用户约了几个人（几乎总是 0）
       //   bookedNum   = 舞室官方系统里的真实已约人数（可能为 null = 平台没提供）

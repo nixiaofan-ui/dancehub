@@ -346,7 +346,8 @@ router.get(
         select: { scheduleId: true, status: true },
       }),
       prisma.reminder.findMany({
-        where: { userId: req.userId, scheduleId: { in: ids } },
+        // 只认开课提醒：抢课闹钟是另一回事，别让它把「开启开课提醒」顶成已开启
+        where: { userId: req.userId, scheduleId: { in: ids }, kind: "CLASS" },
         select: { scheduleId: true },
       }),
     ]);

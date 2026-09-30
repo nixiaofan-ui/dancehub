@@ -99,13 +99,27 @@ const apiBookings = () => req.get("/bookings");
 const apiPendingCount = () => req.get("/bookings/pending-count");
 
 const apiReminders = () => req.get("/reminders");
-const apiAddReminder = (scheduleId, subscribe) => {
+/**
+ * 提醒（两种场景共用一个接口）：
+ * - kind 省略/"CLASS" = 开课提醒，时刻由服务端按「课前 2 小时」算
+ * - kind "SNIPE"       = 抢课闹钟，必须自带 remindAt
+ * remindAt 用「2026-10-05 12:00」这种**北京时间**字符串：服务端按东八区解析，
+ * 不要传 UTC ISO —— 容器按 UTC 跑，换算错一次就差 8 小时，闹钟等于白设。
+ */
+const apiAddReminder = (scheduleId, subscribe, opts) => {
   markDirty();
-  return req.post("/reminders", { scheduleId, subscribe: Boolean(subscribe) });
+  const o = opts || {};
+  return req.post("/reminders", {
+    scheduleId,
+    subscribe: Boolean(subscribe),
+    ...(o.kind ? { kind: o.kind } : {}),
+    ...(o.remindAt ? { remindAt: o.remindAt } : {}),
+  });
 };
-const apiRemoveReminder = (scheduleId) => {
+const apiRemoveReminder = (scheduleId, kind) => {
   markDirty();
-  return req.delete("/reminders/" + scheduleId);
+  // 带 kind 只关一种；不带则把两种都关掉（兼容旧调用）
+  return req.delete("/reminders/" + scheduleId + (kind ? "?kind=" + kind : ""));
 };
 /**
  * 订阅消息配置：拿课程提醒模板 ID，以及「服务端到底配没配」。

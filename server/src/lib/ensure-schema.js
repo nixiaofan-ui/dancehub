@@ -148,6 +148,24 @@ async function indexExists(table, index) {
   return Number(rows?.[0]?.c || 0) > 0;
 }
 
+/** Reminder.kind（抢课闹钟与开课提醒共存的前提） */
+const REMINDER_KIND_SQL = `
+ALTER TABLE \`Reminder\` ADD COLUMN \`kind\` VARCHAR(191) NOT NULL DEFAULT 'CLASS';
+`;
+
+/**
+ * ⚠️ 顺序不能反。
+ * MySQL 的外键必须有索引垫着，而 (userId, scheduleId) 这条唯一键正好被
+ * Reminder 的 userId/scheduleId 外键用着 —— 直接 DROP 会报
+ * "Cannot drop index ... needed in a foreign key constraint"，被 run() 吞掉之后
+ * 旧约束仍在生效，同一节课的第二条提醒（SNIPE）插不进去，线上表现为
+ * 「设了抢课闹钟却没反应」，还极难定位。所以先加新index、再删旧的。
+ */
+const REMINDER_OLD_UNIQ = "Reminder_userId_scheduleId_key";
+const REMINDER_NEW_UNIQ = "Reminder_userId_scheduleId_kind_key";
+const REMINDER_NEW_UNIQ_SQL =
+  "ALTER TABLE `Reminder` ADD UNIQUE INDEX `Reminder_userId_scheduleId_kind_key` (`userId`, `scheduleId`, `kind`)";
+
 export async function ensureSchema() {
   await run("CoachBlock", COACH_BLOCK_SQL);
   await run("CoachFollow", COACH_FOLLOW_SQL);
@@ -171,5 +189,18 @@ export async function ensureSchema() {
   // 老师搜索按名字匹配，存量库的 Coach 表没有这个索引
   if (!(await indexExists("Coach", "Coach_name_idx"))) {
     await run("Coach.name idx", "ALTER TABLE `Coach` ADD INDEX `Coach_name_idx` (`name`)");
+  }
+  // 抢课闹钟：同一节课允许同时挂「提醒抢」和「提醒上」两条
+  if (!(await columnExists("Reminder", "kind"))) {
+    await run("Reminder.kind", REMINDER_KIND_SQL);
+  }
+  if (!(await indexExists("Reminder", REMINDER_NEW_UNIQ))) {
+    await run("Reminder new uniq", REMINDER_NEW_UNIQ_SQL);
+  }
+  if (await indexExists("Reminder", REMINDER_OLD_UNIQ)) {
+    await run(
+      "Reminder drop old uniq",
+      `ALTER TABLE \`Reminder\` DROP INDEX \`${REMINDER_OLD_UNIQ}\``,
+    );
   }
 }

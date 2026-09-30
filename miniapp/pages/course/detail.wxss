@@ -187,6 +187,163 @@
   border-color: #00f5d4;
   background: rgba(0, 245, 212, 0.08);
 }
+/* 约课提醒：橙色系，跟开课提醒的青色分开 —— 两件事，别让用户看混 */
+.action.snipe {
+  background: transparent;
+  color: #ff9e6b;
+  border: 2rpx solid rgba(255, 107, 53, 0.45);
+}
+.action.snipe.on {
+  color: #ff8a5c;
+  border-color: #ff6b35;
+  background: rgba(255, 107, 53, 0.1);
+}
+/* 手机日历：中性色。它不是"我们"的提醒，是写进用户自己的日历，视觉上别抢主按钮 */
+.action.cal {
+  background: transparent;
+  color: #9aa3c0;
+  border: 2rpx solid #2b3050;
+}
+
+/* ── 约课提醒弹层 ── */
+.sn-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.62);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+.sn-sheet {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1f2033;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 36rpx 32rpx calc(36rpx + env(safe-area-inset-bottom));
+}
+.sn-title {
+  font-size: 34rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.sn-sub {
+  font-size: 24rpx;
+  color: #7f88a3;
+  margin-top: 8rpx;
+}
+.sn-hint {
+  font-size: 23rpx;
+  color: #ff9e6b;
+  line-height: 1.55;
+  background: rgba(255, 107, 53, 0.1);
+  border-left: 6rpx solid rgba(255, 107, 53, 0.55);
+  border-radius: 12rpx;
+  padding: 14rpx 18rpx;
+  margin-top: 20rpx;
+}
+.sn-row {
+  display: flex;
+  margin-top: 24rpx;
+}
+/* ⚠ picker 里是原生控件，必须给明确高度：只写 padding 在真机上会被压成一条线 */
+.sn-pick {
+  height: 96rpx;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2rpx solid #2b3050;
+  border-radius: 18rpx;
+  padding: 0 24rpx;
+  margin-right: 20rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.sn-pick-label {
+  font-size: 21rpx;
+  color: #6b7391;
+  line-height: 1.2;
+}
+.sn-pick-val {
+  font-size: 30rpx;
+  color: #ffffff;
+  font-weight: 900;
+  line-height: 1.3;
+  margin-top: 4rpx;
+}
+.sn-tip {
+  font-size: 22rpx;
+  color: #6b7391;
+  line-height: 1.6;
+  margin-top: 20rpx;
+}
+/* 同步到手机日历的开关行 */
+.sn-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22rpx;
+  padding: 20rpx 24rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 18rpx;
+}
+.sn-switch-txt {
+  flex: 1;
+  margin-right: 20rpx;
+}
+.sn-switch-title {
+  font-size: 27rpx;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.sn-switch-sub {
+  font-size: 21rpx;
+  color: #6b7391;
+  line-height: 1.4;
+  margin-top: 6rpx;
+}
+/* ⚠ iOS 的日历权限有两档，只选「仅添加事件」不会写入且不报错 ——
+   这句必须提前摆出来，等 fail 回调再说是来不及的 */
+.sn-cal-hint {
+  font-size: 21rpx;
+  color: #ff9e6b;
+  line-height: 1.55;
+  margin-top: 14rpx;
+}
+.sn-actions {
+  display: flex;
+  margin-top: 28rpx;
+}
+.sn-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  padding: 0;
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  font-weight: 900;
+  margin-right: 16rpx;
+}
+.sn-btn:last-child {
+  margin-right: 0;
+}
+.sn-btn.ghost {
+  background: transparent;
+  color: #a8adc2;
+  border: 2rpx solid #2b3050;
+}
+.sn-btn.del {
+  background: transparent;
+  color: #ff6b6b;
+  border: 2rpx solid rgba(255, 107, 107, 0.45);
+}
+.sn-btn.main {
+  background: linear-gradient(135deg, #ff6b35, #ff8a5c);
+  color: #ffffff;
+}
 /* 取消预约：破坏性操作，红色描边 */
 .action.danger {
   background: transparent;
