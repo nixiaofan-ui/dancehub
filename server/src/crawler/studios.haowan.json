@@ -1,0 +1,28 @@
+[
+  {
+    "id": "haowan-htd",
+    "enabled": true,
+    "label": "HTD 舞蹈工作室（深圳）",
+    "studio": { "name": "HTD舞蹈工作室", "city": "深圳", "region": "CN" },
+    "mode": "haowan",
+    "haowan": {
+      "baseUrl": "https://ws-htd.haowan2000.com",
+      "gyms": [
+        {
+          "id": 1,
+          "name": "HTD舞蹈工作室",
+          "city": "深圳",
+          "address": "广东省深圳市福田区华强北步行街万商电器城三楼东301室",
+          "lat": 22.548355,
+          "lng": 114.087171
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

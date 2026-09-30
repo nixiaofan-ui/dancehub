@@ -142,5 +142,49 @@
     "refreshHours": 6,
     "cron": null,
     "timeFormat": "HH:mm-HH:mm"
+  },
+  {
+    "id": "styd-storm",
+    "enabled": true,
+    "label": "STORM 舞蹈工作室 + S-art Dance Academy",
+    "studio": { "name": "STORM舞蹈工作室", "city": "深圳", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "KLmaAPYVd1N",
+      "brandId": "2987132323496029",
+      "shops": [
+        {
+          "id": "2987125243513741",
+          "name": "STORM舞蹈工作室·罗湖店（罗湖）",
+          "city": "深圳",
+          "address": "广东省深圳市罗湖区华佳布艺广场8楼810室",
+          "lat": 22.54581,
+          "lng": 114.122253
+        },
+        {
+          "id": "2991742115254562",
+          "name": "STORM舞蹈工作室·福田店（福田）",
+          "city": "深圳",
+          "address": "广东省深圳市福田区华富街道彩田路深科技城C座3层C301室",
+          "lat": 22.563912,
+          "lng": 114.068424
+        },
+        {
+          "id": "2990957461591832",
+          "name": "S-art Dance Academy（南山店）",
+          "city": "深圳",
+          "address": "广东省深圳市南山区高新南环路1号粤海街道文体中心二层西侧",
+          "lat": 22.523427,
+          "lng": 113.950376
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
   }
 ]

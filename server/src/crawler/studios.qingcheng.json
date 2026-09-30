@@ -1,0 +1,60 @@
+[
+  {
+    "id": "qingcheng-unlabel",
+    "enabled": true,
+    "label": "UNLABEL&舞厂牌（东莞）",
+    "studio": { "name": "UNLABEL&舞厂牌", "city": "东莞", "region": "CN" },
+    "mode": "qingcheng",
+    "qingcheng": {
+      "baseUrl": "https://yun.qingchengfit.cn",
+      "shops": [
+        {
+          "id": "63447",
+          "name": "UNLABEL&舞厂牌（南城店）",
+          "city": "东莞",
+          "address": "广东省东莞市南城街道西平地铁站D口负一楼",
+          "lat": 22.994655,
+          "lng": 113.746309
+        },
+        {
+          "id": "69993",
+          "name": "UNLABEL&舞厂牌（莞城店）",
+          "city": "东莞",
+          "address": "广东省东莞市莞城街道天宝路16号巨汉商业中心2号楼",
+          "lat": 23.044891,
+          "lng": 113.777962
+        },
+        {
+          "id": "71882",
+          "name": "UNLABEL&舞厂牌（东城店）",
+          "city": "东莞",
+          "address": "广东省东莞市东城街道乌石岗工业路33小缇18栋3楼301",
+          "lat": 23.023805,
+          "lng": 113.792648
+        },
+        {
+          "id": "72128",
+          "name": "UNLABEL&舞厂牌（厚街店）",
+          "city": "东莞",
+          "address": "广东省东莞市厚街镇莞太路万达广场1号2单元2134室",
+          "lat": 22.944731,
+          "lng": 113.675775
+        },
+        {
+          "id": "72422",
+          "name": "UNLABEL&舞厂牌（松山湖店）",
+          "city": "东莞",
+          "address": "广东省东莞市松山湖光大we谷A区1栋210",
+          "lat": 22.958836,
+          "lng": 113.893815
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

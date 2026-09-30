@@ -386,6 +386,17 @@ async function crawlWithStyd(config, date) {
       : [{ id: "", name: config.studio?.name || "" }];
 
   const out = [];
+  // 门店档案：当天没课的分店也要留在库里（与嘉禾 / csdsp 同策略）
+  out.ensureStudios = targets
+    .filter((s) => s && s.id && s.name)
+    .map((s) => ({
+      name: String(s.name).trim(),
+      city: s.city,
+      address: s.address,
+      lat: s.lat,
+      lng: s.lng,
+    }));
+
   for (const shop of targets) {
     if (!shop.id) continue;
     const headers = {
@@ -424,8 +435,352 @@ async function crawlWithStyd(config, date) {
         status: max && used != null && used >= max ? "已满" : "可预约",
         _bookedNum: used,
         _studioName: (shop.name || config.studio?.name || "").trim(),
+        // 门店级档案（配置里带）：地址/坐标/城市，供 importer 建档时写进去
+        _address: shop.address,
+        _city: shop.city,
+        _lat: shop.lat,
+        _lng: shop.lng,
         // category_name 多为「舞龄50节课起」这类门槛说明，透传进 remark
         _remark: String(c.category_name || "").trim(),
+      });
+    }
+  }
+  return out;
+}
+
+/* ─────────────── 咪哩约课（miliyoga.com）抓取 ─────────────── */
+
+/** 咪哩约课的 apiKey，硬编码在学员端小程序包里（capture/mili_api.py 同款） */
+const MILI_API_KEY = "Mp6AbNLllvJRp7tB";
+const MILI_UA =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.50";
+
+/**
+ * 咪哩约课签名：`md5(apiKey + "k1=v1&k2=v2" + apiKey)`，参数按 **key 升序**（key 统一转小写），
+ * 空值参与且作为空串，不含 X-Mili-* 请求头。
+ */
+function miliSignature(params, apiKey) {
+  const body = Object.keys(params)
+    .map((k) => [String(k).toLowerCase(), params[k] == null ? "" : String(params[k])])
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("&");
+  return crypto.createHash("md5").update(`${apiKey}${body}${apiKey}`, "utf8").digest("hex");
+}
+
+/**
+ * 咪哩约课（api-esa.miliyoga.com）—— 继 iWOD / 菲体云 / 爱舞功 / styd 之后的**第五套**舞蹈 SaaS。
+ * 瑜伽馆/舞室通用（嘉兴小粒信息），学员端是**一套通用包**：租户标识 `pk`（形如 9iwjnvceyz，
+ * 10 位小写字母数字）在进场 scene 里下发，不在包内 —— 所以每家店必须单独从抓包里取 pk。
+ *
+ * 逆向要点（2026-09-30 手机抓包 + 小程序包解密）：
+ * - 免登录课表 GET `/fronts/<pk>/schedule/groups?ctype=1&sdate=YYYY-MM-DD&include=course,coach,users`
+ * - **签名是钥匙**：X-Mili-Sign 缺了/算错一律 404 "Not find."（和 pk 失效长得一样，别误判）
+ * - 门店清单 GET `/fronts/<pk>/brand?include=places` → data.places[] 是整个品牌的全部门店，
+ *   一次就能拿到分店名 + 地址 + 省市，不用一家家找（返回值里也带各自的 hash_key = pk）
+ * - 课程字段：course.course_name 课名 / coach.true_name 教练 / coach.avatar_url 头像 /
+ *     sdate_start + sdate_end "18:40" / people_num 容量 / reserve_num 已约 / sur_num 剩余
+ */
+async function crawlWithMiliyoga(config, date) {
+  const {
+    baseUrl = "https://api-esa.miliyoga.com/fronts",
+    apiKey = MILI_API_KEY,
+    places,
+  } = config.miliyoga || {};
+  if (!Array.isArray(places) || !places.length) {
+    throw new Error("miliyoga 模式缺少 places 配置");
+  }
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const brandName = (config.studio?.name || "").trim();
+  const out = [];
+  // 门店档案：当天没课的分店也要留在库里（与嘉禾 / csdsp 同策略）
+  out.ensureStudios = places
+    .filter((p) => p && p.pk && p.name)
+    .map((p) => ({
+      name: composeStudioName(brandName, p.name),
+      city: p.city,
+      address: p.address,
+      lat: p.lat,
+      lng: p.lng,
+    }));
+
+  for (const place of places) {
+    const pk = String(place.pk || "").trim();
+    if (!pk) continue;
+    const params = { ctype: "1", sdate: dateStr, include: "course,coach,users" };
+    const url = `${baseUrl}/${pk}/schedule/groups?${new URLSearchParams(params)}`;
+
+    const resp = await fetch(url, {
+      headers: {
+        "X-Mili-Token": "",
+        "X-Mili-Platform": "WX_XCX",
+        "X-Mili-Appversion": "2.1.1",
+        "X-Mili-Time": String(Math.floor(Date.now() / 1000)),
+        "X-Mili-Preview": "",
+        "X-Mili-Identity": "1",
+        "X-Mili-Sign": miliSignature(params, apiKey),
+        Accept: "application/vnd.api.v1+json",
+        "Content-Type": "application/json",
+        "User-Agent": MILI_UA,
+      },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) throw new Error(`咪哩约课接口 HTTP ${resp.status}`);
+
+    const json = await resp.json();
+    // meta.code 非 200 视为该店当天无课（或 pk 失效），不抛错，避免整条链断掉
+    if (json?.meta?.code !== 200) continue;
+
+    for (const g of json.data || []) {
+      const courseName = cleanCourseName(g.course?.course_name);
+      if (!courseName) continue;
+      const max = g.people_num != null ? Number(g.people_num) : null;
+      const used = g.reserve_num != null ? Number(g.reserve_num) : null;
+      out.push({
+        courseName,
+        coach: String(g.coach?.true_name || "").trim(),
+        _coachAvatar: pickImageUrl(g.coach?.avatar_url),
+        time: `${g.sdate_start || ""}-${g.sdate_end || ""}`,
+        capacity: max ? `${used ?? ""}/${max}` : "",
+        status: max && used != null && used >= max ? "已满" : "可预约",
+        _bookedNum: used,
+        _studioName: composeStudioName(brandName, place.name),
+        _photoUrl: pickImageUrl(g.course?.bg_img_url),
+        _city: place.city,
+        _address: place.address,
+      });
+    }
+  }
+  return out;
+}
+
+/* ─────────────── 一只鸟 / 亦知鸟（yizhiniao.com）抓取 ─────────────── */
+
+/**
+ * 一只鸟（www.yizhiniao.com）—— 又一套场馆 SaaS（舞岚舞蹈实验室在用）。
+ * 免登录，两个接口足够：
+ * - 门店：GET `/api/user/website/getShopListByWxappid?wxappid=<appId>`（按小程序 appId 反查品牌全部门店）
+ * - 课表：GET `/api/user/course/bookingArrangingCourseList3?beginTime=&endTime=&shopId=`
+ *     ⚠ 参数是 `beginTime`/`endTime`（"YYYY-MM-DD HH:mm:ss"），**不是 date**
+ * - 返回 `context[].arrangingStudentList[]`，每条的 course.courseName 是课名、
+ *     shopTeacherList[0] 是教练、classInfo.classMax 是容量、arrangingCourses.bookingTotal 是已约
+ */
+async function crawlWithYizhiniao(config, date) {
+  const { baseUrl = "https://www.yizhiniao.com", shops } = config.yizhiniao || {};
+  if (!Array.isArray(shops) || !shops.length) {
+    throw new Error("yizhiniao 模式缺少 shops 配置");
+  }
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const profiles = new Map(shops.map((s) => [String(s.name || "").trim(), s]));
+  const out = [];
+  // 门店档案：当天没课的分店也要留在库里（与嘉禾 / csdsp 同策略）
+  out.ensureStudios = shops
+    .filter((s) => s && s.name)
+    .map((s) => ({
+      name: String(s.name).trim(),
+      city: s.city,
+      address: s.address,
+      lat: s.lat,
+      lng: s.lng,
+    }));
+
+  // ⚠ 这个接口**忽略 shopId**：传任何一家店的 id，返回的都是品牌**全部门店**，
+  //    按 context[] 分组。所以只请求一次再按分组落库 —— 按 shopId 循环会得到
+  //    3 倍重复数据（幂等 upsert 兜得住，但白写 3 遍，抓取耗时也翻三倍）。
+  const qs = new URLSearchParams({
+    beginTime: `${dateStr} 00:00:00`,
+    endTime: `${dateStr} 23:59:59`,
+    shopId: String(shops[0].id || ""),
+  });
+  const resp = await fetch(`${baseUrl}/api/user/course/bookingArrangingCourseList3?${qs}`, {
+    headers: {
+      "User-Agent": MILI_UA,
+      Accept: "application/json",
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!resp.ok) throw new Error(`一只鸟接口 HTTP ${resp.status}`);
+
+  const json = await resp.json();
+  if (String(json?.status) !== "200") return out;
+
+  for (const group of json.context || []) {
+    const shopName = String(group?.shop?.shopName || "").trim();
+    const prof = profiles.get(shopName);
+    // 只落配置里列出的门店（品牌旗下可能还有没接入的分店）
+    if (profiles.size && !prof) continue;
+    for (const item of group?.arrangingStudentList || []) {
+      const courseName = cleanCourseName(item?.course?.courseName);
+      if (!courseName) continue;
+      const begin = String(item?.arrangingCourses?.beginDate || "");
+      const end = String(item?.arrangingCourses?.endDate || "");
+      const hhmm = (iso) => (iso.match(/T(\d{2}:\d{2})/) || [])[1] || "";
+      const max = item?.classInfo?.classMax != null ? Number(item.classInfo.classMax) : null;
+      const used =
+        item?.arrangingCourses?.bookingTotal != null
+          ? Number(item.arrangingCourses.bookingTotal)
+          : null;
+      const teacher = (item?.shopTeacherList || [])[0] || {};
+      out.push({
+        courseName,
+        coach: String(teacher.teacherName || "").trim(),
+        _coachAvatar: pickImageUrl(teacher.teacherLongUrl),
+        time: `${hhmm(begin)}-${hhmm(end)}`,
+        capacity: max ? `${used ?? ""}/${max}` : "",
+        status: max && used != null && used >= max ? "已满" : "可预约",
+        _bookedNum: used,
+        _studioName: shopName,
+        _roomName: String(item?.classRoom?.classRoomName || "").trim(),
+        _city: prof?.city,
+        _address: prof?.address,
+        _lat: prof?.lat,
+        _lng: prof?.lng,
+      });
+    }
+  }
+  return out;
+}
+
+/* ─────────────── 舞空云 / HTD（haowan2000.com）抓取 ─────────────── */
+
+/**
+ * 舞空云（ws-htd.haowan2000.com）—— HTD 舞蹈工作室在用的小程序 SaaS。
+ * - 门店：GET `/api/v1/gym/listGym`（返回 gymId / gymName / address / lon / lat）
+ * - 课表：GET `/api/v1/course/getCourseList?queryDate=YYYY-MM-DD&gymId=<id>&courseType=全部类型`
+ * - 课程字段：courseName / danceType 舞种 / teacherName 教练 / teacherHeadUrl 头像 /
+ *     startDate + startTime + endTime / remainQuota 剩余 / spaceName 教室
+ * ⚠ 接口**不返回容量总量**（只有 remainQuota 剩余），所以 capacity / 已约数一律留空，
+ *   不要拿 remainQuota 冒充容量 —— 「剩余 3」和「总共 30」是完全不同的信息。
+ */
+async function crawlWithHaowan(config, date) {
+  const { baseUrl = "https://ws-htd.haowan2000.com", gyms } = config.haowan || {};
+  if (!Array.isArray(gyms) || !gyms.length) {
+    throw new Error("haowan 模式缺少 gyms 配置");
+  }
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const brandName = (config.studio?.name || "").trim();
+  const out = [];
+  // 门店档案：当天没课的分店也要留在库里（与嘉禾 / csdsp 同策略）
+  out.ensureStudios = gyms
+    .filter((g) => g && g.name)
+    .map((g) => ({
+      name: composeStudioName(brandName, g.name),
+      city: g.city,
+      address: g.address,
+      lat: g.lat,
+      lng: g.lng,
+    }));
+
+  for (const gym of gyms) {
+    const gymId = gym.id != null ? String(gym.id) : "";
+    const qs = new URLSearchParams({
+      queryDate: dateStr,
+      gymId,
+      courseType: "全部类型",
+    });
+    const resp = await fetch(`${baseUrl}/api/v1/course/getCourseList?${qs}`, {
+      headers: { "User-Agent": MILI_UA, Accept: "application/json" },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) throw new Error(`舞空云接口 HTTP ${resp.status}`);
+
+    const json = await resp.json();
+    if (json?.code !== 0) continue;
+
+    for (const c of json.data || []) {
+      const courseName = cleanCourseName(c.courseName);
+      if (!courseName) continue;
+      out.push({
+        courseName,
+        coach: String(c.teacherName || "").trim(),
+        _coachAvatar: pickImageUrl(c.teacherHeadUrl),
+        time: `${c.startTime || ""}-${c.endTime || ""}`,
+        capacity: "",
+        status: "可预约",
+        // 抓不到已约人数就存 null，不存 0（0 和「不知道」是两回事）
+        _bookedNum: null,
+        _studioName: composeStudioName(brandName, c.shopName || gym.name),
+        _roomName: String(c.spaceName || "").trim(),
+        _photoUrl: pickImageUrl(c.coursePicUrl),
+        _city: gym.city,
+        _address: gym.address,
+        _lat: gym.lat,
+        _lng: gym.lng,
+      });
+    }
+  }
+  return out;
+}
+
+/* ─────────────── 青橙科技（qingchengfit.cn）抓取 ─────────────── */
+
+/**
+ * 青橙科技（yun.qingchengfit.cn）—— 健身/舞蹈场馆 SaaS（UNLABEL&舞厂牌在用）。
+ * - 品牌全部门店：GET `/select/shops/?brand_id=<id>`（含店名 / 地址 / 经纬度）
+ * - 课表：GET `/api/mobile/schedules/group/?shop_id=<id>&date=YYYY-MM-DD`
+ * - 课程字段：course.name 课名 / course.course_type_tag 舞种 / teacher.username 教练 /
+ *     teacher.avatar 头像 / start + end ISO 时间 / max_users 容量 / current_users 已约 /
+ *     space.name 教室 / shop.name 门店名
+ */
+async function crawlWithQingcheng(config, date) {
+  const { baseUrl = "https://yun.qingchengfit.cn", shops } = config.qingcheng || {};
+  if (!Array.isArray(shops) || !shops.length) {
+    throw new Error("qingcheng 模式缺少 shops 配置");
+  }
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const brandName = (config.studio?.name || "").trim();
+  const out = [];
+  // 门店档案：当天没课的分店也要留在库里（与嘉禾 / csdsp 同策略）
+  out.ensureStudios = shops
+    .filter((s) => s && s.name)
+    .map((s) => ({
+      name: composeStudioName(brandName, s.name),
+      city: s.city,
+      address: s.address,
+      lat: s.lat,
+      lng: s.lng,
+    }));
+
+  for (const shop of shops) {
+    const shopId = String(shop.id || "").trim();
+    if (!shopId) continue;
+    const qs = new URLSearchParams({ shop_id: shopId, date: dateStr });
+    const resp = await fetch(`${baseUrl}/api/mobile/schedules/group/?${qs}`, {
+      headers: { "User-Agent": MILI_UA, Accept: "application/json" },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) throw new Error(`青橙接口 HTTP ${resp.status}`);
+
+    const json = await resp.json();
+    if (json?.status !== 200) continue;
+
+    for (const s of json?.data?.schedules || []) {
+      const courseName = cleanCourseName(s?.course?.name);
+      if (!courseName) continue;
+      const max = s.max_users != null ? Number(s.max_users) : null;
+      const used = s.current_users != null ? Number(s.current_users) : null;
+      // start/end 是 "2026-09-30T11:00:00" 本地墙钟字符串，只取 HH:mm 交给 mapper 解析
+      const hhmm = (iso) => (String(iso).match(/T(\d{2}:\d{2})/) || [])[1] || "";
+      out.push({
+        courseName,
+        coach: String(s?.teacher?.username || "").trim(),
+        _coachAvatar: pickImageUrl(s?.teacher?.avatar),
+        time: `${hhmm(s.start)}-${hhmm(s.end)}`,
+        capacity: max ? `${used ?? ""}/${max}` : "",
+        status: max && used != null && used >= max ? "已满" : "可预约",
+        _bookedNum: used,
+        _studioName: composeStudioName(brandName, s?.shop?.name || shop.name),
+        _roomName: String(s?.space?.name || "").trim(),
+        _photoUrl: pickImageUrl(s.image),
+        _remark: s?.course?.course_type_tag ? `舞种：${s.course.course_type_tag}` : null,
+        _city: shop.city,
+        _address: shop.address,
+        _lat: shop.lat,
+        _lng: shop.lng,
       });
     }
   }
@@ -1727,6 +2082,10 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "http") return crawlWithHttp(config, date);
   if (config.mode === "fityun") return crawlWithFityun(config, date);
   if (config.mode === "styd") return crawlWithStyd(config, date);
+  if (config.mode === "miliyoga") return crawlWithMiliyoga(config, date);
+  if (config.mode === "yizhiniao") return crawlWithYizhiniao(config, date);
+  if (config.mode === "haowan") return crawlWithHaowan(config, date);
+  if (config.mode === "qingcheng") return crawlWithQingcheng(config, date);
   if (config.mode === "jiahe") return crawlWithJiahe(config, date);
   if (config.mode === "gsteps") return crawlWithGsteps(config, date);
   if (config.mode === "foxdance") return crawlWithFoxdance(config, date);

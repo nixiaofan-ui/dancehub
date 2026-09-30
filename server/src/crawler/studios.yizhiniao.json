@@ -1,0 +1,44 @@
+[
+  {
+    "id": "yizhiniao-wulan",
+    "enabled": true,
+    "label": "舞岚舞蹈实验室（深圳）",
+    "studio": { "name": "舞岚舞蹈实验室", "city": "深圳", "region": "CN" },
+    "mode": "yizhiniao",
+    "yizhiniao": {
+      "baseUrl": "https://www.yizhiniao.com",
+      "shops": [
+        {
+          "id": "62402",
+          "name": "舞岚舞蹈实验室（万象店）",
+          "city": "深圳",
+          "address": "广东省深圳市罗湖区笋岗街道万象世家4楼L423",
+          "lat": 22.561765,
+          "lng": 114.110603
+        },
+        {
+          "id": "62403",
+          "name": "舞岚舞蹈实验室（梅林店）",
+          "city": "深圳",
+          "address": "广东省深圳市福田区梅林街道APARK艺术公园L1-06",
+          "lat": 22.564637,
+          "lng": 114.040337
+        },
+        {
+          "id": "62404",
+          "name": "舞岚舞蹈实验室（蛇口店）",
+          "city": "深圳",
+          "address": "广东省深圳市南山区蛇口文体公园201",
+          "lat": 22.493757,
+          "lng": 113.937234
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

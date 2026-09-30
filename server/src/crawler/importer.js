@@ -31,6 +31,25 @@ function resolvePlatform(studioRef) {
   return studioRef.region === "OVERSEAS" ? "OTHER" : "WECHAT";
 }
 
+/**
+ * 经纬度清洗（坐标能不能入库的最后一道闸）。
+ *
+ * ⚠ 上游把「经度,纬度」写反是**真实发生过**的事故（菲体云的 lng_lat 就是反的），
+ *   反了坐标会落到非洲西海岸，而距离数字照样算得出来、界面上看不出任何异常，
+ *   只有把地图铺开才发现不对。所以这里不修正、只丢弃 —— 宁缺勿错。
+ * - 国内店（region 非 OVERSEAS）：必须落在中国大致范围内才算数，
+ *   反序值必然出界 → 自然被挡掉；
+ * - 海外店：只做 ±90 / ±180 的合法性检查（首尔、东京都在国内范围之外）。
+ */
+function sanitizeLatLng(lat, lng, region) {
+  const a = Number(lat);
+  const b = Number(lng);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  if (Math.abs(a) > 90 || Math.abs(b) > 180) return null;
+  if (region !== "OVERSEAS" && (a < 3 || a > 54 || b < 73 || b > 136)) return null;
+  return { lat: a, lng: b };
+}
+
 export async function findOrCreateStudio(studioRef, extra = {}) {
   const existing = await resolveExistingStudio(studioRef);
   // 跳转小程序 appId / 官网地址等新字段：已有店也补写
@@ -58,6 +77,11 @@ export async function findOrCreateStudio(studioRef, extra = {}) {
     patch.platform = wantPlatform;
   }
   if (studioRef.address && !existing.address) patch.address = studioRef.address;
+  // 坐标：只在库里还是空的时候补（有值不动，避免把人工校准过的坐标覆盖掉）
+  if ((existing.lat == null || existing.lng == null) && Number.isFinite(studioRef.lat) && Number.isFinite(studioRef.lng)) {
+    patch.lat = studioRef.lat;
+    patch.lng = studioRef.lng;
+  }
 
   if (Object.keys(patch).length) {
     return prisma.studio.update({ where: { id: existing.id }, data: patch });
@@ -136,6 +160,8 @@ async function createStudioOnce(studioRef, extra, city) {
       name: studioRef.name,
       cityId: city.id,
       address: studioRef.address || null,
+      lat: Number.isFinite(studioRef.lat) ? studioRef.lat : null,
+      lng: Number.isFinite(studioRef.lng) ? studioRef.lng : null,
       platform: resolvePlatform(studioRef),
       status: true,
       bookingMiniAppId: extra.bookingMiniAppId || null,
@@ -388,9 +414,11 @@ export async function importSchedules(config, rows, ensureStudios = []) {
    * 早期只展开 config.studio（name/city/region），于是配置里那 1100 条真地址
    * 一条都没进库（库里地址覆盖率常年只有 14%），区名和坐标全都抽不出来。
    */
+  const baseCoord = sanitizeLatLng(config.lat, config.lng, config.studio?.region);
   const baseRef = {
     ...config.studio,
     ...(config.address ? { address: config.address } : {}),
+    ...(baseCoord ? { lat: baseCoord.lat, lng: baseCoord.lng } : {}),
   };
 
   /**
@@ -402,12 +430,14 @@ export async function importSchedules(config, rows, ensureStudios = []) {
   for (const ref of ensureStudios) {
     if (!ref || !ref.name) continue;
     try {
+      const coord = sanitizeLatLng(ref.lat, ref.lng, baseRef.region);
       const studioRef = {
         ...baseRef,
         name: ref.name,
         ...(ref.city ? { city: ref.city } : {}),
         // 上游实时拿到的地址比配置里写死的准优先
         ...(ref.address ? { address: ref.address } : {}),
+        ...(coord ? { lat: coord.lat, lng: coord.lng } : {}),
       };
       await findOrCreateStudio(studioRef, {
         bookingMiniAppId: config.http?.appId || config.aiwugong?.host,
@@ -443,6 +473,11 @@ export async function importSchedules(config, rows, ensureStudios = []) {
       const v = groupRows.find((r) => r[key])?.[key];
       if (v) rowOverride[key] = v;
     }
+    const rowCoord = sanitizeLatLng(
+      groupRows.find((r) => r._lat != null)?._lat,
+      groupRows.find((r) => r._lng != null)?._lng,
+      baseRef.region,
+    );
     const studioRef = {
       ...baseRef,
       name: studioName,
@@ -451,6 +486,8 @@ export async function importSchedules(config, rows, ensureStudios = []) {
       ...(rowOverride._address ? { address: rowOverride._address } : {}),
       // 跨城市连锁（如嘉禾舞社：北京/广州/青岛/天津/邯郸）按门店地址覆盖城市
       ...(rowOverride._city ? { city: rowOverride._city } : {}),
+      // 门店级坐标（一只鸟 / 舞空云 / 青橙 / styd 的门店清单直接给 lat,lng）
+      ...(rowCoord ? { lat: rowCoord.lat, lng: rowCoord.lng } : {}),
     };
     const studio = await findOrCreateStudio(studioRef, extra);
     for (const row of groupRows) {

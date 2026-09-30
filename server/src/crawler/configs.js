@@ -18,6 +18,11 @@ const AUTO_CONFIG_FILES = [
   "studios.feiyuntoo.json",
   "studios.newdance.json",
   "studios.iwod-extra.json",
+  // 2026-09-30 手写接入的四套新平台（都是手机抓包逆向所得，见 engine.js 各引擎注释）
+  "studios.miliyoga.json",
+  "studios.yizhiniao.json",
+  "studios.haowan.json",
+  "studios.qingcheng.json",
 ];
 
 /**
