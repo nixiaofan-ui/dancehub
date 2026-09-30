@@ -92,6 +92,16 @@ Page({
     // 「门店|日期」→ 本会话已经回源刷过预约人数，避免反复切日期重复打上游
     this._liveFetched = {};
 
+    // ?style=Jazz,Kpop —— 从「我的-关注」带过来的舞种筛选，作为筛选条的初始勾选。
+    // 消费一次就清空（见 syncStyleChips）：之后用户自己的点击说了算。
+    this._presetStyles = query.style
+      ? String(query.style)
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : null;
+    if (this._presetStyles && !this._presetStyles.length) this._presetStyles = null;
+
     // 多店入口：/pages/studio/weekly?ids=1,2,3&title=品牌名
     // 单店入口：/pages/studio/weekly?id=1 —— 保持原逻辑不变
     // first=1 表示「这些门店是品牌页自动带出来的，用户没表达过偏好」→ 默认只勾一家；
@@ -380,18 +390,35 @@ Page({
     Object.keys(grouped || {}).forEach((k) => {
       this.storeScoped(grouped, k).forEach((i) => flat.push(i));
     });
+    // 从「我的-关注」带过来的舞种（?style=Jazz,Kpop）只作**首次**初始值：
+    // 用户进来之后在筛选条上自己点过，就以他点的为准，翻日期不能再把他拽回来。
+    const preset = this._presetStyles;
     const r = buildStyleChips(
       flat,
       (i) => [styleOfCourse(i.courseName)],
-      this.activeStyles,
+      this.activeStyles != null ? this.activeStyles : preset,
       this._styleLabels,
     );
-    this.activeStyles = r.active;
+    let active = r.active;
+    let chips = r.chips;
+    if (preset && this.activeStyles == null) {
+      // 带过来的舞种这家店一节都没有（在别家筛了 Jazz，这家只教 Kpop）：
+      // 不能当成「筛了但没命中」—— 那会给用户一张全空课表，而他是从卡片点进来看课的。
+      // 回落成全选，让筛选条自己说明这家店有什么。
+      // ⚠ 只在筛选条真的会显示时才回落：r.active 为 null 是「没在筛」的意思，
+      //   若在这里把 null 变成 []，filterByStyle 会把课一节不留地全筛掉。
+      if (r.show && (!active || !active.length)) {
+        active = chips.map((c) => c.label);
+        chips = chips.map((c) => ({ ...c, on: true }));
+      }
+      this._presetStyles = null;
+    }
+    this.activeStyles = active;
     this._styleLabels = r.labels;
     this.setData({
-      styleChips: r.chips,
+      styleChips: chips,
       showStyleBar: r.show,
-      styleAllOn: isAllOn(r.chips, r.active),
+      styleAllOn: isAllOn(chips, active),
     });
   },
 

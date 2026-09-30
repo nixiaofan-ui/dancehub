@@ -297,7 +297,13 @@ Page({
   openStudio(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return;
-    wx.navigateTo({ url: "/pages/studio/weekly?id=" + id });
+    // 把当前筛的舞种带进门店页：在这儿筛了 Jazz，点进店却看到全部舞种，
+    // 等于让用户当着这家店的面再筛一次 —— 而从这张卡片点进来的意图很明确，
+    // 就是想看这家店的 Jazz 什么时候有课。想看别的舞种，门店页的舞种条就在那儿。
+    // null（没在筛）和 []（用户清除了）都不带 —— 那两种情况下带过去没有意义。
+    const styles = Array.isArray(this.activeStyles) ? this.activeStyles : [];
+    const q = styles.length ? "&style=" + encodeURIComponent(styles.join(",")) : "";
+    wx.navigateTo({ url: "/pages/studio/weekly?id=" + id + q });
   },
 
   // ── 关注列表：舞种筛选 + 卡片内联课程 ──────────────────
