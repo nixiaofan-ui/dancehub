@@ -7,6 +7,7 @@ const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 const { foldBlocked } = require("../../utils/blocked");
 const { timeAgo } = require("../../utils/time-ago");
+const { styleOfCourse, buildStyleChips, filterByStyle } = require("../../utils/style-filter");
 
 /** 实时刷人数时最多回源几家店：全选十几家分店逐店拉，等待时间比数字本身更烦人 */
 const MAX_LIVE_STORES = 4;
@@ -52,6 +53,12 @@ Page({
     activeStoreIds: [], // 当前勾选的门店，空数组语义=全不选
     allStoreIds: [],
     allOn: false, // 是否已全选 —— 决定右侧按钮显示「全选」还是「清除」
+    // 舞种筛选条：与门店条串成两级（门店 → 舞种）
+    styleChips: [],
+    showStyleBar: false,
+    styleAllOn: true,
+    // 课表被舞种筛空了，但这一天本来是有课的 —— 空态文案要区分这两种情况
+    styleFilteredOut: false,
     // 被屏蔽的老师：课不直接消失，折叠成一行（点了展开才把课放回列表）
     foldedRows: [],
   },
@@ -220,6 +227,8 @@ Page({
         }
 
         this.weeksCache[from] = grouped;
+        // 舞种条要排在门店初始化之后：它统计的是「门店已定、舞种未筛」的那份
+        this.syncStyleChips(grouped);
         this.applyWeekData();
       })
       .catch((e) => {
@@ -309,21 +318,92 @@ Page({
       stores,
       allOn: activeIds.length > 0 && activeIds.length === stores.length,
     });
+    // 换门店等于换了一批课，舞种条要跟着重算（这家分店可能根本不教 Urban）
+    const grouped =
+      (this.weeksCache && this.weekMonday && this.weeksCache[dateKey(this.weekMonday)]) || {};
+    this.syncStyleChips(grouped);
     this.applyWeekData();
   },
 
   /**
-   * 按当前勾选门店过滤某一天的课。
-   * 周视图上的「今天有没有课」小圆点也要跟着过滤，
-   * 否则会出现「日期上有课、点进去却空白」。
+   * 只按勾选门店过滤（不含舞种）。
+   * 单独拆出来是因为舞种条的统计要基于「门店已经选好、舞种还没筛」的那份，
+   * 否则每勾一个舞种，剩下的 chip 计数就会跟着缩水，像筛选条自己坏了。
    */
-  visibleOf(grouped, key) {
+  storeScoped(grouped, key) {
     let list = grouped[key] || [];
     if (this.multiMode) {
       const active = new Set(this.data.activeStoreIds);
       list = list.filter((i) => active.has(i.studioId));
     }
     return list;
+  },
+
+  /**
+   * 按当前勾选门店 + 舞种过滤某一天的课。
+   * 周视图上的「今天有没有课」小圆点也要跟着过滤，
+   * 否则会出现「日期上有课、点进去却空白」。
+   */
+  visibleOf(grouped, key) {
+    return this.filterByStyle(this.storeScoped(grouped, key));
+  },
+
+  // ── 舞种筛选：与门店条串成两级 ──
+
+  /**
+   * 统计**整周**（不是某一天）的舞种分布。
+   * 用整周是为了让用户左右翻日期时筛选条纹丝不动 ——
+   * 按当天统计的话，切到没排 Jazz 的那天 Jazz 这个 chip 就凭空消失了。
+   */
+  syncStyleChips(grouped) {
+    const flat = [];
+    Object.keys(grouped || {}).forEach((k) => {
+      this.storeScoped(grouped, k).forEach((i) => flat.push(i));
+    });
+    const r = buildStyleChips(
+      flat,
+      (i) => [styleOfCourse(i.courseName)],
+      this.activeStyles,
+      this._styleLabels,
+    );
+    this.activeStyles = r.active;
+    this._styleLabels = r.labels;
+    this.setData({
+      styleChips: r.chips,
+      showStyleBar: r.show,
+      styleAllOn: r.active.length === r.chips.length,
+    });
+  },
+
+  filterByStyle(items) {
+    return filterByStyle(items, (i) => [styleOfCourse(i.courseName)], this.activeStyles);
+  },
+
+  tapStyleChip(e) {
+    const label = e.currentTarget.dataset.label;
+    const active = new Set(this.activeStyles || []);
+    if (active.has(label)) {
+      if (active.size === 1) return toast(this, "至少保留一个舞种");
+      active.delete(label);
+    } else {
+      active.add(label);
+    }
+    this.activeStyles = [...active];
+    this.setData({
+      styleChips: (this.data.styleChips || []).map((c) => ({ ...c, on: active.has(c.label) })),
+      styleAllOn: active.size === (this.data.styleChips || []).length,
+    });
+    this.applyWeekData();
+  },
+
+  tapAllStyles() {
+    const chips = this.data.styleChips || [];
+    this.activeStyles = chips.map((c) => c.label);
+    this.setData({
+      styleChips: chips.map((c) => ({ ...c, on: true })),
+      styleAllOn: true,
+    });
+    this.applyWeekData();
   },
 
   /**
@@ -355,6 +435,12 @@ Page({
 
     const selectedKey = this.data.selectedKey || todayKey();
     const { visible, folded } = this.splitByBlocked(grouped, selectedKey);
+    // 同一天、只过门店不过舞种的那份 —— 用来判断空列表到底是谁造成的。
+    // 被屏蔽的老师从这里就排除了，所以「全被屏蔽」不会被误判成「被舞种筛掉」。
+    const { visible: visibleNoStyle } = foldBlocked(
+      this.storeScoped(grouped, selectedKey),
+      (i) => i.coachName,
+    );
     const shown = this._shownBlocked || {};
     const decorate = (i, hidden) => ({ ...i, booked: booked.has(i.id), hidden });
 
@@ -379,6 +465,7 @@ Page({
       })),
       bookedCount: dayItems.filter((i) => i.booked).length,
       weekBookedCount: weekDays.reduce((n, d) => n + d.bookedCount, 0),
+      styleFilteredOut: visibleNoStyle.length > 0 && visible.length === 0,
     });
 
     // 渲染完再异步换真数：先出课表（可能带着几小时前的快照人数），刷新回来就地替换

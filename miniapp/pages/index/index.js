@@ -16,7 +16,7 @@ const { onNavTop } = require("../../utils/scroll-top");
 // 跳老师主页统一走这里：详情页/周课表页也是同一个实现，行为保持一致
 const { onTapCoach } = require("../../utils/coach-nav");
 const CP = require("../../utils/city-picker-mixin");
-const { detectStyle, OTHER, DISPLAY_ORDER } = require("../../utils/dance-style");
+const { styleOfCourse, buildStyleChips, filterByStyle } = require("../../utils/style-filter");
 
 /**
  * 首页和发现页共用一套城市选择逻辑（热门 chip + 全量面板）。
@@ -319,42 +319,25 @@ Page(
    *
    * ⚠ 「认不出舞种」的课归到「其它」，不能丢 —— 那批课也是用户想看的。
    */
+  /** 首页按「课」筛：一节课只有一个舞种 */
   syncStyleChips(items) {
-    const tally = new Map();
-    items.forEach((i) => {
-      const label = detectStyle(i.courseName) || OTHER;
-      tally.set(label, (tally.get(label) || 0) + 1);
-    });
-    // 只有一个舞种（或全都识别不出来）时不显示：没有选择余地的开关是噪音
-    if (tally.size < 2) {
-      this.activeStyles = [];
-      this.setData({ styleChips: [], showStyleBar: false, styleAllOn: true });
-      return;
-    }
-    // 「其它」不是真舞种，同课时一律排最后（它没有 DISPLAY_ORDER 位次）
-    const orderOf = (l) => (l === OTHER ? 999 : DISPLAY_ORDER.indexOf(l));
-    const chips = [...tally.entries()]
-      .map((p) => ({ label: p[0], count: p[1] }))
-      .sort((a, b) => b.count - a.count || orderOf(a.label) - orderOf(b.label));
-
-    // 首次全选；之后保留上次勾选，但剔掉这次列表里已经没有的舞种
-    let active = (this.activeStyles || []).filter((l) => tally.has(l));
-    if (!active.length) active = chips.map((c) => c.label);
-    this.activeStyles = active;
-
-    const on = new Set(active);
+    const r = buildStyleChips(
+      items,
+      (i) => [styleOfCourse(i.courseName)],
+      this.activeStyles,
+      this._styleLabels,
+    );
+    this.activeStyles = r.active;
+    this._styleLabels = r.labels;
     this.setData({
-      styleChips: chips.map((c) => ({ ...c, on: on.has(c.label) })),
-      showStyleBar: true,
-      styleAllOn: on.size === chips.length,
+      styleChips: r.chips,
+      showStyleBar: r.show,
+      styleAllOn: r.active.length === r.chips.length,
     });
   },
 
   filterByStyle(items) {
-    const active = this.activeStyles;
-    if (!active || !active.length) return items;
-    const on = new Set(active);
-    return items.filter((i) => on.has(detectStyle(i.courseName) || OTHER));
+    return filterByStyle(items, (i) => [styleOfCourse(i.courseName)], this.activeStyles);
   },
 
   /** 两级筛选串起来：门店 → 舞种。顺序不影响结果，但只调这一个地方不容易漏 */

@@ -9,15 +9,9 @@ const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 const { bookCourse } = require("../../utils/booking");
 const { todayKey, parseKey, WEEK } = require("../../utils/date");
-// 只取展示顺序：舞种本身是服务端按未来课表算好随关注接口下发的，
-// 前端不重新识别（课表没拉下来时前端也识别不出）。
-const { DISPLAY_ORDER } = require("../../utils/dance-style");
-
-/**
- * 没有未来排课（或课名认不出舞种）的店归到「其它」。
- * 不能把它们直接丢掉：默认全选时它们得在列表里，否则用户会觉得店凭空少了。
- */
-const OTHER = "其它";
+// 舞种本身是服务端按未来课表算好、随关注接口下发的，前端不重新识别
+// （课表没拉下来时前端也识别不出）。
+const { OTHER, buildStyleChips, filterByStyle } = require("../../utils/style-filter");
 
 Page({
   onNavTop,
@@ -297,39 +291,18 @@ Page({
    * 否则每点一下 chip，条上的数字就跟着跳，看起来像筛选条自己坏了。
    */
   syncFollowStyleChips(rows) {
-    const tally = new Map();
-    rows.forEach((r) => {
-      new Set(this.stylesOf(r)).forEach((l) => tally.set(l, (tally.get(l) || 0) + 1));
-    });
-    // 只有一个标签（或全都归到「其它」）时不显示：没有选择余地的开关是噪音
-    if (tally.size < 2) {
-      this.activeStyles = [];
-      this.setData({ styleChips: [], showStyleBar: false, styleAllOn: true });
-      return;
-    }
-    const orderOf = (l) => (l === OTHER ? 999 : DISPLAY_ORDER.indexOf(l));
-    const chips = [...tally.entries()]
-      .map((p) => ({ label: p[0], count: p[1] }))
-      .sort((a, b) => b.count - a.count || orderOf(a.label) - orderOf(b.label));
-
-    // 首次全选；之后保留上次勾选，但剔掉这次列表里已经没有的舞种
-    let active = (this.activeStyles || []).filter((l) => tally.has(l));
-    if (!active.length) active = chips.map((c) => c.label);
-    this.activeStyles = active;
-
-    const on = new Set(active);
+    const r = buildStyleChips(rows, (x) => this.stylesOf(x), this.activeStyles, this._styleLabels);
+    this.activeStyles = r.active;
+    this._styleLabels = r.labels;
     this.setData({
-      styleChips: chips.map((c) => ({ ...c, on: on.has(c.label) })),
-      showStyleBar: true,
-      styleAllOn: on.size === chips.length,
+      styleChips: r.chips,
+      showStyleBar: r.show,
+      styleAllOn: r.active.length === r.chips.length,
     });
   },
 
   filterFollowsByStyle(rows) {
-    const active = this.activeStyles;
-    if (!active || !active.length) return rows;
-    const on = new Set(active);
-    return rows.filter((r) => this.stylesOf(r).some((l) => on.has(l)));
+    return filterByStyle(rows, (x) => this.stylesOf(x), this.activeStyles);
   },
 
   tapStyleChip(e) {

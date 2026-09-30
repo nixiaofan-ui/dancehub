@@ -41,6 +41,26 @@
     >{{followed ? '已关注' : '关注'}}</button>
   </view>
 
+  <!--
+    舞种筛选：一家店一周几十节课，常常只想看某一类（「这家店的 Kpop 都在哪天」）。
+    在门店条之后，两级串起来用：先选哪家分店，再选看什么舞种。
+    统计的是整周的课，所以左右翻日期时筛选条不会变。
+    认不出舞种的课归到「其它」，不会被悄悄筛掉。
+  -->
+  <view wx:if="{{showStyleBar}}" class="style-filter">
+    <scroll-view scroll-x class="style-scroll" enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{styleChips}}"
+        wx:key="label"
+        class="stf-chip {{item.on ? 'on' : ''}}"
+        hover-class="press"
+        data-label="{{item.label}}"
+        bindtap="tapStyleChip"
+      >{{item.label}}<text class="stf-n">{{item.count}}</text></view>
+    </scroll-view>
+    <view class="stf-all {{styleAllOn ? 'on' : ''}}" hover-class="press" bindtap="tapAllStyles">全部</view>
+  </view>
+
   <!-- 星期横条 -->
   <view class="week-nav">
     <view class="week-arrow" hover-class="press" bindtap="prevWeek">‹</view>
@@ -88,6 +108,10 @@
     <view wx:elif="{{multiMode && activeStoreIds.length === 0}}" class="empty-tip">
       未勾选门店
       <view class="empty-sub">点上方「全选」，或直接点想看的门店</view>
+    </view>
+    <view wx:elif="{{dayItems.length === 0 && styleFilteredOut}}" class="empty-tip">
+      这天没有你选的舞种
+      <view class="empty-sub">点上方「全部」恢复，或换一天看看</view>
     </view>
     <view wx:elif="{{dayItems.length === 0}}" class="empty-tip">当天暂无课程</view>
     <view
