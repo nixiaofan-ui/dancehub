@@ -132,6 +132,8 @@ const apiCoachTimeline = (name, cityId, days, direction) =>
     days: days || 14,
     ...(direction ? { direction } : {}),
   });
+// 同城搜老师：返回一个「同名 → 任教门店清单」的列表（同名不合并，由用户自己判断）
+const apiCoachSearch = (q, cityId) => req.get("/coaches/search", { q, cityId });
 // 不想看的老师（本地即时生效，云端用于跨设备同步）
 const apiBlocked = () => req.get("/blocked");
 const apiBlock = (name) => req.post("/blocked", { name });
@@ -194,6 +196,7 @@ module.exports = {
   apiRemoveReminder,
   apiSubscribeConfig,
   apiCoachTimeline,
+  apiCoachSearch,
   apiBlocked,
   apiBlock,
   apiUnblock,

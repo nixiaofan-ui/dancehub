@@ -136,6 +136,18 @@ async function columnExists(table, column) {
   return Number(rows?.[0]?.c || 0) > 0;
 }
 
+async function indexExists(table, index) {
+  const rows = await prisma
+    .$queryRawUnsafe(
+      `SELECT COUNT(*) AS c FROM information_schema.STATISTICS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?`,
+      table,
+      index,
+    )
+    .catch(() => [{ c: 1 }]);
+  return Number(rows?.[0]?.c || 0) > 0;
+}
+
 export async function ensureSchema() {
   await run("CoachBlock", COACH_BLOCK_SQL);
   await run("CoachFollow", COACH_FOLLOW_SQL);
@@ -155,5 +167,9 @@ export async function ensureSchema() {
   }
   if (!(await columnExists("Studio", "lat"))) {
     await run("Studio.lat/lng", STUDIO_LATLNG_SQL);
+  }
+  // 老师搜索按名字匹配，存量库的 Coach 表没有这个索引
+  if (!(await indexExists("Coach", "Coach_name_idx"))) {
+    await run("Coach.name idx", "ALTER TABLE `Coach` ADD INDEX `Coach_name_idx` (`name`)");
   }
 }

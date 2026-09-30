@@ -155,6 +155,9 @@ model Coach {
   schedules Schedule[]
 
   @@index([studioId])
+  // 搜老师按名字匹配（/api/coaches/search 的 equals / startsWith 两档）。
+  // 没这个索引时一次搜索就是一次全表扫。
+  @@index([name])
 }
 
 model Schedule {

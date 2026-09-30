@@ -4,7 +4,13 @@ import { requireAdmin } from "../middleware/admin.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import { ok, fail } from "../utils/response.js";
-import { getCoachSchedules, toDateKey, addDays } from "../services/schedule.service.js";
+import {
+  getCoachSchedules,
+  toDateKey,
+  addDays,
+  parseDateKey,
+  visibleScope,
+} from "../services/schedule.service.js";
 import { shortStudioLabel } from "../lib/studio-name.js";
 
 const router = Router();
@@ -76,6 +82,174 @@ router.get(
       studios: [...studioMap.values()].sort((a, b) => b.count - a.count),
       items,
     });
+  }),
+);
+
+/**
+ * 按名字找同城的老师记录。
+ *
+ * 三档渐进：精确 → 前缀 → 包含。前两档能走 Coach.name 索引，「包含」是兜底
+ * （库里的老师名常带尾巴，例如 "Kennis "、"Kennis(代课)"）。
+ * ⚠ 命中一档就停：用户输全名时，再放宽只会把同名的人一起捞进来。
+ */
+async function matchCoaches(keyword, cityId, take) {
+  const base = { studio: { cityId, status: true } };
+  const include = { studio: { select: { id: true, name: true, cityId: true } } };
+  const modes = [{ equals: keyword }, { startsWith: keyword }, { contains: keyword }];
+  for (const name of modes) {
+    const rows = await prisma.coach.findMany({ where: { ...base, name }, include, take });
+    if (rows.length) return rows;
+  }
+  return [];
+}
+
+/**
+ * 同城搜老师：GET /api/coaches/search?cityId=17&q=kennis
+ *
+ * ⚠ 同名**不合并**——这是刻意的：
+ * 同一个老师在不同门店是两条 Coach 记录（名字一样、id 不同），而我们没有任何
+ * 字段能证明「A 店的 Kennis」和「B 店的 Kennis」是同一个人；舞蹈圈重名本来
+ * 就常见，跨店授课的也确实有。合并成一个人，用户照着合并结果去约课，很可能
+ * 约到另一个人的课 —— 那种错误比多列几行严重得多。
+ *
+ * 所以这里同城同名**全取**，按名字聚成一组，组内把每家店单独列出来
+ * （课程数 + 最近一次 / 下一次排课），是不是同一个人由用户看着门店清单自己判断。
+ */
+router.get(
+  "/search",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const q = String(req.query.q || req.query.keyword || "").trim();
+    const cityId = Number(req.query.cityId || 0);
+    if (!q) return fail(res, 400, "q 必填");
+    if (!cityId) return fail(res, 400, "cityId 必填");
+
+    const coaches = await matchCoaches(q, cityId, 120);
+    const ids = coaches.map((c) => c.id);
+    const today = parseDateKey(toDateKey(new Date()));
+    const scope = { ...visibleScope(req.userId), studio: { status: true } };
+
+    // 未来/历史各聚合一次：前者决定「还能不能去上」，后者在多数舞室只放
+    // 最近几天课时是唯一有信息量的描述（这老师上周固定周几在哪上课）
+    const [future, past] = ids.length
+      ? await Promise.all([
+          prisma.schedule.groupBy({
+            by: ["coachId"],
+            where: { ...scope, coachId: { in: ids }, scheduleDate: { gte: today } },
+            _count: { _all: true },
+            _min: { scheduleDate: true },
+          }),
+          prisma.schedule.groupBy({
+            by: ["coachId"],
+            where: { ...scope, coachId: { in: ids }, scheduleDate: { lt: today } },
+            _count: { _all: true },
+            _max: { scheduleDate: true },
+          }),
+        ])
+      : [[], []];
+
+    const fut = new Map(future.map((r) => [r.coachId, r]));
+    const his = new Map(past.map((r) => [r.coachId, r]));
+
+    const byName = new Map();
+    coaches.forEach((c) => {
+      const f = fut.get(c.id);
+      const p = his.get(c.id);
+      const entry = {
+        coachId: c.id,
+        studioId: c.studio.id,
+        studioName: c.studio.name,
+        short: shortStudioLabel(c.studio.name),
+        upcoming: f ? Number(f._count._all) : 0,
+        past: p ? Number(p._count._all) : 0,
+        nextDate: f && f._min.scheduleDate ? toDateKey(f._min.scheduleDate) : "",
+        lastDate: p && p._max.scheduleDate ? toDateKey(p._max.scheduleDate) : "",
+      };
+      let g = byName.get(c.name);
+      if (!g) {
+        g = { name: c.name, avatarUrl: c.avatarUrl || "", studios: [] };
+        byName.set(c.name, g);
+      }
+      // 头像可能有店有、有店没有 → 别让空值把已有的覆盖掉
+      if (!g.avatarUrl && c.avatarUrl) g.avatarUrl = c.avatarUrl;
+      g.studios.push(entry);
+    });
+
+    const groups = [...byName.values()].map((g) => {
+      const studios = g.studios.sort(
+        (a, b) =>
+          (b.nextDate ? 1 : 0) - (a.nextDate ? 1 : 0) ||
+          String(a.nextDate || "9999").localeCompare(String(b.nextDate || "9999")) ||
+          b.upcoming + b.past - (a.upcoming + a.past),
+      );
+      const total = studios.reduce((n, s) => n + s.upcoming + s.past, 0);
+      const nexts = studios.map((s) => s.nextDate).filter(Boolean).sort();
+      const lasts = studios.map((s) => s.lastDate).filter(Boolean).sort();
+      return {
+        name: g.name,
+        avatarUrl: g.avatarUrl,
+        studioCount: studios.length,
+        totalCourses: total,
+        upcoming: studios.reduce((n, s) => n + s.upcoming, 0),
+        nextDate: nexts[0] || "",
+        lastDate: lasts[lasts.length - 1] || "",
+        // 同名多店：前端要把它讲清楚（「同名 3 家店」），不能默认是一个人
+        multiStudio: studios.length > 1,
+        studios,
+      };
+    });
+
+    // 近期有课的排前面：搜到一位下周有课的老师，比搜到一位去年教过的有用得多
+    groups.sort(
+      (a, b) =>
+        (b.nextDate ? 1 : 0) - (a.nextDate ? 1 : 0) ||
+        String(a.nextDate || "9999").localeCompare(String(b.nextDate || "9999")) ||
+        String(b.lastDate || "").localeCompare(String(a.lastDate || "")) ||
+        b.totalCourses - a.totalCourses,
+    );
+
+    const result = {
+      keyword: q,
+      cityId,
+      groups: groups.slice(0, 30),
+      total: groups.length,
+    };
+
+    // 同城一个都没搜到：给一句「全国还有 N 位」并列出城市，
+    // 否则用户只会以为我们没收录（与门店搜索的 crossCity 同一套处理）
+    if (!groups.length) {
+      const rows = await prisma.coach.findMany({
+        where: { name: { contains: q }, studio: { status: true } },
+        select: { name: true, studio: { select: { city: { select: { id: true, name: true } } } } },
+        take: 200,
+      });
+      const byCity = new Map();
+      const names = new Set();
+      rows.forEach((r) => {
+        const city = r.studio && r.studio.city;
+        if (!city) return;
+        names.add(r.name);
+        let cur = byCity.get(city.id);
+        if (!cur) {
+          cur = { cityId: city.id, name: city.name, seen: new Set() };
+          byCity.set(city.id, cur);
+        }
+        cur.seen.add(r.name);
+      });
+      if (names.size) {
+        // ⚠ 城市 count 也按**名字去重**：按记录数算的话会出现「全国 8 位 · 上海 12」
+        // 这种前后矛盾的文案 —— 上海那 12 条记录里大半是同一个名字的不同门店
+        result.crossCity = {
+          total: names.size,
+          cities: [...byCity.values()]
+            .map((c) => ({ cityId: c.cityId, name: c.name, count: c.seen.size }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5),
+        };
+      }
+    }
+
+    ok(res, result);
   }),
 );
 

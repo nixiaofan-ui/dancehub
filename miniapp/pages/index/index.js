@@ -62,6 +62,17 @@ Page(
     // 因「屏蔽老师」而隐藏的课
     hiddenCount: 0,
     showBlocked: false,
+    /**
+     * 「只看已约」开关。默认关：课表的主职还是「我今天能上什么」，
+     * 一上来就只给已约的课，等于把这张表变成了另一份「预约记录」。
+     *
+     * ⚠ 已约置顶（sortBookedFirst）**不受这个开关影响**，是常驻行为：
+     * 一天几十节课里，用户第一件事往往是确认「我约的那节在几点」，
+     * 置顶比开关更高频，也不挡住别的课。
+     */
+    onlyBooked: false,
+    // 这天已约（含待确认）的课数，写在开关旁边；为 0 时开关整体收起
+    bookedCount: 0,
 
     panel: { visible: false, item: null },
   }),
@@ -253,6 +264,12 @@ Page(
 
       this.syncStoreChips(base);
       this.syncStyleChips(base);
+      // 计数用**全量** items（含被屏蔽的）：开关上写的是「这天我约了几节」，
+      // 跟着隐藏状态变会让这个数字和「我的」里的预约记录对不上
+      const bookedCount = items.filter((i) => !!i.bookingStatus).length;
+      // 翻到一节已约都没有的那天：开关继续开着就是一片空白，自动退回全部。
+      // ⚠ 只在这一天关掉，翻回有预约的那天要再点一次 —— 空列表比「开关自己关了」更难解释
+      if (this.data.onlyBooked && !bookedCount) this.setData({ onlyBooked: false });
       const visible = this.applyFilters(base);
       const pendingCount = items.filter((i) => i.bookingStatus === "PENDING").length;
 
@@ -262,6 +279,7 @@ Page(
       this.commitVisible(visible, {
         pendingCount,
         hiddenCount,
+        bookedCount,
         loading: false,
         loadError: "",
       });
@@ -365,9 +383,40 @@ Page(
     );
   },
 
-  /** 两级筛选串起来：门店 → 舞种。顺序不影响结果，但只调这一个地方不容易漏 */
+  /**
+   * 串起所有筛选：门店 → 舞种 → 已约 → 置顶。
+   * 顺序不影响结果，但只调这一个地方不容易漏。
+   */
   applyFilters(items) {
-    return this.filterByStyle(this.filterByStore(items));
+    return this.sortBookedFirst(
+      this.filterByBooked(this.filterByStyle(this.filterByStore(items))),
+    );
+  },
+
+  /**
+   * 已约课置顶。
+   *
+   * 一天几十节课时，「我约的那节在几点」是最高频的问题 —— 置顶让它不用翻。
+   * 顺序：已约好 > 待确认 > 没约；同档内保持原顺序（就是时间先后），
+   * 自己带 idx 做 tiebreak，别指望引擎的 sort 稳定性。
+   */
+  sortBookedFirst(items) {
+    const rank = (i) =>
+      i.bookingStatus === "CONFIRMED" ? 0 : i.bookingStatus === "PENDING" ? 1 : 2;
+    return items
+      .map((item, idx) => ({ item, idx }))
+      .sort((a, b) => rank(a.item) - rank(b.item) || a.idx - b.idx)
+      .map((x) => x.item);
+  },
+
+  /** 「只看已约」：已约好和待确认都算已约 —— 两者都是用户主动标过的 */
+  filterByBooked(items) {
+    return this.data.onlyBooked ? items.filter((i) => !!i.bookingStatus) : items;
+  },
+
+  toggleOnlyBooked() {
+    this.setData({ onlyBooked: !this.data.onlyBooked });
+    this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
   tapStyleChip(e) {

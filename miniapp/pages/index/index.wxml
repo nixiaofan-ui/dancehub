@@ -68,6 +68,20 @@
     <view class="add-day" hover-class="press" bindtap="goImport">＋</view>
   </view>
 
+  <!--
+    只看已约。
+    默认关：课表的主职是「今天我能上什么」，一上来只剩已约的课，等于把它变成
+    另一份预约记录。但**已约课恒定置顶**（不管开关开着还是关着）——
+    一天几十节课时，「我约的那节在几点」是最高频的问题，不该让人翻。
+    ⚠ 这天一节已约都没有时整行收起：一个点了只会变空的开关纯属噪音。
+  -->
+  <view wx:if="{{bookedCount > 0}}" class="booked-filter">
+    <view class="bf-toggle {{onlyBooked ? 'on' : ''}}" hover-class="press" bindtap="toggleOnlyBooked">
+      {{onlyBooked ? '✓ 只看已约' : '只看已约'}}
+    </view>
+    <text class="bf-count">已约 {{bookedCount}} 节 · 已置顶</text>
+  </view>
+
   <!-- 已关注门店筛选：多家店同时看时，用它决定时间轴里出现谁 -->
   <view wx:if="{{showStoreBar}}" class="store-filter">
     <scroll-view scroll-x class="store-scroll" enhanced show-scrollbar="{{false}}">
@@ -132,7 +146,9 @@
       <!-- 有课但被筛掉了 ≠ 这天没课：说错原因，用户会以为数据漏了 -->
       <view wx:if="{{emptyFiltered}}" class="empty-title">这些筛选下没有课</view>
       <view wx:else class="empty-title">今日暂无课程</view>
-      <view wx:if="{{emptyFiltered}}" class="empty-sub">点上方「全选」恢复，或换一天看看</view>
+      <!-- 开了「只看已约」却空着：原因就是这天没预约，别让人以为课表没数据 -->
+      <view wx:if="{{emptyFiltered && onlyBooked}}" class="empty-sub">这天没有已约的课，关掉「只看已约」看全部</view>
+      <view wx:elif="{{emptyFiltered}}" class="empty-sub">点上方「全选」恢复，或换一天看看</view>
       <view wx:else class="empty-sub">去「发现」页搜索并关注舞室吧</view>
       <button wx:if="{{!emptyFiltered}}" class="btn-pri empty-btn" hover-class="press" bindtap="goDiscover">去发现</button>
       <!-- 空列表恰恰是最该出现补录入口的时刻：这天没课，多半是这家店没被抓到 -->

@@ -202,6 +202,36 @@
   letter-spacing: 1rpx;
 }
 
+/*
+  只看已约：做成开关而不是又一个 chip，是因为它和门店/舞种筛选不是一类东西 ——
+  那两条是「从全部课里挑」，这条是「换一种视角」。
+*/
+.booked-filter {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14rpx;
+}
+.bf-toggle {
+  padding: 10rpx 28rpx;
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #a8adc2;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+}
+.bf-toggle.on {
+  color: #0e0e1c;
+  background: linear-gradient(135deg, #00f5d4, #00d9ff);
+  border-color: transparent;
+}
+.bf-count {
+  margin-left: 14rpx;
+  font-size: 21rpx;
+  font-weight: 600;
+  color: #79819c;
+}
+
 /* 日期 */
 .date-nav {
   display: flex;

@@ -662,3 +662,131 @@
   font-weight: 900;
   padding-left: 12rpx;
 }
+
+/* ───────────────── 教练搜索结果 ───────────────── */
+/*
+  与门店卡片同一套骨架，只把左边框换成青色 —— 搜索结果里「门店」和「教练」
+  是两个维度，靠颜色区分比靠标题更快。
+*/
+.coach-block {
+  margin-bottom: 24rpx;
+}
+.coach-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+.coach-title {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.coach-city {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #8f97b4;
+}
+/* 同名不合并是刻意的设计，得写给用户看，否则他会以为是我们没归并干净 */
+.coach-tip {
+  font-size: 20rpx;
+  color: #79819c;
+}
+.coach-card {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  margin-bottom: 12rpx;
+  /* 右侧给字母索引条让位（与门店卡片一致） */
+  margin-right: 28rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.07);
+  border-left: 5rpx solid rgba(0, 245, 212, 0.85);
+  border-radius: 20rpx;
+  background: linear-gradient(160deg, #1c2547 0%, #151c35 100%);
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.25);
+}
+/* 头像是圆的：和门店的方角色块区分开，一眼看出这边是「人」 */
+.coach-avatar {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #7b2fbe, #9b5cff);
+}
+.coach-avatar-txt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+.coach-info {
+  flex: 1;
+  /* 同 .info：不归零的话长名字会把箭头顶出卡片 */
+  min-width: 0;
+  margin-left: 18rpx;
+}
+.coach-name-row {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+.coach-name {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #ffffff;
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.coach-flag {
+  flex-shrink: 0;
+  margin-left: 10rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #ffb38a;
+  background: rgba(255, 107, 53, 0.14);
+  border-radius: 6rpx;
+  padding: 3rpx 10rpx;
+}
+.coach-sub {
+  font-size: 21rpx;
+  color: #8f97b4;
+  font-weight: 600;
+  margin-top: 4rpx;
+}
+.cs-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 8rpx;
+}
+.cs-tag {
+  flex-shrink: 0;
+  max-width: 100%;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #5eead4;
+  background: rgba(0, 245, 212, 0.1);
+  border-radius: 6rpx;
+  padding: 3rpx 12rpx;
+  line-height: 1.5;
+  margin: 0 8rpx 6rpx 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-note {
+  color: #7f88a3;
+}
+.cs-tag.more {
+  color: #79819c;
+  background: rgba(255, 255, 255, 0.06);
+}
+.coach-arrow {
+  font-size: 40rpx;
+  color: #00f5d4;
+  font-weight: 900;
+  padding-left: 12rpx;
+}

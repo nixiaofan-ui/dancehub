@@ -50,7 +50,7 @@
     </view>
     <input
       class="search-input"
-      placeholder="搜索舞室名称 / 地址"
+      placeholder="搜索舞室 / 教练名称"
       placeholder-class="search-ph"
       confirm-type="search"
       value="{{keyword}}"
@@ -81,6 +81,55 @@
         bindtap="tapHitCity"
       >{{item.name}} {{item.count}}</view>
     </scroll-view>
+  </view>
+
+  <!--
+    教练维度：搜「一个名字」时，命中的往往既有店也有人。
+    ⚠ 同名**不合并**：两家店的 Ken 是不是同一个人，我们手上没有任何字段能证明，
+    合并成一个人、用户照着约课，很可能约到另一个人的课。所以同城同名全取，
+    每家店单列一行（含最近/下一次排课），是不是同一个人由用户自己判断。
+  -->
+  <view wx:if="{{coachGroups.length}}" class="coach-block">
+    <view class="coach-head">
+      <view class="coach-title">教练<text wx:if="{{coachCityName}}" class="coach-city"> · {{coachCityName}}</text></view>
+      <view class="coach-tip">同名多店不合并，按门店自己判断</view>
+    </view>
+    <view
+      wx:for="{{coachGroups}}"
+      wx:key="name"
+      class="coach-card"
+      hover-class="press"
+      data-index="{{index}}"
+      bindtap="goCoachResult"
+    >
+      <image wx:if="{{item.avatarUrl}}" class="coach-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="coach-avatar coach-avatar-txt">{{item.initial}}</view>
+      <view class="coach-info">
+        <view class="coach-name-row">
+          <text class="coach-name">{{item.name}}</text>
+          <text wx:if="{{item.multiStudio}}" class="coach-flag">同名 {{item.studioCount}} 家店</text>
+        </view>
+        <view wx:if="{{item.sub}}" class="coach-sub">{{item.sub}}</view>
+        <view class="cs-row">
+          <view
+            wx:for="{{item.studios}}"
+            wx:for-item="st"
+            wx:key="studioId"
+            class="cs-tag"
+          >{{st.short}}<text class="cs-note"> · {{st.note}}</text></view>
+          <view wx:if="{{item.extraStudios}}" class="cs-tag more">+{{item.extraStudios}}</view>
+        </view>
+      </view>
+      <view class="coach-arrow">›</view>
+    </view>
+  </view>
+
+  <!-- 同城搜不到这位老师，全国有：说一句，否则用户只会以为我们没收录 -->
+  <view wx:if="{{coachCrossCity}}" class="cross-bar" hover-class="press" bindtap="goCoachCrossCity">
+    <view class="cb-main">
+      <view class="cb-title">本城没有叫「{{keyword}}」的教练</view>
+      <view class="cb-sub">全国还有 {{coachCrossCity.total}} 位 · {{coachCrossText}}，看看 ›</view>
+    </view>
   </view>
 
   <!--

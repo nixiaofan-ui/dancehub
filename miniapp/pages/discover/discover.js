@@ -7,9 +7,39 @@ const CP = require("../../utils/city-picker-mixin");
 const { buildBrandGroups, splitStudioName } = require("../../utils/brand");
 const { locateCity, getOrigin } = require("../../utils/locate");
 const { sortByDistance, llOf } = require("../../utils/geo");
+const { goToCoach } = require("../../utils/coach-nav");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
+
+/** 卡片上最多平铺几家任教门店，多出来的收成「+N」 */
+const MAX_COACH_STUDIOS = 4;
+
+/** dateKey(2026-10-05) → 10-05。完整日期在卡片上太长，也没有年份信息量 */
+const shortDay = (k) => (k ? String(k).slice(5) : "");
+
+/**
+ * 一家店的排课状态。
+ * 「下周有课」和「上周教过」对用户是两个不同结论 —— 前者能去上，
+ * 后者只说明这老师在这儿教过，所以分开写，别合成一句「有 N 节课」。
+ */
+function studioNote(s) {
+  if (s.nextDate) return shortDay(s.nextDate) + " 有课";
+  if (s.lastDate) return "最近 " + shortDay(s.lastDate);
+  return "暂无排课";
+}
+
+/** 老师卡片副标题：任教几家店 + 课量 */
+function coachSub(g) {
+  const n = g.studioCount || (g.studios ? g.studios.length : 0);
+  const where = n > 1 ? n + " 家店" : g.studios && g.studios[0] ? g.studios[0].short : "";
+  const cnt = g.upcoming
+    ? "近期 " + g.upcoming + " 节"
+    : g.totalCourses
+      ? "历史 " + g.totalCourses + " 节"
+      : "";
+  return [where, cnt].filter(Boolean).join(" · ");
+}
 
 /** 卡片上最多平铺几个舞种标签，多出来的收成「+N」 */
 const MAX_TAGS = 3;
@@ -168,6 +198,17 @@ Page(
     crossCity: null,
     /** WXML 不能拼字符串，城市列表先在 JS 里拼好 */
     crossCityText: "",
+    /**
+     * 老师搜索结果（只在有关键词时出现）。
+     * 一组 = 一个名字；组内是各家门店，**同名不合并** —— 详情见服务端注释：
+     * 我们没法证明两家店的 Ken 是同一个人，合并了用户会约错人。
+     */
+    coachGroups: [],
+    /** 同城搜不到老师、但全国有（服务端算好回传） */
+    coachCrossCity: null,
+    coachCrossText: "",
+    /** 老师结果所属城市名（标题上要写明「北京的教练」，否则跨城重名无从判断） */
+    coachCityName: "",
   }),
 
   async onLoad() {
@@ -217,10 +258,17 @@ Page(
         params.limit = 200;
         params.withCityCounts = 1;
       }
+      // 教练搜索同批发出去：用户搜的是「一个名字」，门店和老师两个维度一起回，
+      // 比先看到一堆店、再想起来还能搜老师顺畅。
+      // ⚠ 只搜当前城市：老师重名比店名普遍得多，放开全国重名会淹没真目标。
+      const coachPromise =
+        kw && scopeId ? api.apiCoachSearch(kw, scopeId).catch(() => null) : Promise.resolve(null);
+
       // 品牌接口失败不该挡住发现页 → 兜底空数组，最差退化成纯门店列表
-      const [res, follows] = await Promise.all([
+      const [res, follows, coachRes] = await Promise.all([
         api.apiStudios(params),
         api.apiFollows(),
+        coachPromise,
       ]);
       // 全国搜索回的是 { items, cityCounts, total }，城市内搜索回的是数组
       const rawStudios = Array.isArray(res) ? res : res.items || [];
@@ -268,6 +316,7 @@ Page(
       this._studios = studios;
       this._brandList = brandList;
       const view = this.buildRows(this.applyDistrictFilter(studios));
+      const coaches = this.buildCoachGroups(coachRes, scopeId);
       this.setData(
         {
           brands: brandList,
@@ -278,6 +327,10 @@ Page(
           hitTotal,
           crossCity: cc,
           crossCityText,
+          coachGroups: coaches.groups,
+          coachCrossCity: coaches.crossCity,
+          coachCrossText: coaches.crossText,
+          coachCityName: coaches.cityName,
           loading: false,
         },
         () => {
@@ -289,6 +342,61 @@ Page(
       this.setData({ loading: false });
       toast(this, e.message);
     }
+  },
+
+  /**
+   * 老师搜索结果 → 卡片视图。
+   * WXML 里不能拼字符串、也不能调方法，展示文案一律在这里算好。
+   */
+  buildCoachGroups(res, cityId) {
+    const groups = (res && res.groups ? res.groups : []).map((g) => ({
+      name: g.name,
+      avatarUrl: g.avatarUrl || "",
+      initial: (g.name || "?").charAt(0),
+      sub: coachSub(g),
+      multiStudio: g.studioCount > 1,
+      studios: (g.studios || []).slice(0, MAX_COACH_STUDIOS).map((s) => ({
+        studioId: s.studioId,
+        short: s.short,
+        note: studioNote(s),
+      })),
+      extraStudios: Math.max(0, (g.studios || []).length - MAX_COACH_STUDIOS),
+    }));
+    const cc = res && res.crossCity ? res.crossCity : null;
+    const cities = this.data.cities || app.globalData.cities || [];
+    const city = cities.find((c) => c.id === cityId);
+    // 点卡片跳老师主页要用**这次搜索的城市**：用户可能收窄到了别的城市
+    this._coachCityId = cityId || 0;
+    return {
+      groups,
+      crossCity: cc,
+      crossText: cc
+        ? (cc.cities || [])
+            .slice(0, 3)
+            .map((c) => `${c.name} ${c.count}`)
+            .join(" · ")
+        : "",
+      cityName: city ? city.name : "",
+    };
+  },
+
+  /** 老师卡片 → 老师主页（未来两周的课 + 任教门店） */
+  goCoachResult(e) {
+    const idx = Number(e.currentTarget.dataset.index);
+    const g = this.data.coachGroups[idx];
+    if (!g) return;
+    goToCoach(g.name, this._coachCityId || this.data.cityId);
+  },
+
+  /** 本城没这位老师、别处有 → 切到命中最多那座城市再看 */
+  goCoachCrossCity() {
+    const cc = this.data.coachCrossCity;
+    const first = cc && cc.cities && cc.cities[0];
+    if (!first) return;
+    const patch = this.syncCityView(this.data.region, first.cityId, this.data.cities);
+    app.setCity(this.data.region, first.cityId, "manual");
+    this.setData(Object.assign({ searchCityId: first.cityId }, patch));
+    this.load();
   },
 
   switchRegion(e) {
@@ -439,6 +547,9 @@ Page(
       hitTotal: 0,
       crossCity: null,
       crossCityText: "",
+      coachGroups: [],
+      coachCrossCity: null,
+      coachCrossText: "",
     });
     this.load();
   },
