@@ -79,7 +79,7 @@
     <view class="bf-toggle {{onlyBooked ? 'on' : ''}}" hover-class="press" bindtap="toggleOnlyBooked">
       {{onlyBooked ? '✓ 只看已约' : '只看已约'}}
     </view>
-    <text class="bf-count">已约 {{bookedCount}} 节 · 已置顶</text>
+    <text class="bf-count">已约 {{bookedCount}} 节 · 已置顶并高亮</text>
   </view>
 
   <!-- 已关注门店筛选：多家店同时看时，用它决定时间轴里出现谁 -->
@@ -94,7 +94,9 @@
         bindtap="tapStoreChip"
       >{{item.short}}<text class="sf-n">{{item.count}}</text></view>
     </scroll-view>
-    <view class="sf-all" hover-class="press" bindtap="tapAllStores">全选</view>
+    <view class="sf-all {{storeAllOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllStores">
+      {{storeAllOn ? '清除' : '全选'}}
+    </view>
   </view>
 
   <!--
@@ -158,14 +160,14 @@
     <view
       wx:for="{{items}}"
       wx:key="id"
-      class="row {{item.isPast ? 'past' : ''}} {{item.bookingStatus === 'CONFIRMED' ? 'booked' : ''}}"
+      class="row {{item.isPast ? 'past' : ''}} {{item.bookingStatus === 'CONFIRMED' ? 'booked' : ''}} {{item.bookingStatus === 'PENDING' ? 'pending' : ''}} {{item.bookingStatus ? '' : 'unbooked'}}"
     >
       <view class="time-col">
         <view class="t-start">{{item.startTime}}</view>
         <view class="t-end">{{item.endTime}}</view>
       </view>
       <view class="line">
-        <view class="dot {{item.bookingStatus ? 'dot-booked' : ''}}"></view>
+        <view class="dot {{item.bookingStatus === 'CONFIRMED' ? 'dot-booked' : ''}} {{item.bookingStatus === 'PENDING' ? 'dot-pending' : ''}}"></view>
         <view class="line-body"></view>
       </view>
       <view class="card" hover-class="press">

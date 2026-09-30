@@ -53,6 +53,8 @@ Page(
     // 已关注门店筛选条
     storeChips: [],
     showStoreBar: false,
+    // 门店条是否处于全选态（决定右侧那颗按钮显示「全选」还是「清除」）
+    storeAllOn: true,
     // 舞种筛选条（课名里天然带舞种，本地识别即可，不用等服务端发版）
     styleChips: [],
     showStyleBar: false,
@@ -332,11 +334,17 @@ Page(
     this.setData({
       storeChips: chips.map((c) => ({ ...c, on: active.has(c.id) })),
       showStoreBar: chips.length > 1,
+      storeAllOn: isAllOn(chips, ids),
     });
   },
 
+  /**
+   * ⚠ `activeIds` 的 null 与 [] 是两种意思，别合并：
+   *   null = 还没初始化（首屏），全部放行；[] = 用户按了「清除」，一家都不该出现。
+   * 之前写成 `!length` 就放行，导致点「清除」等于什么都没发生。
+   */
   filterByStore(items) {
-    if (!this.activeIds || !this.activeIds.length) return items;
+    if (!this.activeIds) return items;
     const active = new Set(this.activeIds);
     return items.filter((i) => i.studio && active.has(i.studio.id));
   },
@@ -487,16 +495,27 @@ Page(
       active.add(id);
     }
     this.activeIds = [...active];
+    const chips = this.data.storeChips || [];
     this.setData({
-      storeChips: (this.data.storeChips || []).map((c) => ({ ...c, on: active.has(c.id) })),
+      storeChips: chips.map((c) => ({ ...c, on: active.has(c.id) })),
+      storeAllOn: isAllOn(chips, [...active]),
     });
     this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
+  /**
+   * 全选 / 清除 二合一（与舞种条一致）。
+   * 清除 = 一家店都不选，列表自然清空 —— 这是用户刚做的选择，不是出错，
+   * 所以空态必须说明「点上方全选恢复」，别让他以为这天没课。
+   */
   tapAllStores() {
     const chips = this.data.storeChips || [];
-    this.activeIds = chips.map((c) => c.id);
-    this.setData({ storeChips: chips.map((c) => ({ ...c, on: true })) });
+    const active = toggleAllActive(chips, this.data.storeAllOn, "id");
+    this.activeIds = active;
+    this.setData({
+      storeChips: chips.map((c) => ({ ...c, on: active.indexOf(c.id) >= 0 })),
+      storeAllOn: isAllOn(chips, active),
+    });
     this.commitVisible(this.applyFilters(this.allItems || []));
   },
 

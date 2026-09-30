@@ -8,6 +8,7 @@
  *   3. bookedCount 算的是全量（含被屏蔽的课），开关上写的数字不能跟着隐藏状态变
  *   4. 翻到一节已约都没有的那天，开关自动关掉（否则就是一片空白）
  *   5. 开关与门店/舞种筛选能叠加，互不打架
+ *   6. 门店条「全选 / 清除」二合一：清除是「一家都不选」，不是「等于没筛」
  */
 const path = require("path");
 
@@ -125,6 +126,20 @@ const ids = (page) => (page.data.items || []).map((i) => i.id);
   check("这天没有已约 → 开关自动关掉", page.data.onlyBooked, false);
   check("这天没有已约 → 计数归零", page.data.bookedCount, 0);
   check("这天没有已约 → 课表照常显示 5 节", page.data.items.length, 5);
+
+  // 门店条「全选 / 清除」二合一：清除 = 一家都不选（不是「等于没筛」）
+  check("门店条默认全选态", page.data.storeAllOn, true);
+  await page.tapAllStores();
+  check("点「清除」后一家店都不选", ids(page), []);
+  check("清除后按钮翻回「全选」", page.data.storeAllOn, false);
+  check("清除后所有门店 chip 都是灰的", page.data.storeChips.map((c) => c.on), [
+    false,
+    false,
+  ]);
+  check("清除造成的空列表归因为被筛掉", page.data.emptyFiltered, true);
+  await page.tapAllStores();
+  check("再点「全选」5 节全回来", ids(page), [1, 2, 3, 4, 5]);
+  check("恢复后按钮回到「清除」", page.data.storeAllOn, true);
 
   console.log(failed ? `\n✖ ${failed} 项未通过` : "\n✔ 全部通过");
   process.exit(failed ? 1 : 0);

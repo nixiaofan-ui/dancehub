@@ -118,6 +118,13 @@
   margin-left: 12rpx;
   font-weight: 700;
 }
+/* 全选态下这颗按钮变成「清除」：换个中性色，同一个青色按钮来回变字
+   会被看成点了没反应（与舞种条同款处理） */
+.sf-all.is-clear {
+  color: #a8adc2;
+  border-color: rgba(168, 173, 194, 0.5);
+  background: rgba(168, 173, 194, 0.12);
+}
 
 /* 舞种筛选条：和上面的门店条是两级独立筛选（先选店、再看教什么） */
 .style-filter {
@@ -316,11 +323,33 @@
 .row {
   display: flex;
 }
-.past {
-  opacity: 0.35;
-}
+/*
+  明暗分配：**已约的课最亮，没约的让位**。
+  原来是反过来的（未约亮、已约压到 0.6）—— 而这张表的高频问题是
+  「我约的那节在几点」，被压暗的恰恰是最该一眼看到的那些。
+  三档：已约好（青）> 待确认（紫）> 未约（压暗但仍可读）。
+*/
 .row.booked {
-  opacity: 0.6;
+  opacity: 1;
+}
+.row.booked .card {
+  background: #1a2a4e;
+  border-left-color: #00f5d4;
+  box-shadow: 0 8rpx 40rpx rgba(0, 245, 212, 0.16);
+}
+/* 待确认：用户主动标过，比未约更靠前，但还没落地 → 中间亮度 + 紫色呼应按钮 */
+.row.pending {
+  opacity: 0.92;
+}
+.row.pending .card {
+  border-left-color: #9b5cff;
+}
+.row.unbooked {
+  opacity: 0.66;
+}
+/* 已过去的课最淡：不管约没约，都写成 `.row.past` 且放在最后覆盖上面三档 */
+.row.past {
+  opacity: 0.3;
 }
 .time-col {
   width: 118rpx;
@@ -360,6 +389,10 @@
 .dot-booked {
   background: #00f5d4;
   box-shadow: 0 0 12rpx rgba(0, 245, 212, 0.7);
+}
+.dot-pending {
+  background: #9b5cff;
+  box-shadow: 0 0 12rpx rgba(155, 92, 255, 0.6);
 }
 .line-body {
   width: 2rpx;
@@ -476,9 +509,11 @@
   background: linear-gradient(135deg, #7b2fbe, #9b5cff);
   color: #ffffff;
 }
+/* 已约的标签跟着卡片一起提亮（原来是若隐若现的淡青底） */
 .btn.booked {
-  background: rgba(0, 245, 212, 0.14);
+  background: rgba(0, 245, 212, 0.22);
   color: #00f5d4;
+  border: 1rpx solid rgba(0, 245, 212, 0.5);
 }
 .loading-tip {
   text-align: center;

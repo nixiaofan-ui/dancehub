@@ -100,8 +100,9 @@ function filterByStyle(items, labelsOf, active) {
  * 「全选 / 清除」二合一按钮的新状态 —— 与分店条那颗按钮同一套行为。
  * 全选时它是「清除」（点了清空），否则是「全选」。
  */
-function toggleAllActive(chips, allOn) {
-  return allOn ? [] : (chips || []).map((c) => c.label);
+function toggleAllActive(chips, allOn, key) {
+  const k = key || "label";
+  return allOn ? [] : (chips || []).map((c) => c[k]);
 }
 
 /** 当前是否全选（一个都没选时不算全选，否则清除态会被显示成全选态） */
