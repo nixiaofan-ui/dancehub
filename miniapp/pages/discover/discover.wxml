@@ -116,8 +116,8 @@
             wx:for="{{item.studios}}"
             wx:for-item="st"
             wx:key="studioId"
-            class="cs-tag"
-          >{{st.short}}<text class="cs-note"> · {{st.note}}</text></view>
+            class="cs-tag {{st.hot ? 'hot' : ''}}"
+          >{{st.short}}</view>
           <view wx:if="{{item.extraStudios}}" class="cs-tag more">+{{item.extraStudios}}</view>
         </view>
       </view>

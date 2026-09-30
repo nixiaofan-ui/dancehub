@@ -3,6 +3,13 @@
 <view class="body">
   <view wx:if="{{loading}}" class="tip">正在整理这位老师的课…</view>
 
+  <!-- 拉不到就直说原因 + 给重试入口，别让空白页被读成「这老师没课」 -->
+  <view wx:elif="{{loadError}}" class="load-error">
+    <view class="le-title">没拉到这位老师的课</view>
+    <view class="le-desc">{{loadError}}</view>
+    <view class="le-btn" hover-class="press" bindtap="load">点击重试</view>
+  </view>
+
   <block wx:else>
     <view class="coach-head">
       <view class="ch-top">
@@ -13,12 +20,16 @@
         </button>
       </view>
       <view class="ch-meta" wx:if="{{studios.length}}">
-        过去一周在 {{studios.length}} 家舞室上过 {{pastTotal}} 节课
+        {{studios.length}} 家舞室 · 接下来能约 {{total}} 节 · 上周 {{pastTotal}} 节
       </view>
-      <view class="ch-meta" wx:else>过去一周没有抓到这位老师的排课</view>
+      <view class="ch-meta" wx:else>这段时间没有抓到这位老师的排课</view>
     </view>
 
-    <!-- 任教门店：这老师在哪跑，是这张页最值钱的一句话 -->
+    <!--
+      任教门店条：把「哪家店、什么时候有课」放在这里。
+      ⚠ 这块信息原本挤在发现页的教练卡片上（「陆家嘴店 · 09-30 有课」），
+      卡片一行塞不下几个字；挪过来之后卡片只留店名，日期由这张页承载。
+    -->
     <scroll-view wx:if="{{studios.length}}" scroll-x class="st-bar" enhanced show-scrollbar="{{false}}">
       <view
         wx:for="{{studios}}"
@@ -29,7 +40,7 @@
         bindtap="goStudio"
       >
         <view class="st-short">{{item.short}}</view>
-        <view class="st-count">{{item.count}} 节</view>
+        <view class="st-count {{item.hot ? 'hot' : ''}}">{{item.badge}}</view>
       </view>
     </scroll-view>
 

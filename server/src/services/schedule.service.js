@@ -202,8 +202,11 @@ export async function getStudiosDaySchedules(studioIds, dateKey, endKey, userId)
  * @param {string} [toKey]
  */
 export async function getCoachSchedules(coachName, cityId, fromKey, toKey, userId) {
+  const cid = Number(cityId) || 0;
   const where = {
-    coach: { name: coachName, studio: { cityId: Number(cityId) } },
+    // cityId 为 0 = 不限城市。前端偶尔拿不到城市（没定位、外部链接没带），
+    // 这种时候宁可多列几座城的课，也别 400 让整页空白。
+    coach: cid ? { name: coachName, studio: { cityId: cid } } : { name: coachName },
     studio: { status: true },
     ...visibleScope(userId),
     scheduleDate: toKey

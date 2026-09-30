@@ -11,13 +11,26 @@ const { resolveCityId } = require("../../utils/coach-nav");
 
 const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
+/**
+ * ⚠ 这里踩过一次：`addDays` 收的是 **Date**，而 `todayKey()` 返回的是字符串
+ * （"2026-09-30"）。写成 `addDays(today, 1)` 直接抛 `d.getTime is not a function`
+ * —— 而它是在 load() 里给未来课分组时调的，一抛就把整个 load 打断：
+ * 「上周排课规律」和「接下来能约」两块同时变空，用户以为这位老师一条课都没有。
+ * 要字符串就老实绕一圈 dateKey(parseKey(...))。
+ */
 function dayLabel(key) {
   const d = parseKey(key);
   const today = todayKey();
+  const tomorrow = dateKey(addDays(parseKey(today), 1));
   let head = d.getMonth() + 1 + "月" + d.getDate() + "日 " + WEEK_CN[d.getDay()];
   if (key === today) head = "今天 " + head;
-  else if (key === addDays(today, 1)) head = "明天 " + head;
+  else if (key === tomorrow) head = "明天 " + head;
   return head;
+}
+
+/** 2026-10-04 → 10-04。门店条上只放得下这么长 */
+function mdOf(key) {
+  return key ? String(key).slice(5) : "";
 }
 
 Page({
@@ -27,6 +40,9 @@ Page({
     name: "",
     cityId: null,
     loading: true,
+    // 接口挂了不要只留白：错误文案 + 重试按钮（空白页会被读成「这老师没课」）
+    loadError: "",
+    // 任教门店条：[{ id, short, badge:「今天有课」/「10-04 有课」/「上周 2 节」, hot }]
     studios: [],
     // 过去一周按「周几」归并的排课规律（主视图）
     weekdays: [],
@@ -81,8 +97,12 @@ Page({
    * 才是用户真能拿去安排时间的信（`2026-09-28` 改）。
    */
   async load() {
-    await api.ensureReady();
+    this.setData({ loading: true, loadError: "" });
     try {
+      // ⚠ ensureReady 必须在 try 里面。它等的是 app.ready 的登录结果，
+      // 放在 try 外面一旦 reject，load 直接中断、loading 永远停在 true ——
+      // 用户看到的就是「正在整理这位老师的课…」转到天荒地老，两块内容都不出来。
+      await api.ensureReady();
       const [past, future] = await Promise.all([
         api.apiCoachTimeline(this.name, this.cityId, 7, "past"),
         api.apiCoachTimeline(this.name, this.cityId, 14),
@@ -132,17 +152,60 @@ Page({
         items: list,
       }));
 
+      // ── 门店条：哪家店、下次什么时候有课 ──
+      // 这块信息原来是挤在发现页的教练卡片上的（「陆家嘴店 · 09-30 有课」），
+      // 卡片一行塞不下几个字，挪到这里之后卡片只留店名，时间由这张页承载。
+      // 未来有课的排前面（这是「能不能去上」的答案），只在过去一周出现过的补在后。
+      const bar = new Map();
+      (future.studios || []).forEach((s) => {
+        bar.set(s.id, {
+          id: s.id,
+          short: s.short,
+          badge: s.today ? "今天有课" : mdOf(s.firstDate) + " 有课",
+          hot: !!s.today,
+          firstDate: s.firstDate || "",
+          pastCount: 0,
+        });
+      });
+      (past.studios || []).forEach((s) => {
+        const cur = bar.get(s.id);
+        if (cur) {
+          cur.pastCount = s.count;
+          return;
+        }
+        bar.set(s.id, {
+          id: s.id,
+          short: s.short,
+          badge: "上周 " + s.count + " 节",
+          hot: false,
+          firstDate: "",
+          pastCount: s.count,
+        });
+      });
+      // 有未来课的排前面（「能不能去上」才是用户找这里的理由），
+      // 同样有课比日期先后；只有历史的按课量排。日期串直接比大小，
+      // 不用 localeCompare —— 小程序 JSCore 与 Node 的排序规则未必一致。
+      const studios = [...bar.values()].sort((a, b) => {
+        if (!!a.firstDate !== !!b.firstDate) return a.firstDate ? -1 : 1;
+        if (a.firstDate && b.firstDate && a.firstDate !== b.firstDate) {
+          return a.firstDate < b.firstDate ? -1 : 1;
+        }
+        return b.pastCount - a.pastCount;
+      });
+
       this.setData({
         weekdays,
         days,
-        studios: past.studios || [],
+        studios,
         pastTotal: (past.items || []).length,
         total: (future.items || []).length,
         loading: false,
+        loadError: "",
       });
     } catch (e) {
-      this.setData({ loading: false });
-      toast(this, e.message);
+      // 只弹 toast 的话，页面会是一片空白 + 一闪而过的提示，用户只会以为
+      // 「这位老师没课」。错误留在页面上，配上重试按钮。
+      this.setData({ loading: false, loadError: e.message || "加载失败", weekdays: [], days: [] });
     }
   },
 

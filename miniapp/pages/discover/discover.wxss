@@ -767,13 +767,15 @@
   flex-wrap: wrap;
   margin-top: 8rpx;
 }
+/* 门店 chip 只写店名，日期放到教练页。
+   颜色承担原来那句话的职责：青色 = 近期有课（能去上），灰色 = 只在历史里出现过 */
 .cs-tag {
   flex-shrink: 0;
   max-width: 100%;
   font-size: 20rpx;
   font-weight: 600;
-  color: #5eead4;
-  background: rgba(0, 245, 212, 0.1);
+  color: #9aa3bd;
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 6rpx;
   padding: 3rpx 12rpx;
   line-height: 1.5;
@@ -782,8 +784,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.cs-note {
-  color: #7f88a3;
+.cs-tag.hot {
+  color: #5eead4;
+  background: rgba(0, 245, 212, 0.1);
 }
 .cs-tag.more {
   color: #79819c;

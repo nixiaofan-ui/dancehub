@@ -28,7 +28,7 @@ router.get(
   asyncHandler(async (req, res) => {
     const { name, cityId } = req.query;
     if (!name) return fail(res, 400, "name 必填");
-    if (!cityId) return fail(res, 400, "cityId 必填");
+    // cityId 缺省 = 不限城市（不报错：前端拿不到城市时也要能出内容）
 
     const today = toDateKey(new Date());
     const days = Math.min(Math.max(Number(req.query.days) || 14, 1), 30);
@@ -52,7 +52,10 @@ router.get(
 
     const bookingMap = new Map(bookings.map((b) => [b.scheduleId, b.status]));
 
-    // 任教门店清单：这老师到底在几家店跑，是这张页最有信息量的一句话
+    // 任教门店清单：这老师到底在几家店跑，是这张页最有信息量的一句话。
+    // schedules 已按日期升序 → firstDate 就是这批里这家店最早的一天：
+    // 查未来时它是「下次开课日期」（列表里直接展示，用户不用点进去），
+    // 查过去时它是「上周最早那天」（前端忽略即可）。
     const studioMap = new Map();
     schedules.forEach((s) => {
       if (!studioMap.has(s.studio.id)) {
@@ -62,9 +65,14 @@ router.get(
           short: shortStudioLabel(s.studio.name),
           cityId: s.studio.cityId,
           count: 0,
+          firstDate: s.scheduleDate,
+          // 当日就有课：前端要把它和「下次是后天」区分开，蹲课提醒优先今天
+          today: false,
         });
       }
-      studioMap.get(s.studio.id).count += 1;
+      const e = studioMap.get(s.studio.id);
+      e.count += 1;
+      if (s.scheduleDate === today) e.today = true;
     });
 
     const items = schedules.map((s) => ({

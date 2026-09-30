@@ -15,20 +15,6 @@ const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
 /** 卡片上最多平铺几家任教门店，多出来的收成「+N」 */
 const MAX_COACH_STUDIOS = 4;
 
-/** dateKey(2026-10-05) → 10-05。完整日期在卡片上太长，也没有年份信息量 */
-const shortDay = (k) => (k ? String(k).slice(5) : "");
-
-/**
- * 一家店的排课状态。
- * 「下周有课」和「上周教过」对用户是两个不同结论 —— 前者能去上，
- * 后者只说明这老师在这儿教过，所以分开写，别合成一句「有 N 节课」。
- */
-function studioNote(s) {
-  if (s.nextDate) return shortDay(s.nextDate) + " 有课";
-  if (s.lastDate) return "最近 " + shortDay(s.lastDate);
-  return "暂无排课";
-}
-
 /** 老师卡片副标题：任教几家店 + 课量 */
 function coachSub(g) {
   const n = g.studioCount || (g.studios ? g.studios.length : 0);
@@ -368,10 +354,14 @@ Page(
       cityLabel: nationwide ? (g.cityNames || []).slice(0, 2).join(" / ") : "",
       // 跳老师主页要用**这位老师所在**的城市（全国模式下各组可能不同城）
       cityId: g.cityId || cityId || 0,
+      // ⚠ 门店条只留店名，不带日期：卡片一行塞不下「店名 · 09-30 有课」，
+      // 而且这信息对「判断是不是同一个人」没有帮助。具体哪天有课挪到
+      // 教练页（那里有整块地方按日期列出）。这里只用颜色区分
+      // 「近期有课」和「只在历史里出现过」，扫一眼就知道哪家现在能去。
       studios: (g.studios || []).slice(0, MAX_COACH_STUDIOS).map((s) => ({
         studioId: s.studioId,
         short: nationwide && s.cityName ? `${s.cityName} · ${s.short}` : s.short,
-        note: studioNote(s),
+        hot: !!s.nextDate,
       })),
       extraStudios: Math.max(0, (g.studios || []).length - MAX_COACH_STUDIOS),
     }));

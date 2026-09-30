@@ -1,6 +1,6 @@
 const app = getApp();
 const api = require("../../services/api");
-const { dateKey, addDays, todayKey } = require("../../utils/date");
+const { dateKey, addDays, todayKey, parseKey } = require("../../utils/date");
 const { toast } = require("../../utils/toast");
 const { confirm } = require("../../utils/confirm");
 const { onNavTop } = require("../../utils/scroll-top");
@@ -219,7 +219,9 @@ Page(
     const init = {
       dateText: today,
       dateStart: today,
-      dateEnd: addDays(today, 13),
+      // ⚠ addDays 收 Date，today 是 "2026-09-30" 这种字符串 ——
+      // 直接传会抛 `d.getTime is not a function`，onLoad 中断、日期全部填不上。
+      dateEnd: dateKey(addDays(parseKey(today), 13)),
       endAuto: addMinutes(this.data.startText, 90),
     };
     if (opts.cityId) {

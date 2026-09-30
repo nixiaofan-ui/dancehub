@@ -81,6 +81,38 @@
   margin-top: 6rpx;
   font-weight: 700;
 }
+/* 今天就有课：这条是「现在能不能去上」的答案，值得用主色点出来 */
+.st-count.hot {
+  color: #00f5d4;
+}
+
+/* 接口失败：说清原因 + 就地重试（空白页会被读成「这老师没课」） */
+.load-error {
+  text-align: center;
+  padding: 80rpx 40rpx;
+}
+.le-title {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: #ffffff;
+}
+.le-desc {
+  font-size: 24rpx;
+  color: #a8adc2;
+  margin-top: 14rpx;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.le-btn {
+  display: inline-block;
+  margin-top: 32rpx;
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #00f5d4;
+  border: 1rpx solid rgba(0, 245, 212, 0.5);
+  border-radius: 40rpx;
+  padding: 12rpx 44rpx;
+}
 
 .day-block {
   margin-bottom: 28rpx;

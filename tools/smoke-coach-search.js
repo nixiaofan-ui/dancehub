@@ -113,10 +113,16 @@ const ken = view.groups[0];
 check("头像透传", ken.avatarUrl, "https://cdn/ken.png");
 check("同名多店要标出来", ken.multiStudio, true);
 check("副标题：家数 + 近期课量", ken.sub, "5 家店 · 近期 6 节");
+// ⚠ 门店 chip 只写店名、不写日期（日期挪到教练页），靠颜色区分能不能去上
 check(
   "门店清单只铺 4 家，其余收成 +N",
-  ken.studios.map((s) => `${s.short}:${s.note}`),
-  ["三里屯:10-02 有课", "朝阳:10-05 有课", "丙舞蹈:最近 09-20", "丁舞蹈:暂无排课"],
+  ken.studios.map((s) => s.short),
+  ["三里屯", "朝阳", "丙舞蹈", "丁舞蹈"],
+);
+check(
+  "用 hot 标出「近期有课」的店",
+  ken.studios.map((s) => (s.hot ? "有课" : "历史")),
+  ["有课", "有课", "历史", "历史"],
 );
 check("多余的 1 家收成 +1", ken.extraStudios, 1);
 
