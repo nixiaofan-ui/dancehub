@@ -1,13 +1,13 @@
 /**
- * 「约课提醒 + 手机日历」烟测。
+ * 「约课提醒 / 手机日历」烟测。
  *
  * 盯四件事（都是"错了也不报错、只是默默不对"的那种）：
  *   1. 时区：课程时间 → unix 秒必须是**绝对时刻**，换个 TZ 跑结果要一样。
  *      本项目 scheduleDate 存 UTC 午夜、startTime 存北京墙钟，拼错一次差 8 小时，
  *      日历里的事件就跑到半夜去了，而且没有任何报错。
  *   2. 写日历的入参：标题要带店名、提前 1 小时响、endTime 缺失时给默认时长。
- *   3. 约课提醒落日历：开关打开才写，且**日历失败不能把提醒一起废掉**
- *      （订阅消息一次性消耗，日历才是蹲点最靠得住的那条通道）。
+ *   3. 约课提醒（详情页 SNIPE）**只走微信推送、绝不碰日历**（2026-09-30 拍板）——
+ *      回归成"顺手也写日历"是最容易犯的错，这里钉死 calls.calendar 必须为空。
  *   4. 已约课程加日历：数据取自当前渲染的详情，不是别处。
  *
  *   /usr/local/bin/node tools/smoke-remind-calendar.js
@@ -164,17 +164,11 @@ function check(label, got, want) {
   });
   check("时间不全 → 明确报错", rejected.includes("加不了日历"), true);
 
-  // ── 3. 约课提醒（一次性闹钟） ──
-  calls.calendar.length = 0;
-  await cal.addWatchToCalendar({ dateKey: "2026-10-02", hhmm: "12:00", title: "去约课：Jazz 编舞" });
-  check("约课提醒提前 0 分钟响（踩点）", calls.calendar[0].alarmOffset, 0);
-  check("约课提醒时刻", calls.calendar[0].startTime, Math.floor(Date.parse("2026-10-02T12:00:00+08:00") / 1000));
-
-  // ── 4. 详情页：设约课提醒（开日历同步） ──
+  // ── 3. 详情页：设约课提醒（纯微信推送，不碰日历） ──
   const page = makePage(false);
   await page.load();
   check("详情加载出课程", page.data.detail.courseName, "Jazz 编舞");
-  check("默认勾选写日历", page.data.snipeSyncCal, true);
+  check("没有日历开关这回事", "snipeSyncCal" in page.data, false);
   check("没设提醒时的按钮文案", page.data.snipeLabel, "设约课提醒");
 
   page.openSnipe();
@@ -187,27 +181,11 @@ function check(label, got, want) {
   addReminderArgs = null;
   await page.saveSnipe();
   check("提醒接口收到 SNIPE + 时刻", addReminderArgs.opts, { kind: "SNIPE", remindAt: "2026-10-02 12:00" });
-  check("同时写了一份进日历", calls.calendar.length, 1);
-  check("日历事件标题带课名", calls.calendar[0].title, "去约课：Jazz 编舞");
+  check("✋ 一条日历都没写（约课提醒不再联动日历）", calls.calendar.length, 0);
   check("弹层关闭", page.data.snipeOpen, false);
+  check("文案不再提日历", calls.toast.every((t) => !/日历/.test(t || "")), true);
 
-  // ── 5. 日历失败不能把提醒一起废掉 ──
-  const origin = wx.addPhoneCalendar;
-  Object.defineProperty(global.wx, "addPhoneCalendar", {
-    value: (o) => o.fail && o.fail({ errMsg: "addPhoneCalendar:fail system error" }),
-    configurable: true,
-  });
-  const page2 = makePage(false);
-  await page2.load();
-  await page2.openSnipe();
-  page2.onSnipeDate({ detail: { value: "2026-10-02" } });
-  addReminderArgs = null;
-  await page2.saveSnipe();
-  check("日历炸了，提醒照样设上了", addReminderArgs !== null, true);
-  check("并且如实告诉用户日历没加成", calls.toast.some((t) => /日历没加成/.test(t || "")), true);
-  Object.defineProperty(global.wx, "addPhoneCalendar", { value: origin, configurable: true });
-
-  // ── 6. 已约课程加进日历（按钮） ──
+  // ── 4. 已约课程加进日历（按钮） ──
   calls.calendar.length = 0;
   const page3 = makePage(true);
   await page3.addToCalendar();
@@ -215,7 +193,7 @@ function check(label, got, want) {
   check("取的是当前这节详情的时间", [ev3.startTime, ev3.endTime], [want, want + 3600]);
   check("地点带上门店地址", ev3.location, "上海市浦东新区世纪大道 1 号");
 
-  // ── 7. 每周重复的约课提醒 ──
+  // ── 5. 每周重复的放课提醒（门店页，保留日历通道） ──
   calls.repeat.length = 0;
   await cal.addWeeklyWatchToCalendar({ weekday: 3, hhmm: "12:00", title: "去约课" });
   const wk = calls.repeat[0];

@@ -141,24 +141,6 @@ function addCourseToCalendar(course) {
 }
 
 /**
- * 把「约课提醒」也写一份到手机日历（订阅消息的兜底）。
- * 提前 0 分钟响 —— 约课就是踩点，早响晚响都没用。
- */
-function addWatchToCalendar(opt) {
-  const o = opt || {};
-  const startTime = toUnixSeconds(o.dateKey, o.hhmm);
-  if (!startTime) return Promise.reject(new Error("提醒时刻不完整，加不了日历"));
-  return writeEvent({
-    title: o.title || "去约课",
-    startTime,
-    endTime: startTime + 600,
-    location: "",
-    description: o.desc || "DanceHub 提醒你：到点了，去约课",
-    alarmOffset: 0,
-  });
-}
-
-/**
  * 每周重复的约课提醒（「这家店每周三中午放课」这种）。
  * weekday 0=周日 … 6=周六；hhmm 是本机时区的墙钟时刻（用户手机就是北京时间）。
  * repeatInterval 只支持 day/week/month/year；month 那档日期不能大于 28 日，别用。
@@ -211,6 +193,5 @@ module.exports = {
   supported,
   toUnixSeconds,
   addCourseToCalendar,
-  addWatchToCalendar,
   addWeeklyWatchToCalendar,
 };

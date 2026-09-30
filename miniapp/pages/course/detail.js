@@ -57,10 +57,6 @@ Page({
     snipeOpen: false,
     snipeDate: "",
     snipeTime: "12:00",
-    // 设提醒时顺手写一份到手机系统日历：订阅消息是一次性的（一次授权只能推一条），
-    // 日历不消耗额度、离线也响，是这个功能真正的兜底
-    snipeSyncCal: true,
-    calHint: cal.CAL_HINT,
     todayKey: "",
     bookedCount: 0,
     capacity: 1,
@@ -362,48 +358,28 @@ Page({
   onSnipeTime(e) {
     this.setData({ snipeTime: e.detail.value });
   },
-  onSnipeSyncCal(e) {
-    this.setData({ snipeSyncCal: Boolean(e.detail.value) });
-  },
   // 弹层内容区的点击不该冒泡到遮罩（否则一点就关）
   noop() {},
 
   async saveSnipe() {
     if (this.data.busy) return;
     const { snipeDate, snipeTime } = this.data;
-    const d = this.data.detail || {};
     if (!snipeDate) return toast(this, "先选个日期");
     const at = snipeDate + " " + snipeTime;
     this.setData({ busy: true });
     try {
-      // 约课提醒比开课提醒更依赖推送：那一下用户多半根本不在小程序里
+      // 约课提醒只走微信推送：和开课提醒同一条订阅消息模板，服务端到点发。
+      // ⚠ 不再联动手机日历（2026-09-30 老板拍板「先不联动日历」）——
+      //   那份日历兜底对「蹲点抢课」作用有限，还把 iOS 日历权限的两档坑
+      //   （「仅添加事件」不写入也不报错）暴露给了每个设提醒的人。
       const tplId = app.globalData.classReminderTplId;
       const granted = tplId ? await requestSubscribe(tplId) : false;
       await api.apiAddReminder(this.scheduleId, granted, { kind: "SNIPE", remindAt: at });
 
-      // 再顺手写一份到手机系统日历。⚠ 日历失败绝不能连提醒一起废掉：
-      // 订阅消息一次性消耗，日历才是"蹲点"最靠得住的那条通道，所以单独 try、单独报告。
-      let calNote = "";
-      if (this.data.snipeSyncCal) {
-        try {
-          const r = await cal.addWatchToCalendar({
-            dateKey: snipeDate,
-            hhmm: snipeTime,
-            title: "去约课：" + (d.courseName || "舞蹈课"),
-            desc:
-              (d.studio && d.studio.name ? d.studio.name + " · " : "") +
-              "DanceHub 提醒你到点去约课",
-          });
-          calNote = r && r.added ? "，也写进手机日历了" : "（日历没加成，只有微信提醒）";
-        } catch (e) {
-          calNote = "（日历没加成，只有微信提醒）";
-        }
-      }
-
       this.setData({ busy: false, snipeOpen: false });
       toast(
         this,
-        (granted ? "已设 " + at + " 约课提醒" : "提醒已设（未授权推送，只能进小程序看）") + calNote,
+        granted ? "已设 " + at + " 约课提醒" : "提醒已设（未授权推送，只能进小程序看）",
         granted ? "success" : undefined,
       );
       this.load();

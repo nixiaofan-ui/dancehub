@@ -138,15 +138,7 @@
           </view>
         </picker>
       </view>
-      <view class="sn-tip">到点会提醒你去约这节课。微信推送需要你点一下授权。</view>
-      <view class="sn-switch">
-        <view class="sn-switch-txt">
-          <view class="sn-switch-title">同时写进手机日历</view>
-          <view class="sn-switch-sub">微信推送是一次性的，日历不消耗额度、没网也会响</view>
-        </view>
-        <switch checked="{{snipeSyncCal}}" bindchange="onSnipeSyncCal" color="#00F5D4" />
-      </view>
-      <view wx:if="{{snipeSyncCal}}" class="sn-cal-hint">{{calHint}}</view>
+      <view class="sn-tip">到点会微信提醒你去约这节课，需要你点一下「允许通知」。</view>
       <view class="sn-actions">
         <button class="sn-btn ghost" hover-class="press" bindtap="closeSnipe">取消</button>
         <button wx:if="{{snipeRemindAt}}" class="sn-btn del" hover-class="press" bindtap="removeSnipe" disabled="{{busy}}">关掉提醒</button>

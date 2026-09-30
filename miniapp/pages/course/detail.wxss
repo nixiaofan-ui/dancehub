@@ -279,40 +279,7 @@
   line-height: 1.6;
   margin-top: 20rpx;
 }
-/* 同步到手机日历的开关行 */
-.sn-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 22rpx;
-  padding: 20rpx 24rpx;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 18rpx;
-}
-.sn-switch-txt {
-  flex: 1;
-  margin-right: 20rpx;
-}
-.sn-switch-title {
-  font-size: 27rpx;
-  color: #ffffff;
-  font-weight: 700;
-  line-height: 1.3;
-}
-.sn-switch-sub {
-  font-size: 21rpx;
-  color: #6b7391;
-  line-height: 1.4;
-  margin-top: 6rpx;
-}
-/* ⚠ iOS 的日历权限有两档，只选「仅添加事件」不会写入且不报错 ——
-   这句必须提前摆出来，等 fail 回调再说是来不及的 */
-.sn-cal-hint {
-  font-size: 21rpx;
-  color: #ff9e6b;
-  line-height: 1.55;
-  margin-top: 14rpx;
-}
+/* 「同时写进手机日历」开关行已随约课提醒的日历联动一起撤掉（2026-09-30） */
 .sn-actions {
   display: flex;
   margin-top: 28rpx;
