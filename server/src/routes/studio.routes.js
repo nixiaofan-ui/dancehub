@@ -403,7 +403,23 @@ router.put(
   "/:id",
   requireAdmin,
   asyncHandler(async (req, res) => {
-    const { cityId, name, address, contact, logoUrl, platform, status } = req.body || {};
+    const {
+      cityId,
+      name,
+      address,
+      contact,
+      logoUrl,
+      platform,
+      status,
+      // 手工建店/补录时坐标是从商家后台或地图上直接抄来的，必须能一起写。
+      // ⚠ 上游坑：有赞门店接口的 lng_lat 是「经度,纬度」，写反了会全落到非洲西海岸
+      //   而距离照样算得出 —— 这里做范围校验，别信调用方。
+      lat,
+      lng,
+      district,
+      bookingMiniAppId,
+      officialUrl,
+    } = req.body || {};
     const data = {};
     if (cityId !== undefined) data.cityId = Number(cityId);
     if (name !== undefined) data.name = name;
@@ -412,6 +428,21 @@ router.put(
     if (logoUrl !== undefined) data.logoUrl = logoUrl;
     if (platform !== undefined) data.platform = platform;
     if (status !== undefined) data.status = Boolean(status);
+    if (district !== undefined) data.district = district;
+    if (bookingMiniAppId !== undefined) data.bookingMiniAppId = bookingMiniAppId;
+    if (officialUrl !== undefined) data.officialUrl = officialUrl;
+    if (lat !== undefined || lng !== undefined) {
+      const nLat = Number(lat);
+      const nLng = Number(lng);
+      if (!Number.isFinite(nLat) || nLat < -90 || nLat > 90) {
+        return fail(res, 400, "lat 必须在 -90~90 之间（纬度）");
+      }
+      if (!Number.isFinite(nLng) || nLng < -180 || nLng > 180) {
+        return fail(res, 400, "lng 必须在 -180~180 之间（经度）");
+      }
+      data.lat = nLat;
+      data.lng = nLng;
+    }
 
     const studio = await prisma.studio.update({
       where: { id: Number(req.params.id) },
