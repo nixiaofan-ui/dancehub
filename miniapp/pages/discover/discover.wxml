@@ -84,53 +84,18 @@
   </view>
 
   <!--
-    教练维度：搜「一个名字」时，命中的往往既有店也有人。
-    ⚠ 同名**不合并**：两家店的 Ken 是不是同一个人，我们手上没有任何字段能证明，
-    合并成一个人、用户照着约课，很可能约到另一个人的课。所以同城同名全取，
-    每家店单列一行（含最近/下一次排课），是不是同一个人由用户自己判断。
+    结果区顶部：门店在前、教练在后，所以给教练留一个入口。
+    没有这一句的话，搜一次回 200 家门店时老师结果等于不存在 —— 没人会往下翻两百行。
+    ⚠ 门店被行政区筛光时不显示（sections.length 为 0）：那时候教练块自己就在最上面。
   -->
-  <view wx:if="{{coachGroups.length}}" class="coach-block">
-    <view class="coach-head">
-      <view class="coach-title">教练<text wx:if="{{coachCityName}}" class="coach-city"> · {{coachCityName}}</text></view>
-      <view class="coach-tip">同名多店不合并，按门店自己判断</view>
-    </view>
-    <view
-      wx:for="{{coachGroups}}"
-      wx:key="name"
-      class="coach-card"
-      hover-class="press"
-      data-index="{{index}}"
-      bindtap="goCoachResult"
-    >
-      <image wx:if="{{item.avatarUrl}}" class="coach-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
-      <view wx:else class="coach-avatar coach-avatar-txt">{{item.initial}}</view>
-      <view class="coach-info">
-        <view class="coach-name-row">
-          <text class="coach-name">{{item.name}}</text>
-          <text wx:if="{{item.cityLabel}}" class="coach-flag city">{{item.cityLabel}}</text>
-          <text wx:if="{{item.multiStudio}}" class="coach-flag">同名 {{item.studioCount}} 家店</text>
-        </view>
-        <view wx:if="{{item.sub}}" class="coach-sub">{{item.sub}}</view>
-        <view class="cs-row">
-          <view
-            wx:for="{{item.studios}}"
-            wx:for-item="st"
-            wx:key="studioId"
-            class="cs-tag {{st.hot ? 'hot' : ''}}"
-          >{{st.short}}</view>
-          <view wx:if="{{item.extraStudios}}" class="cs-tag more">+{{item.extraStudios}}</view>
-        </view>
-      </view>
-      <view class="coach-arrow">›</view>
-    </view>
-  </view>
-
-  <!-- 同城搜不到这位老师，全国有：说一句，否则用户只会以为我们没收录 -->
-  <view wx:if="{{coachCrossCity}}" class="cross-bar" hover-class="press" bindtap="goCoachCrossCity">
-    <view class="cb-main">
-      <view class="cb-title">本城没有叫「{{keyword}}」的教练</view>
-      <view class="cb-sub">全国还有 {{coachCrossCity.total}} 位 · {{coachCrossText}}，看看 ›</view>
-    </view>
+  <view
+    wx:if="{{keyword && coachGroups.length && sections.length}}"
+    class="coach-jump"
+    hover-class="press"
+    bindtap="jumpToCoaches"
+  >
+    <text class="cj-text">另命中 <text class="cj-n">{{coachGroups.length}}</text> 位教练</text>
+    <text class="cj-go">查看 ›</text>
   </view>
 
   <!--
@@ -145,11 +110,16 @@
     <view class="pe-arrow">›</view>
   </view>
 
-  <!-- 多店品牌：同城开了好几家分店的品牌，点进去一次看完全部门店的课 -->
+  <!--
+    多店品牌：同城开了好几家分店的品牌，点进去一次看完全部门店。
+    ⚠ 搜索态只列**这次搜到**的品牌与分店（品牌表按本次结果重算）。
+      搜「Jazz」时顶部挂一排一家店都没命中的连锁品牌、点进去还全是别的分店，
+      是用户明确反馈要去掉的东西。
+  -->
   <view wx:if="{{brands.length}}" class="brand-block">
     <view class="brand-head">
       <view class="brand-title">连锁 / 多店品牌</view>
-      <view class="brand-sub">一次看完全部分店</view>
+      <view class="brand-sub">{{brandSub}}</view>
     </view>
     <scroll-view scroll-x class="brand-bar" enhanced show-scrollbar="{{false}}">
       <view
@@ -221,7 +191,18 @@
     </view>
   </view>
 
-  <view wx:if="{{!loading && sections.length === 0}}" class="empty">
+  <!--
+    ⚠ 命中教练时不能说「搜了个寂寞」：教练块就在下面，空态喊一句没搜到
+      等于把唯一的结果说成没结果。门店 0 家、老师有命中时，教练块的副标题
+      会说明「没有匹配的舞室」。
+    ⚠ 但「用户自己清除了行政区」是例外，有教练也要说 —— 不说的话门店列表凭空
+      消失，用户只会以为筛选条把页面搞坏了（districtCleared 时那条文案是
+      「已清除区域筛选 / 点上方全选恢复」，本来就不会喊没搜到）。
+  -->
+  <view
+    wx:if="{{!loading && sections.length === 0 && (districtCleared || (!coachGroups.length && !coachCrossCity))}}"
+    class="empty"
+  >
     <view class="dancer-lg empty-dancer">
       <view class="d-head"></view>
       <view class="d-torso"></view>
@@ -238,8 +219,12 @@
     <button wx:if="{{!districtCleared}}" class="empty-report" hover-class="press" bindtap="goReport">没找到我要的舞室？告诉我们</button>
   </view>
 
-  <!-- 常驻提报入口：搜得到不代表搜得全，缺谁让用户直接告诉我们 -->
-  <view class="report-row" hover-class="press" bindtap="goReport">
+  <!--
+    常驻提报入口：搜得到不代表搜得全，缺谁让用户直接告诉我们。
+    ⚠ 只在有门店结果时出现：门店 0 家时它正好悬在教练结果上方，一句
+      「没找到你想去的舞室？」会让人以为搜索失败（那种情况空态自带提报按钮）。
+  -->
+  <view wx:if="{{sections.length}}" class="report-row" hover-class="press" bindtap="goReport">
     <view class="rr-text">没找到你想去的舞室？<text class="rr-em">告诉我们</text></view>
     <view class="rr-arrow">›</view>
   </view>
@@ -311,6 +296,58 @@
         </view>
       </view>
     </block>
+  </view>
+
+  <!--
+    教练维度：搜「一个名字」时，命中的往往既有店也有人。
+    ⚠ 位置在门店结果**之后**：搜索的主诉求是找舞室，教练卡先铺一屏会把门店
+      挤到折叠线以下；而搜老师名时门店通常没命中，往下就是唯一的结果区。
+    ⚠ 同名**不合并**：两家店的 Ken 是不是同一个人，我们手上没有任何字段能证明，
+    合并成一个人、用户照着约课，很可能约到另一个人的课。所以同城同名全取，
+    每家店单列一行（含最近/下一次排课），是不是同一个人由用户自己判断。
+  -->
+  <view wx:if="{{coachGroups.length}}" id="coach-block" class="coach-block">
+    <view class="coach-head">
+      <view class="coach-title">教练<text wx:if="{{coachCityName}}" class="coach-city"> · {{coachCityName}}</text></view>
+      <view class="coach-tip">{{coachTip}}</view>
+    </view>
+    <view
+      wx:for="{{coachGroups}}"
+      wx:key="name"
+      class="coach-card"
+      hover-class="press"
+      data-index="{{index}}"
+      bindtap="goCoachResult"
+    >
+      <image wx:if="{{item.avatarUrl}}" class="coach-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="coach-avatar coach-avatar-txt">{{item.initial}}</view>
+      <view class="coach-info">
+        <view class="coach-name-row">
+          <text class="coach-name">{{item.name}}</text>
+          <text wx:if="{{item.cityLabel}}" class="coach-flag city">{{item.cityLabel}}</text>
+          <text wx:if="{{item.multiStudio}}" class="coach-flag">同名 {{item.studioCount}} 家店</text>
+        </view>
+        <view wx:if="{{item.sub}}" class="coach-sub">{{item.sub}}</view>
+        <view class="cs-row">
+          <view
+            wx:for="{{item.studios}}"
+            wx:for-item="st"
+            wx:key="studioId"
+            class="cs-tag {{st.hot ? 'hot' : ''}}"
+          >{{st.short}}</view>
+          <view wx:if="{{item.extraStudios}}" class="cs-tag more">+{{item.extraStudios}}</view>
+        </view>
+      </view>
+      <view class="coach-arrow">›</view>
+    </view>
+  </view>
+
+  <!-- 同城搜不到这位老师，全国有：说一句，否则用户只会以为我们没收录 -->
+  <view wx:if="{{coachCrossCity}}" class="cross-bar" hover-class="press" bindtap="goCoachCrossCity">
+    <view class="cb-main">
+      <view class="cb-title">本城没有叫「{{keyword}}」的教练</view>
+      <view class="cb-sub">全国还有 {{coachCrossCity.total}} 位 · {{coachCrossText}}，看看 ›</view>
+    </view>
   </view>
 </view>
 

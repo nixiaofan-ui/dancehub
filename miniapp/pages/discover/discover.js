@@ -188,13 +188,20 @@ Page(
      * 老师搜索结果（只在有关键词时出现）。
      * 一组 = 一个名字；组内是各家门店，**同名不合并** —— 详情见服务端注释：
      * 我们没法证明两家店的 Ken 是同一个人，合并了用户会约错人。
+     *
+     * ⚠ 排布上在门店结果**之后**：搜店名的人不想先被一排老师卡片挡住，
+     *   而搜老师名时门店多半没命中，往下就是唯一的结果区（顶上有跳转条）。
      */
     coachGroups: [],
+    /** 教练块的副标题（门店 0 命中时要说明一下为什么只有老师） */
+    coachTip: "同名多店不合并，按门店自己判断",
     /** 同城搜不到老师、但全国有（服务端算好回传） */
     coachCrossCity: null,
     coachCrossText: "",
     /** 老师结果所属城市名（标题上要写明「北京的教练」，否则跨城重名无从判断） */
     coachCityName: "",
+    /** 品牌条副标题：搜索态只说命中的分店，别说成「全部分店」 */
+    brandSub: "一次看完全部分店",
   }),
 
   async onLoad() {
@@ -291,14 +298,17 @@ Page(
       });
       // 品牌归属前端自己算：服务端 /studios/brands 要等云托管发版才生效，
       // 而门店名本来就在手上、聚类又是纯函数 —— 本地算就不受发版节奏牵制。
-      // 搜索时沿用上一次全量算好的结果（顶部品牌栏不该跟着关键词变），
-      // 两端都算不出来才退回服务端接口，最差退化成纯门店列表。
+      // ⚠ 一律按**本次结果**算，搜索态也一样：早期搜索态是沿用上一次全城那份品牌表
+      //   （当时的顾虑是「顶部品牌栏不该跟着关键词变」），代价是搜「Jazz」时顶部
+      //   挂着一排一家店都没命中的连锁品牌，点进去全是别的分店 —— 搜什么就该看到什么。
       // ⚠ 跨城结果不做品牌合并：「上海 AB DANCE」和「杭州 AB DANCE」
       // 收成一行只会让人以为它们通卡。
       let brandList = [];
       if (!globalMode) {
-        brandList = this.data.keyword ? this.data.brands || [] : buildBrandGroups(studios);
-        if (!brandList.length) {
+        brandList = buildBrandGroups(studios);
+        // 只有浏览态才退回服务端那份全城品牌表。搜索态宁可不显示品牌条 ——
+        // 把没命中的品牌兜回来，正是这次要修掉的东西。
+        if (!brandList.length && !this.data.keyword) {
           brandList = await api.apiBrands(scopeId).catch(() => []);
         }
       }
@@ -309,6 +319,12 @@ Page(
       this._brandList = brandList;
       const view = this.buildRows(this.applyDistrictFilter(studios));
       const coaches = this.buildCoachGroups(coachRes, coachCity);
+      // 一家店都没命中、却有人名命中时，标题上要说一句：否则用户看到光秃秃的
+      // 教练卡片，会以为是门店列表没加载出来。
+      const coachTip =
+        coaches.groups.length && view.sections.length === 0
+          ? "没有匹配的舞室，以下是命中的教练"
+          : "同名多店不合并，按门店自己判断";
       this.setData(
         {
           brands: brandList,
@@ -323,6 +339,8 @@ Page(
           coachCrossCity: coaches.crossCity,
           coachCrossText: coaches.crossText,
           coachCityName: coaches.cityName,
+          coachTip,
+          brandSub: this.data.keyword ? "只看这次搜到的分店" : "一次看完全部分店",
           loading: false,
         },
         () => {
@@ -390,6 +408,24 @@ Page(
     if (!g) return;
     // 全国兜底的结果各组不同城 → 用组自己的城市，不能统一用搜索城市
     goToCoach(g.name, g.cityId || this._coachCityId || this.data.cityId);
+  },
+
+  /**
+   * 跳到教练结果区。
+   *
+   * 为什么需要这条：教练排在门店之后，而一次搜索可能回 200 家门店 —— 没有入口的话
+   * 老师结果实际上等于不存在（没人会往下翻两百行）。所以只要两批结果都有，
+   * 就在结果区顶部留一句「另命中 N 位教练」。
+   */
+  jumpToCoaches() {
+    const q = wx.createSelectorQuery();
+    q.select("#coach-block").boundingClientRect();
+    q.selectViewport().scrollOffset();
+    q.exec((res) => {
+      if (!res || !res[0] || !res[1]) return;
+      const top = res[1].scrollTop + res[0].top - (this.data.statusBarHeight || 0);
+      wx.pageScrollTo({ scrollTop: Math.max(0, top), duration: 200 });
+    });
   },
 
   /** 本城没这位老师、别处有 → 切到命中最多那座城市再看 */

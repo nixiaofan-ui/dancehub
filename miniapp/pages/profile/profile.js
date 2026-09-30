@@ -301,8 +301,12 @@ Page({
     // 等于让用户当着这家店的面再筛一次 —— 而从这张卡片点进来的意图很明确，
     // 就是想看这家店的 Jazz 什么时候有课。想看别的舞种，门店页的舞种条就在那儿。
     // null（没在筛）和 []（用户清除了）都不带 —— 那两种情况下带过去没有意义。
+    // ⚠ 全选态也不带：全选等于没筛，带过去只是把 URL 撑长，语义完全一样。
+    // ⚠ 判据现算（isAllOn），不读 data.styleAllOn —— 那是给按钮文案用的渲染态，
+    //   初值是 true，筛选条还没渲染时直接读它会把该带的舞种吞掉（烟测踩到过）。
     const styles = Array.isArray(this.activeStyles) ? this.activeStyles : [];
-    const q = styles.length ? "&style=" + encodeURIComponent(styles.join(",")) : "";
+    const carry = styles.length && !isAllOn(this.data.styleChips, styles) ? styles : [];
+    const q = carry.length ? "&style=" + encodeURIComponent(carry.join(",")) : "";
     wx.navigateTo({ url: "/pages/studio/weekly?id=" + id + q });
   },
 

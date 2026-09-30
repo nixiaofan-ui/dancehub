@@ -172,7 +172,17 @@ const view = (page, id) => page.data.followsView.find((f) => f.studio.id === id)
   console.log("\n[9] 跳转：卡片进门店课表，课行进课程详情");
   page.tapAllStyles();
   page.openStudio({ currentTarget: { dataset: { id: 12 } } });
-  check("门店跳转地址", global.__lastUrl, "/pages/studio/weekly?id=12");
+  // 全选态不往 URL 上挂舞种：全选等于没筛，挂上去只是噪音
+  check("全选态的门店跳转地址", global.__lastUrl, "/pages/studio/weekly?id=12");
+  // 筛了才带：落点侧据此把筛选条预先勾好
+  page.tapStyleChip({ currentTarget: { dataset: { label: "Kpop" } } });
+  page.openStudio({ currentTarget: { dataset: { id: 12 } } });
+  check(
+    "筛过的门店跳转地址带上舞种",
+    global.__lastUrl,
+    "/pages/studio/weekly?id=12&style=" + encodeURIComponent("Jazz,HipHop,其它"),
+  );
+  page.tapAllStyles();
   page.openCourse({ currentTarget: { dataset: { id: 101 } } });
   check("课程跳转地址", global.__lastUrl, "/pages/course/detail?id=101");
 

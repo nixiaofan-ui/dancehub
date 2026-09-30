@@ -668,7 +668,37 @@
   与门店卡片同一套骨架，只把左边框换成青色 —— 搜索结果里「门店」和「教练」
   是两个维度，靠颜色区分比靠标题更快。
 */
+/* 结果区顶部的教练跳转：门店在前、教练在后，这条负责把用户送过去 */
+.coach-jump {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  padding: 16rpx 24rpx;
+  border-radius: 14rpx;
+  /* 青色系跟门店卡片左侧那道竖条同源，暗示「是同一次搜索的另一类结果」 */
+  background: rgba(0, 245, 212, 0.09);
+  border: 1rpx solid rgba(0, 245, 212, 0.32);
+}
+.cj-text {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #9fe8dd;
+}
+.cj-n {
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #00f5d4;
+}
+.cj-go {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #00f5d4;
+}
+
 .coach-block {
+  /* 教练排在门店结果之后 → 上方要留出间距，别和最后一张门店卡片糊在一起 */
+  margin-top: 28rpx;
   margin-bottom: 24rpx;
 }
 .coach-head {
