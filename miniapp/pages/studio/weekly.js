@@ -7,7 +7,13 @@ const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 const { foldBlocked } = require("../../utils/blocked");
 const { timeAgo } = require("../../utils/time-ago");
-const { styleOfCourse, buildStyleChips, filterByStyle } = require("../../utils/style-filter");
+const {
+  styleOfCourse,
+  buildStyleChips,
+  filterByStyle,
+  toggleAllActive,
+  isAllOn,
+} = require("../../utils/style-filter");
 
 /** 实时刷人数时最多回源几家店：全选十几家分店逐店拉，等待时间比数字本身更烦人 */
 const MAX_LIVE_STORES = 4;
@@ -371,7 +377,7 @@ Page({
     this.setData({
       styleChips: r.chips,
       showStyleBar: r.show,
-      styleAllOn: r.active.length === r.chips.length,
+      styleAllOn: isAllOn(r.chips, r.active),
     });
   },
 
@@ -389,19 +395,22 @@ Page({
       active.add(label);
     }
     this.activeStyles = [...active];
+    const chips = this.data.styleChips || [];
     this.setData({
-      styleChips: (this.data.styleChips || []).map((c) => ({ ...c, on: active.has(c.label) })),
-      styleAllOn: active.size === (this.data.styleChips || []).length,
+      styleChips: chips.map((c) => ({ ...c, on: active.has(c.label) })),
+      styleAllOn: isAllOn(chips, [...active]),
     });
     this.applyWeekData();
   },
 
+  /** 全选 / 清除 二合一，与上面的门店条同款 */
   tapAllStyles() {
     const chips = this.data.styleChips || [];
-    this.activeStyles = chips.map((c) => c.label);
+    const active = toggleAllActive(chips, this.data.styleAllOn);
+    this.activeStyles = active;
     this.setData({
-      styleChips: chips.map((c) => ({ ...c, on: true })),
-      styleAllOn: true,
+      styleChips: chips.map((c) => ({ ...c, on: active.indexOf(c.label) >= 0 })),
+      styleAllOn: isAllOn(chips, active),
     });
     this.applyWeekData();
   },

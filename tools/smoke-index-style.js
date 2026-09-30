@@ -109,8 +109,8 @@ const ids = (page) => (page.data.items || []).map((i) => i.id);
   ]);
   check("默认全选", page.data.styleAllOn, true);
 
-  // 只看 Jazz
-  await page.tapAllStyles();
+  // 只看 Jazz。进页面本来就是全选，不用先点那颗按钮 ——
+  // 它已经是「全选 / 清除」二合一，在全选态下点它是清除（见末尾那条断言）
   await page.tapStyleChip({ currentTarget: { dataset: { label: "HipHop" } } });
   await page.tapStyleChip({ currentTarget: { dataset: { label: "其它" } } });
   await page.tapStyleChip({ currentTarget: { dataset: { label: "中国舞" } } });
@@ -134,6 +134,15 @@ const ids = (page) => (page.data.items || []).map((i) => i.id);
   await page.tapAllStores();
   await page.tapAllStyles();
   check("全选后恢复 8 节", ids(page), [1, 2, 3, 4, 5, 6, 7, 8]);
+
+  // 二合一按钮：全选态下这一下是「清除」，点了就是一节不留
+  await page.tapAllStyles();
+  check("全选态下再点 = 清除", ids(page), []);
+  check("按钮回到「全选」态", page.data.styleAllOn, false);
+  check("空态归因为被筛掉", page.data.emptyFiltered, true);
+  await page.tapAllStyles();
+  check("再点一下回到 8 节", ids(page), [1, 2, 3, 4, 5, 6, 7, 8]);
+  check("空态标记复原", page.data.emptyFiltered, false);
 
   // 只有一种舞种时不该给筛选条
   const page2 = makePage();

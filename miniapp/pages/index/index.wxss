@@ -164,9 +164,12 @@
   margin-left: 12rpx;
   font-weight: 700;
 }
-.stf-all.on {
-  background: rgba(0, 245, 212, 0.14);
-  font-weight: 900;
+/* 全选状态下这颗按钮变成「清除」：换中性色，同一个青色按钮来回变字
+   会让人以为点了没生效（和分店条那颗同款处理） */
+.stf-all.is-clear {
+  color: #a8adc2;
+  border-color: rgba(168, 173, 194, 0.5);
+  background: rgba(168, 173, 194, 0.12);
 }
 
 /* 屏蔽提示条：藏了什么必须让用户知道，还要能一键反悔 */

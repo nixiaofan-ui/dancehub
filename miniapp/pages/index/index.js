@@ -16,7 +16,13 @@ const { onNavTop } = require("../../utils/scroll-top");
 // 跳老师主页统一走这里：详情页/周课表页也是同一个实现，行为保持一致
 const { onTapCoach } = require("../../utils/coach-nav");
 const CP = require("../../utils/city-picker-mixin");
-const { styleOfCourse, buildStyleChips, filterByStyle } = require("../../utils/style-filter");
+const {
+  styleOfCourse,
+  buildStyleChips,
+  filterByStyle,
+  toggleAllActive,
+  isAllOn,
+} = require("../../utils/style-filter");
 
 /**
  * 首页和发现页共用一套城市选择逻辑（热门 chip + 全量面板）。
@@ -51,6 +57,8 @@ Page(
     styleChips: [],
     showStyleBar: false,
     styleAllOn: true,
+    // 列表空着，但原因是「被筛掉了」而不是「这天没课」——空态文案靠它分岔
+    emptyFiltered: false,
     // 因「屏蔽老师」而隐藏的课
     hiddenCount: 0,
     showBlocked: false,
@@ -251,7 +259,12 @@ Page(
       // 藏了多少课要让用户看见，别悄悄替他做决定
       const hiddenCount = this.data.showBlocked ? 0 : hidden;
 
-      this.setData({ items: visible, pendingCount, hiddenCount, loading: false, loadError: "" });
+      this.commitVisible(visible, {
+        pendingCount,
+        hiddenCount,
+        loading: false,
+        loadError: "",
+      });
       this.allItems = base;
       this.lastLoadedAt = Date.now();
       this.seenDirty = app.globalData.dirty || 0;
@@ -332,12 +345,24 @@ Page(
     this.setData({
       styleChips: r.chips,
       showStyleBar: r.show,
-      styleAllOn: r.active.length === r.chips.length,
+      styleAllOn: isAllOn(r.chips, r.active),
     });
   },
 
   filterByStyle(items) {
     return filterByStyle(items, (i) => [styleOfCourse(i.courseName)], this.activeStyles);
+  },
+
+  /**
+   * 写回筛选结果时顺手算空态原因。
+   * 「有课但被筛掉了」和「这天本来就没课」是两回事，
+   * 空态文案说错，用户只会以为我们漏抓了数据。
+   */
+  commitVisible(items, extra) {
+    const base = this.allItems || [];
+    this.setData(
+      Object.assign({ items, emptyFiltered: base.length > 0 && items.length === 0 }, extra),
+    );
   },
 
   /** 两级筛选串起来：门店 → 舞种。顺序不影响结果，但只调这一个地方不容易漏 */
@@ -355,21 +380,28 @@ Page(
       active.add(label);
     }
     this.activeStyles = [...active];
+    const chips = this.data.styleChips || [];
     this.setData({
-      styleChips: (this.data.styleChips || []).map((c) => ({ ...c, on: active.has(c.label) })),
-      styleAllOn: active.size === (this.data.styleChips || []).length,
-      items: this.applyFilters(this.allItems || []),
+      styleChips: chips.map((c) => ({ ...c, on: active.has(c.label) })),
+      styleAllOn: isAllOn(chips, [...active]),
     });
+    this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
+  /**
+   * 全选 / 清除 二合一（与分店条一致）。
+   * 清除后一节课都不剩 —— 这不是错误状态，是用户刚做的选择，
+   * 所以空态要讲清楚是被筛掉的，别让他以为是这天没课。
+   */
   tapAllStyles() {
     const chips = this.data.styleChips || [];
-    this.activeStyles = chips.map((c) => c.label);
+    const active = toggleAllActive(chips, this.data.styleAllOn);
+    this.activeStyles = active;
     this.setData({
-      styleChips: chips.map((c) => ({ ...c, on: true })),
-      styleAllOn: true,
-      items: this.applyFilters(this.allItems || []),
+      styleChips: chips.map((c) => ({ ...c, on: active.indexOf(c.label) >= 0 })),
+      styleAllOn: isAllOn(chips, active),
     });
+    this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
   /**
@@ -390,10 +422,7 @@ Page(
     this.syncStoreChips(base);
     this.syncStyleChips(base);
     this.allItems = base;
-    this.setData({
-      items: this.applyFilters(base),
-      hiddenCount: 0,
-    });
+    this.commitVisible(this.applyFilters(base), { hiddenCount: 0 });
   },
 
   // 点教练名 → 老师主页（与详情页、周课表页共用 utils/coach-nav）
@@ -411,17 +440,15 @@ Page(
     this.activeIds = [...active];
     this.setData({
       storeChips: (this.data.storeChips || []).map((c) => ({ ...c, on: active.has(c.id) })),
-      items: this.applyFilters(this.allItems || []),
     });
+    this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
   tapAllStores() {
     const chips = this.data.storeChips || [];
     this.activeIds = chips.map((c) => c.id);
-    this.setData({
-      storeChips: chips.map((c) => ({ ...c, on: true })),
-      items: this.applyFilters(this.allItems || []),
-    });
+    this.setData({ storeChips: chips.map((c) => ({ ...c, on: true })) });
+    this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
   switchRegion(e) {

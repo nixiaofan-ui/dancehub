@@ -99,7 +99,10 @@
         bindtap="tapStyleChip"
       >{{item.label}}<text class="stf-n">{{item.count}}</text></view>
     </scroll-view>
-    <view class="stf-all {{styleAllOn ? 'on' : ''}}" hover-class="press" bindtap="tapAllStyles">全部</view>
+    <!-- 全选 / 清除 二合一：和分店条那颗按钮同一套行为 -->
+    <view class="stf-all {{styleAllOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllStyles">
+      {{styleAllOn ? '清除' : '全选'}}
+    </view>
   </view>
 
   <!-- 服务不可达：不能只留一片空白，给出原因和重试入口 -->
@@ -126,9 +129,12 @@
         <view class="d-limb d-leg-l"></view>
         <view class="d-limb d-leg-r"></view>
       </view>
-      <view class="empty-title">今日暂无课程</view>
-      <view class="empty-sub">去「发现」页搜索并关注舞室吧</view>
-      <button class="btn-pri empty-btn" hover-class="press" bindtap="goDiscover">去发现</button>
+      <!-- 有课但被筛掉了 ≠ 这天没课：说错原因，用户会以为数据漏了 -->
+      <view wx:if="{{emptyFiltered}}" class="empty-title">这些筛选下没有课</view>
+      <view wx:else class="empty-title">今日暂无课程</view>
+      <view wx:if="{{emptyFiltered}}" class="empty-sub">点上方「全选」恢复，或换一天看看</view>
+      <view wx:else class="empty-sub">去「发现」页搜索并关注舞室吧</view>
+      <button wx:if="{{!emptyFiltered}}" class="btn-pri empty-btn" hover-class="press" bindtap="goDiscover">去发现</button>
       <!-- 空列表恰恰是最该出现补录入口的时刻：这天没课，多半是这家店没被抓到 -->
       <view class="empty-alt" hover-class="press" bindtap="goImport">＋ 这天有课没抓到？补录一节</view>
     </view>

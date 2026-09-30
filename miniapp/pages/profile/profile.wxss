@@ -169,12 +169,15 @@
 
 /* 关注 */
 .follow-card {
-  display: flex;
-  align-items: center;
   background: #16213e;
   border-radius: 16rpx;
   padding: 20rpx;
   margin-bottom: 16rpx;
+}
+/* 门店那一横：整块可点进门店课表 */
+.follow-top {
+  display: flex;
+  align-items: center;
 }
 .follow-avatar {
   width: 80rpx;
@@ -211,6 +214,48 @@
   margin-top: 6rpx;
   font-weight: 700;
   letter-spacing: 0.5rpx;
+}
+
+/* 卡片下方的「这家店在所选舞种下有什么课」。
+   选完舞种只能看到门店、看不到课，等于没筛 —— 这块就是补上那一步 */
+.follow-courses {
+  margin-top: 16rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.07);
+}
+.fc-row {
+  display: flex;
+  align-items: baseline;
+  padding: 8rpx 0;
+}
+.fc-when {
+  font-size: 22rpx;
+  color: #00f5d4;
+  font-weight: 900;
+  flex-shrink: 0;
+  margin-right: 14rpx;
+}
+.fc-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 25rpx;
+  color: #e8e8f0;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fc-coach {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #a8adc2;
+  margin-left: 12rpx;
+}
+.fc-more {
+  font-size: 22rpx;
+  color: #a8adc2;
+  padding-top: 6rpx;
+  font-weight: 700;
 }
 
 /* 舞种筛选条：与首页课表那条同款（青色，区别于橙色门店条） */
@@ -257,9 +302,12 @@
   margin-left: 12rpx;
   font-weight: 700;
 }
-.stf-all.on {
-  background: rgba(0, 245, 212, 0.14);
-  font-weight: 900;
+/* 全选状态下这颗按钮变成「清除」：换中性色，同一个青色按钮来回变字
+   会让人以为点了没生效（和分店条那颗同款处理） */
+.stf-all.is-clear {
+  color: #a8adc2;
+  border-color: rgba(168, 173, 194, 0.5);
+  background: rgba(168, 173, 194, 0.12);
 }
 .unfollow {
   font-size: 26rpx;

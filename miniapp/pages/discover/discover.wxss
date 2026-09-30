@@ -149,6 +149,12 @@
   margin-left: 12rpx;
   font-weight: 700;
 }
+/* 已全选时变成「清除」：换中性色，紫色的按钮来回换字会让人以为没点中 */
+.df-all.is-clear {
+  color: #a8adc2;
+  border-color: rgba(168, 173, 194, 0.5);
+  background: rgba(168, 173, 194, 0.12);
+}
 
 /* 搜索框 */
 .search-box {

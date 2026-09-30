@@ -145,6 +145,10 @@ Page(
      */
     districtChips: [],
     showDistrictBar: false,
+    // 用户点了「清除」：列表空着是他自己选的，空态不能说成「没搜到」
+    districtCleared: false,
+    // 已被全选 → 右侧按钮显示「清除」；清除了就是空选，一个区都不留
+    districtAllOn: true,
     unlabeledCount: 0,
     /** 本次结果是跨城的：卡片要带城市标签，且不做同城品牌合并 */
     globalMode: false,
@@ -443,7 +447,9 @@ Page(
     });
     // 一个区都没有（也没未标注的）→ 不给筛选条
     if (!tally.size && !unlabeled) {
-      this.activeDistricts = [];
+      // ⚠ 必须是 null（没在筛）而不是 []（用户清除了）：条收起来了还按「清除」
+      //   去过滤，同城列表会一家都不剩
+      this.activeDistricts = null;
       this.setData({ districtChips: [], showDistrictBar: false, unlabeledCount: 0 });
       return;
     }
@@ -454,29 +460,42 @@ Page(
 
     // 只有一个可选项时也没必要给开关
     if (chips.length < 2) {
-      this.activeDistricts = [];
+      // ⚠ 必须是 null（没在筛）而不是 []（用户清除了）：条收起来了还按「清除」
+      //   去过滤，同城列表会一家都不剩
+      this.activeDistricts = null;
       this.setData({ districtChips: [], showDistrictBar: false, unlabeledCount: unlabeled });
       return;
     }
     const known = new Set(chips.map((c) => c.label));
-    let active = (this.activeDistricts || []).filter((l) => known.has(l));
-    // 搜索态一律放弃上次勾的区：搜「trex」时若还挂着「朝阳」，命中的店会被
-    // 悄悄筛掉，用户只会以为这家店没收录。浏览态才保留（那是用户主动筛的）。
-    if (this.data.keyword) active = [];
-    if (!active.length) active = chips.map((c) => c.label);
+    // ⚠ 两种「空」要分开：从未筛过（null）→ 全选；用户点了「清除」（[]）→ 一个不留。
+    //   混在一起的话，清除后一搜或者一切城市，筛选条又自己全勾上了。
+    let active = [];
+    if (this.data.keyword || this.activeDistricts == null) {
+      // 搜索态一律放弃上次勾的区：搜「trex」时若还挂着「朝阳」，命中的店会被
+      // 悄悄筛掉，用户只会以为这家店没收录。
+      active = chips.map((c) => c.label);
+    } else {
+      active = this.activeDistricts.filter((l) => known.has(l));
+    }
     this.activeDistricts = active;
 
     const on = new Set(active);
     this.setData({
       districtChips: chips.map((c) => ({ ...c, on: on.has(c.label) })),
       showDistrictBar: true,
+      districtAllOn: active.length > 0 && active.length === chips.length,
+      districtCleared: Array.isArray(active) && active.length === 0,
       unlabeledCount: unlabeled,
     });
   },
 
+  /**
+   * ⚠ active 为 null = 没在筛；为 [] = 用户清除了 → 一家都不留。
+   * 早期写法把 [] 也当成「不筛」，于是「清除」点了跟没点一样，列表纹丝不动。
+   */
   applyDistrictFilter(studios) {
     const active = this.activeDistricts;
-    if (!active || !active.length) return studios;
+    if (active == null) return studios;
     const on = new Set(active);
     return studios.filter((s) => on.has(s.district || UNLABELED));
   },
@@ -491,23 +510,26 @@ Page(
       active.add(label);
     }
     this.activeDistricts = [...active];
-    const rows = this.applyDistrictFilter(this._studios || []);
+    const chips = this.data.districtChips || [];
     this.setData({
-      districtChips: (this.data.districtChips || []).map((c) => ({
-        ...c,
-        on: active.has(c.label),
-      })),
-      ...this.buildRows(rows),
+      districtChips: chips.map((c) => ({ ...c, on: active.has(c.label) })),
+      districtAllOn: active.size > 0 && active.size === chips.length,
+      districtCleared: false,
+      ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
     });
   },
 
+  /** 全选 / 清除 二合一，与分店条、舞种条同款 */
   tapAllDistricts() {
     const chips = this.data.districtChips || [];
-    this.activeDistricts = chips.map((c) => c.label);
-    const rows = this.applyDistrictFilter(this._studios || []);
+    const allOn = this.data.districtAllOn;
+    const active = allOn ? [] : chips.map((c) => c.label);
+    this.activeDistricts = active;
     this.setData({
-      districtChips: chips.map((c) => ({ ...c, on: true })),
-      ...this.buildRows(rows),
+      districtChips: chips.map((c) => ({ ...c, on: active.indexOf(c.label) >= 0 })),
+      districtAllOn: !allOn,
+      districtCleared: allOn,
+      ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
     });
   },
 

@@ -58,7 +58,10 @@
         bindtap="tapStyleChip"
       >{{item.label}}<text class="stf-n">{{item.count}}</text></view>
     </scroll-view>
-    <view class="stf-all {{styleAllOn ? 'on' : ''}}" hover-class="press" bindtap="tapAllStyles">全部</view>
+    <!-- 全选 / 清除 二合一，和上面的门店条同款按钮 -->
+    <view class="stf-all {{styleAllOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllStyles">
+      {{styleAllOn ? '清除' : '全选'}}
+    </view>
   </view>
 
   <!-- 星期横条 -->
@@ -111,7 +114,7 @@
     </view>
     <view wx:elif="{{dayItems.length === 0 && styleFilteredOut}}" class="empty-tip">
       这天没有你选的舞种
-      <view class="empty-sub">点上方「全部」恢复，或换一天看看</view>
+      <view class="empty-sub">点上方「全选」恢复，或换一天看看</view>
     </view>
     <view wx:elif="{{dayItems.length === 0}}" class="empty-tip">当天暂无课程</view>
     <view

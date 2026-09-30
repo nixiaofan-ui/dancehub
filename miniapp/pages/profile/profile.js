@@ -8,10 +8,24 @@ const { getFavCoaches, unfav, fav } = require("../../utils/fav-coaches");
 const { onNavTop } = require("../../utils/scroll-top");
 const { onTapCoach } = require("../../utils/coach-nav");
 const { bookCourse } = require("../../utils/booking");
-const { todayKey, parseKey, WEEK } = require("../../utils/date");
-// 舞种本身是服务端按未来课表算好、随关注接口下发的，前端不重新识别
-// （课表没拉下来时前端也识别不出）。
-const { OTHER, buildStyleChips, filterByStyle } = require("../../utils/style-filter");
+const { dateKey, todayKey, parseKey, addDays, WEEK } = require("../../utils/date");
+// 舞种：课名里自带，本地就能认。服务端随关注接口下发的 studio.styles 只作兜底
+// （课表没拉下来时，光有店名是认不出舞种的）。
+const {
+  OTHER,
+  styleOfCourse,
+  buildStyleChips,
+  filterByStyle,
+  toggleAllActive,
+  isAllOn,
+} = require("../../utils/style-filter");
+
+/** 一张关注卡片最多铺几节课：再多就成了第二份课表，把门店清单挤没了 */
+const COURSES_PER_CARD = 3;
+/** 一次拉几家店的未来课表：再多的话接口要拒绝，而且关注列表也翻不到那么下面 */
+const COURSE_STUDIO_LIMIT = 30;
+/** 往前看几天的课：够看到周末排课，又不至于把整月都拉回来 */
+const COURSE_DAYS = 7;
 
 Page({
   onNavTop,
@@ -29,6 +43,8 @@ Page({
     styleChips: [],
     showStyleBar: false,
     styleAllOn: true,
+    // 列表空着是因为「被筛掉了」而不是「没关注」——空态文案靠它分岔
+    emptyFiltered: false,
     bookings: [],
     reminders: [],
     // 「我的课表」：我录的课（/imports/mine）和我约的课（/bookings）合并去重后的结果。
@@ -244,7 +260,7 @@ Page({
       this.syncFollowStyleChips(followRows);
       this.setData({
         follows: followRows,
-        followsView: this.filterFollowsByStyle(followRows),
+        followsView: this.buildFollowView(followRows),
         bookings: bookingRows,
         schedules: buildMySchedule(bookingRows, mine || []),
         reminders: reminders.map((r) => ({
@@ -254,6 +270,8 @@ Page({
         })),
         loading: false,
       });
+      // 课表另拉：门店列表先出来（不阻塞），课表到了再补到卡片上
+      this.loadFollowCourses(followRows);
     } catch (e) {
       this.setData({ loading: false });
       toast(this, e.message);
@@ -275,15 +293,110 @@ Page({
     wx.navigateTo({ url: "/pages/studio/weekly?id=" + id });
   },
 
-  // ── 关注列表的舞种筛选 ──────────────────────────────
-  // 这里筛的是**店**：一家店既教 Jazz 又教 Kpop，选任一都该留下它。
-  // 所以一家店要往它每个舞种各自的计数里投一票 —— 和首页「按课筛」的算法不同，
-  // 那边的单位是一节课，这边是一家店。
+  // ── 关注列表：舞种筛选 + 卡片内联课程 ──────────────────
+  //
+  // 用户要的从来不是「哪几家店教 Jazz」，而是「Jazz 在哪家店、什么时候有课」。
+  // 只给门店卡片的话，选完舞种还得一家家点进去才知道有没有想上的那节 ——
+  // 所以卡片本身要把这家店在所选舞种下的课列出来。
+  //
+  // 筛的仍然是**店**（一家店既教 Jazz 又教 Kpop，选任一都该留下它），
+  // 与首页「按课筛」的算法不同：那边的单位是一节课，这边是一家店。
 
-  /** 取一家店的舞种标签；没有未来排课（或课名认不出）的归「其它」 */
+  /**
+   * 拉关注店未来一周的课，按店存一份。
+   *
+   * 一次请求拿完（/timeline/multi 本来就是给多店视图用的），不逐店问 ——
+   * 「我的」页每次 onShow 都重拉，逐店问等于每次进页面打十几个请求。
+   * ⚠ 失败静默：课程是锦上添花，门店列表本身已经能用了，不该弹错打断。
+   */
+  async loadFollowCourses(rows) {
+    const ids = (rows || []).map((r) => r.studio && r.studio.id).filter(Boolean);
+    // 关注名单没变就继续用手上这份，别每次 onShow 都拉一遍
+    const sig = ids.join(",");
+    if (sig === this._courseSig) return;
+    this._courseSig = sig;
+    if (!ids.length) {
+      this.coursesByStudio = new Map();
+      this.applyFollowView();
+      return;
+    }
+    try {
+      // addDays 吃的是 Date，接口要的是 YYYY-MM-DD —— 两头都得转一次
+      const from = todayKey();
+      const to = dateKey(addDays(parseKey(from), COURSE_DAYS - 1));
+      const res = await api.apiMultiTimeline(ids.slice(0, COURSE_STUDIO_LIMIT), from, to);
+      const byStudio = new Map();
+      (res.items || []).forEach((it) => {
+        const sid = it.studio && it.studio.id;
+        if (!sid) return;
+        const list = byStudio.get(sid) || [];
+        if (list.length >= 30) return;
+        list.push({
+          id: it.id,
+          courseName: it.courseName,
+          startTime: it.startTime,
+          endTime: it.endTime,
+          coach: (it.coach && it.coach.name) || "",
+          // WXML 里不拼字符串，日期文案先在 JS 里算好
+          dateText: it.scheduleDate
+            ? `${String(it.scheduleDate).slice(5)} ${WEEK[parseKey(it.scheduleDate).getDay()]}`
+            : "",
+          style: styleOfCourse(it.courseName),
+        });
+        byStudio.set(sid, list);
+      });
+      this.coursesByStudio = byStudio;
+      // 课表到手后舞种认定更准（服务端的 studio.styles 是缓存的，可能滞后），
+      // 所以筛选条要按新的舞种重算一遍
+      this.syncFollowStyleChips(this.allFollows || []);
+      this.applyFollowView();
+    } catch (e) {
+      console.warn("[dancehub] 关注店课表拉取失败:", e && e.message);
+    }
+  },
+
+  /** 一家店的舞种：优先用实际课程认（准），没课表时退回服务端给的 styles */
   stylesOf(item) {
+    if (item._styles && item._styles.length) return item._styles;
     const list = (item.studio && item.studio.styles) || [];
     return list.length ? list : [OTHER];
+  },
+
+  /**
+   * 给每张卡片算出「所选舞种下这家店有什么课」。
+   * 课表还没回来时 courses 为空，卡片就是原来的样子，不会开天窗。
+   */
+  decorateFollow(row) {
+    const sid = row.studio && row.studio.id;
+    const all = (this.coursesByStudio && this.coursesByStudio.get(sid)) || [];
+    const on = this.activeStyles == null ? null : new Set(this.activeStyles);
+    const matched = on ? all.filter((c) => on.has(c.style)) : all;
+    const styles = [...new Set(all.map((c) => c.style))];
+    // 速览只认真舞种：课名里什么都没认出来时显示「其它」毫无信息量，
+    // 这种情况退回服务端那份（它可能认得出，只是课还没拉全）
+    const named = styles.filter((s) => s !== OTHER);
+    return {
+      ...row,
+      _styles: styles,
+      courses: matched.slice(0, COURSES_PER_CARD),
+      moreCount: Math.max(0, matched.length - COURSES_PER_CARD),
+      styleText: named.length ? named.slice(0, 3).join(" · ") : row.styleText,
+    };
+  },
+
+  buildFollowView(rows) {
+    const decorated = (rows || []).map((r) => this.decorateFollow(r));
+    return filterByStyle(decorated, (x) => this.stylesOf(x), this.activeStyles);
+  },
+
+  applyFollowView() {
+    const rows = this.allFollows || [];
+    const view = this.buildFollowView(rows);
+    this.setData({
+      followsView: view,
+      emptyFiltered: rows.length > 0 && view.length === 0,
+      styleCleared: Array.isArray(this.activeStyles) && this.activeStyles.length === 0,
+    });
   },
 
   /**
@@ -291,18 +404,21 @@ Page({
    * 否则每点一下 chip，条上的数字就跟着跳，看起来像筛选条自己坏了。
    */
   syncFollowStyleChips(rows) {
-    const r = buildStyleChips(rows, (x) => this.stylesOf(x), this.activeStyles, this._styleLabels);
+    // 统计前先 decorate：舞种要按这家店实际上的课来定，不是按服务端缓存的那份
+    const decorated = (rows || []).map((r) => this.decorateFollow(r));
+    const r = buildStyleChips(
+      decorated,
+      (x) => this.stylesOf(x),
+      this.activeStyles,
+      this._styleLabels,
+    );
     this.activeStyles = r.active;
     this._styleLabels = r.labels;
     this.setData({
       styleChips: r.chips,
       showStyleBar: r.show,
-      styleAllOn: r.active.length === r.chips.length,
+      styleAllOn: isAllOn(r.chips, r.active),
     });
-  },
-
-  filterFollowsByStyle(rows) {
-    return filterByStyle(rows, (x) => this.stylesOf(x), this.activeStyles);
   },
 
   tapStyleChip(e) {
@@ -315,21 +431,31 @@ Page({
       active.add(label);
     }
     this.activeStyles = [...active];
+    const chips = this.data.styleChips || [];
     this.setData({
-      styleChips: (this.data.styleChips || []).map((c) => ({ ...c, on: active.has(c.label) })),
-      styleAllOn: active.size === (this.data.styleChips || []).length,
-      followsView: this.filterFollowsByStyle(this.allFollows || []),
+      styleChips: chips.map((c) => ({ ...c, on: active.has(c.label) })),
+      styleAllOn: isAllOn(chips, [...active]),
     });
+    this.applyFollowView();
   },
 
+  /** 全选 / 清除 二合一，与分店条、首页那两条同款 */
   tapAllStyles() {
     const chips = this.data.styleChips || [];
-    this.activeStyles = chips.map((c) => c.label);
+    const active = toggleAllActive(chips, this.data.styleAllOn);
+    this.activeStyles = active;
     this.setData({
-      styleChips: chips.map((c) => ({ ...c, on: true })),
-      styleAllOn: true,
-      followsView: this.filterFollowsByStyle(this.allFollows || []),
+      styleChips: chips.map((c) => ({ ...c, on: active.indexOf(c.label) >= 0 })),
+      styleAllOn: isAllOn(chips, active),
     });
+    this.applyFollowView();
+  },
+
+  /** 卡片里的一节课 → 课程详情（catchtap，别连带跳去门店页） */
+  openCourse(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!id) return;
+    wx.navigateTo({ url: "/pages/course/detail?id=" + id });
   },
 
   /** 课表录入：抓取覆盖不到的门店，让用户自己补一节 */

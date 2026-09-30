@@ -145,7 +145,10 @@
         bindtap="tapDistrictChip"
       >{{item.label}}<text class="df-n">{{item.count}}</text></view>
     </scroll-view>
-    <view class="df-all" hover-class="press" bindtap="tapAllDistricts">全选</view>
+    <!-- 全选 / 清除 二合一：和分店条、舞种条那几颗按钮同一套行为 -->
+    <view class="df-all {{districtAllOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllDistricts">
+      {{districtAllOn ? '清除' : '全选'}}
+    </view>
   </view>
 
   <!--
@@ -169,9 +172,12 @@
       <view class="d-limb d-leg-l"></view>
       <view class="d-limb d-leg-r"></view>
     </view>
-    <view class="empty-title">搜了个寂寞</view>
-    <view class="empty-sub">换个关键词，试试手气</view>
-    <button class="empty-report" hover-class="press" bindtap="goReport">没找到我要的舞室？告诉我们</button>
+    <!-- 清除了区域筛选 ≠ 没搜到：说错原因，用户会以为这家店没收录 -->
+    <view wx:if="{{districtCleared}}" class="empty-title">已清除区域筛选</view>
+    <view wx:else class="empty-title">搜了个寂寞</view>
+    <view wx:if="{{districtCleared}}" class="empty-sub">点上方「全选」恢复，或直接点想看的区</view>
+    <view wx:else class="empty-sub">换个关键词，试试手气</view>
+    <button wx:if="{{!districtCleared}}" class="empty-report" hover-class="press" bindtap="goReport">没找到我要的舞室？告诉我们</button>
   </view>
 
   <!-- 常驻提报入口：搜得到不代表搜得全，缺谁让用户直接告诉我们 -->
