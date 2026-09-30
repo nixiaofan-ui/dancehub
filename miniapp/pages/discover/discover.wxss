@@ -388,6 +388,42 @@
   flex-shrink: 0;
 }
 /* 跨城搜索结果上的城市标签：紫色小胶囊，和店名/分店名一眼分得开 */
+/* 距离分档标签（<1km / 1-3km / 3-5km / 5km+） */
+.dist-tag {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  padding: 2rpx 14rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #ffb454;
+  background: rgba(255, 180, 84, 0.14);
+  border: 1rpx solid rgba(255, 180, 84, 0.35);
+}
+/* 排序条 */
+.dsort {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 24rpx 4rpx;
+}
+.ds-chip {
+  font-size: 22rpx;
+  color: #a8adc2;
+  border: 1rpx solid rgba(168, 173, 194, 0.45);
+  border-radius: 24rpx;
+  padding: 6rpx 20rpx;
+  font-weight: 700;
+}
+.ds-chip.on {
+  color: #00f5d4;
+  border-color: rgba(0, 245, 212, 0.5);
+  background: rgba(0, 245, 212, 0.12);
+}
+.ds-hint {
+  font-size: 20rpx;
+  color: #7a7f99;
+  margin-left: 12rpx;
+}
 .city-tag {
   flex-shrink: 0;
   margin-left: 12rpx;

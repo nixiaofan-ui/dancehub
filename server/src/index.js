@@ -9,7 +9,9 @@ import { ensureSchema } from "./lib/ensure-schema.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
 import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
 import { fixStudioDistrictNames } from "./lib/fix-district-name.js";
+import { ensureAddress } from "./lib/fill-address.js";
 import { ensureDistrict } from "./lib/fill-district.js";
+import { ensureLatLng } from "./lib/fill-latlng.js";
 
 // ── 容器/云托管适配 ──
 // 云托管要求监听 80 / 8080；本地开发仍可走 3000。
@@ -56,6 +58,21 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       fixStudioDistrictNames({ log: (m) => console.log(m) }).catch((err) =>
         console.warn(`[dancehub] 区名清洗失败: ${err.message}`)
+      )
+    )
+    // 地址回填（幂等）：配置里 1100 条真地址一直没进库（address 是顶层字段，
+    // 建店只展开了 config.studio），区名和坐标都得先从它来。
+    // ⚠ 必须排在行政区回填之前：区名是从地址抽的，顺序反了这一轮就白跑。
+    .then(() =>
+      ensureAddress({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 地址回填失败: ${err.message}`)
+      )
+    )
+    // 坐标回填（幂等）：菲体云门店清单直接给 lng_lat，是现阶段唯一零成本坐标源。
+    // ⚠ 上游是「经度,纬度」，用反了会全落到非洲西海岸，而距离照样算得出数字。
+    .then(() =>
+      ensureLatLng({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 坐标回填失败: ${err.message}`)
       )
     )
     // 行政区回填（幂等）：发现页要按「海淀区」筛店，但库里 address 95% 是空的，

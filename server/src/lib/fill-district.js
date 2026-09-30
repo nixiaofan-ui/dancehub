@@ -106,13 +106,20 @@ export async function ensureDistrict(opts = {}) {
   for (const r of rows) {
     const city = cityName.get(r.cityId) || "";
     const ov = overrides[`${city}|${r.name}`] || null;
-    const addr = String(r.address || "").trim();
+    let addr = String(r.address || "").trim();
     const patch = {};
 
-    // 顺手把上游地址补回来：库里地址 95% 是空的，而它是后面所有定位的基础
+    // 顺手把上游地址补回来：库里地址长期为空，而它是后面所有定位能力的地基。
+    // ⚠ 地址要**单独写**，不能挂在 district 那次 update 上：算不出区就 `continue`
+    // 的话，这几十家永远补不上，而每轮启动都重复计一次数，日志看起来像一直在修。
     if (!addr && ov && ov.address) {
-      patch.address = ov.address;
-      addressed += 1;
+      addr = ov.address;
+      await prisma.studio
+        .update({ where: { id: r.id }, data: { address: addr } })
+        .then(() => {
+          addressed += 1;
+        })
+        .catch(() => {});
     }
     const d =
       (ov && ov.district) ||

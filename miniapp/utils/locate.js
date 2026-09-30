@@ -21,6 +21,9 @@ const { apiLocateCity } = require("../services/api");
 const SCOPE = "scope.userFuzzyLocation";
 const CACHE_KEY = "dh_locate_cache";
 const CACHE_TTL = 7 * 24 * 3600 * 1000; // 一周内不再反复定位
+// 距离排序用的坐标缓存。比城市缓存短得多：人在城里移动几公里，排序就该变
+const GEO_KEY = "dh_geo_origin";
+const GEO_TTL = 30 * 60 * 1000;
 
 function readCache() {
   try {
@@ -38,6 +41,44 @@ function writeCache(city) {
   } catch (e) {
     /* ignore */
   }
+}
+
+function readGeo() {
+  try {
+    const c = wx.getStorageSync(GEO_KEY);
+    if (c && c.at && Date.now() - c.at < GEO_TTL) return c;
+  } catch (e) {
+    /* ignore */
+  }
+  return null;
+}
+
+/**
+ * 取定位点（经纬度），给「按距离排序」用。
+ *
+ * @param {{ask?: boolean}} [opts]
+ *   ask=false（默认）只读缓存，**绝不弹授权框** —— 页面初次渲染就弹定位权限，
+ *   用户还没表达过想看距离，属于过度索取，拒绝率极高。
+ *   ask=true 才会在没缓存时真去定位，只在用户点了「按距离」这种明确动作时传。
+ * @returns {Promise<{lat:number,lng:number,at:number}|null>} 拿不到就 null，
+ *   调用方退回原排序，不打扰用户。
+ */
+async function getOrigin(opts) {
+  const cached = readGeo();
+  if (cached) return cached;
+  if (!(opts && opts.ask)) return null;
+
+  const auth = await getAuthState();
+  if (auth === "denied") return null;
+  const loc = await getFuzzy();
+  if (loc.err) return null;
+  const origin = { lat: loc.lat, lng: loc.lng, at: Date.now() };
+  try {
+    wx.setStorageSync(GEO_KEY, origin);
+  } catch (e) {
+    /* ignore */
+  }
+  return origin;
 }
 
 function getAuthState() {
@@ -140,4 +181,10 @@ function readLocateCache() {
   return readCache();
 }
 
-module.exports = { locateCity, openSetting, readLocateCache, LOCATE_SCOPE: SCOPE };
+module.exports = {
+  locateCity,
+  openSetting,
+  readLocateCache,
+  getOrigin,
+  LOCATE_SCOPE: SCOPE,
+};

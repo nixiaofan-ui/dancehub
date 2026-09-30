@@ -5,7 +5,8 @@ const { API_HOST } = require("../../utils/config");
 const { onNavTop } = require("../../utils/scroll-top");
 const CP = require("../../utils/city-picker-mixin");
 const { buildBrandGroups, splitStudioName } = require("../../utils/brand");
-const { locateCity } = require("../../utils/locate");
+const { locateCity, getOrigin } = require("../../utils/locate");
+const { sortByDistance, llOf } = require("../../utils/geo");
 
 /** 「#」组没法直接当元素 id，映射成一个合法的锚点值 */
 const anchorId = (letter) => "sec-" + (letter === "#" ? "SHARP" : letter);
@@ -121,6 +122,13 @@ Page(
     keyword: "",
     sections: [],
     letters: [],
+    /**
+     * 「按距离」开关。默认按名称排（带右侧字母索引）。
+     * ⚠ 关着时绝不碰定位权限 —— 授权弹窗必须由「用户点了按距离」这个动作触发。
+     */
+    nearFirst: false,
+    // 按距离排完后没能算出距离的店还有几家：要写出来，否则用户以为排序坏了
+    unknownCount: 0,
     activeLetter: "",
     indexTip: false,
     statusBarHeight: 20,
@@ -322,6 +330,14 @@ Page(
    */
   applyCity(cityId) {
     const patch = this.syncCityView(this.data.region, cityId, this.data.cities);
+    // 换城市就把「按距离」关掉：手上那个定位点是上一个城市的，
+    // 拿它给新城市的店排距离，排出来的顺序是错的，而界面上完全看不出来
+    if (this.nearFirst) {
+      this.nearFirst = false;
+      this.origin = null;
+      patch.nearFirst = false;
+      patch.unknownCount = 0;
+    }
     // 搜索状态下切城市 = 把搜索范围收窄到这个城市。
     // 否则带关键词的请求根本不传 cityId，用户会以为「切了城市没反应」。
     if (this.data.keyword) patch.searchCityId = cityId;
@@ -540,10 +556,49 @@ Page(
    */
   buildRows(studios) {
     const globalMode = this.data.globalMode;
+    // 按距离排时**不做品牌归并**：品牌行是聚合出来的，本身没有坐标，排了只会
+    // 让它沉到底下、把旗下分店甩在前面，比不聚合还乱。这里直接平铺单店。
+    if (this.nearFirst && this.origin) {
+      const r = sortByDistance(studios, this.origin, (s) => llOf(s));
+      this._rows = r.list;
+      // 整段当一个 section、letters 置空 → 右侧索引条自动收起（它要求 ≥2 个字母）
+      return {
+        sections: [{ letter: "", studios: r.list }],
+        letters: [],
+        unknownCount: r.unknownCount,
+      };
+    }
     const rows = globalMode ? studios : mergeBrandRows(studios, this._brandList || []);
     const built = buildSections(rows);
     this._rows = rows;
-    return { sections: built.sections, letters: built.letters };
+    return { sections: built.sections, letters: built.letters, unknownCount: 0 };
+  },
+
+  /**
+   * 发现页「按距离」。
+   * 拿不到定位就静默退回按名称排 —— 不弹错、不纠缠，用户没授权本来就是常态。
+   */
+  async tapNearFirst() {
+    if (this.data.nearFirst) {
+      this.nearFirst = false;
+      this.origin = null;
+      this.setData({
+        nearFirst: false,
+        ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
+      });
+      return;
+    }
+    const origin = await getOrigin({ ask: true });
+    if (!origin) {
+      toast(this, "没拿到定位，可在系统设置里开启后再试");
+      return;
+    }
+    this.origin = origin;
+    this.nearFirst = true;
+    this.setData({
+      nearFirst: true,
+      ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
+    });
   },
 
   /**

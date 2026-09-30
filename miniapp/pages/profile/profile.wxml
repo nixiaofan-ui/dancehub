@@ -99,6 +99,16 @@
 
   <!-- 关注 -->
   <view wx:if="{{tab === 'follows'}}">
+    <!-- 排序：默认按关注时间。点「按距离」才去定位 —— 授权弹窗必须由用户动作触发，
+         页面一进来就弹属于过度索取 -->
+    <view wx:if="{{follows.length > 1}}" class="follow-sort">
+      <view class="fs-chip {{nearFirst ? 'on' : ''}}" hover-class="press" bindtap="tapNearFirst">
+        {{nearFirst ? '按距离 ↑' : '按距离'}}
+      </view>
+      <!-- 没坐标的排在后面但不隐藏，也不编距离：得说清楚，否则以为排序坏了 -->
+      <text wx:if="{{nearFirst && unknownCount}}" class="fs-hint">另有 {{unknownCount}} 家暂无位置</text>
+    </view>
+
     <!-- 舞种筛选条：筛的是「店」——哪几家关注的舞室有这个舞种，卡片上直接列出课 -->
     <view wx:if="{{showStyleBar}}" class="style-filter">
       <scroll-view class="style-scroll" scroll-x enable-flex>
@@ -141,7 +151,10 @@
         <view class="follow-avatar">{{item.initial}}</view>
         <view class="follow-info">
           <view class="follow-name">{{item.studio.name}}</view>
-          <view class="follow-meta">{{item.studio.city}} · {{item.platformLabel}}</view>
+          <view class="follow-meta">{{item.studio.city}} · {{item.platformLabel}}<text
+              wx:if="{{item._dist}}"
+              class="follow-dist"
+            > · {{item._dist}}</text></view>
           <view wx:if="{{item.styleText}}" class="follow-styles">{{item.styleText}}</view>
         </view>
         <!-- catchtap：卡片本身可点进门店，取消按钮必须吃掉冒泡，否则点取消会连带跳走 -->

@@ -207,6 +207,35 @@
   margin-top: 4rpx;
   font-weight: 700;
 }
+/* 距离分档（<1km / 1-3km …）。刻意不显示「1.23km」：定位是模糊定位，
+   百米级误差下给两位小数是假精度，用户会拿去和地图 app 对比然后失望 */
+.follow-dist {
+  color: #ffb454;
+}
+/* 排序条 */
+.follow-sort {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+.fs-chip {
+  font-size: 22rpx;
+  color: #a8adc2;
+  border: 1rpx solid rgba(168, 173, 194, 0.45);
+  border-radius: 24rpx;
+  padding: 6rpx 20rpx;
+  font-weight: 700;
+}
+.fs-chip.on {
+  color: #00f5d4;
+  border-color: rgba(0, 245, 212, 0.5);
+  background: rgba(0, 245, 212, 0.12);
+}
+.fs-hint {
+  font-size: 20rpx;
+  color: #7a7f99;
+  margin-left: 12rpx;
+}
 /* 这家店教什么的速览，和发现页卡片上的标签同一套色 */
 .follow-styles {
   font-size: 22rpx;

@@ -151,6 +151,14 @@
     </view>
   </view>
 
+  <!-- 排序：默认按名称（配右侧字母索引）；按距离时不分组、索引条自动收起 -->
+  <view wx:if="{{sections.length}}" class="dsort">
+    <view class="ds-chip {{nearFirst ? 'on' : ''}}" hover-class="press" bindtap="tapNearFirst">
+      {{nearFirst ? '按距离 ↑' : '按距离'}}
+    </view>
+    <text wx:if="{{nearFirst && unknownCount}}" class="ds-hint">另有 {{unknownCount}} 家暂无位置</text>
+  </view>
+
   <!--
     同城搜不到、但全国有命中。
     没有这一句的话，「杭州搜 T-rex」看到的就是一片空 —— 用户只会以为我们没收录，
@@ -198,7 +206,7 @@
           class="sec-head"
           style="top: {{statusBarHeight}}px"
         >
-          <text class="sec-letter">{{sec.letter}}</text>
+          <text wx:if="{{sec.letter}}" class="sec-letter">{{sec.letter}}</text>
           <text class="sec-count">{{sec.studios.length}}</text>
         </view>
 
@@ -219,6 +227,8 @@
               <text wx:if="{{item.branch}}" class="branch">{{item.branch}}</text>
               <!-- 跨城结果才带城市标签：同城列表里每家都挂个城市名纯属噪音 -->
               <text wx:if="{{globalMode && item.cityName}}" class="city-tag">{{item.cityName}}</text>
+              <!-- 距离分档：不显示「1.23km」，模糊定位的百米级误差撑不起两位小数 -->
+              <text wx:if="{{item._dist}}" class="dist-tag">{{item._dist}}</text>
             </view>
             <!-- 品牌行第二行列分店；单店行显示地址。两者共用省略号样式 -->
             <view wx:if="{{item.branchLine}}" class="addr-line">{{item.branchLine}}</view>

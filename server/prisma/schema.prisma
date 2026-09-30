@@ -128,6 +128,12 @@ model Studio {
   // 由 scripts/build-district-overrides.mjs 回源上游补的地址 + 店名尾巴抽出来，
   // 启动时 ensureDistrict() 回填。抽不到就是 null —— 别猜，宁可归到「未标注」。
   district         String?        @db.VarChar(32)
+  // 经纬度（GCJ-02，和微信/腾讯地图同一套坐标系，前端直接算距离不用换算）。
+  // 现阶段只有菲体云系能从上游直接拿到（门店清单的 lng_lat），其余平台要靠地址
+  // 做地理编码才能补 —— 那要地图 key，先不上。抽不到就是 null：算不出距离的店
+  // 一律排在有距离的后面，绝不编一个出来。
+  lat              Float?
+  lng              Float?
   status           Boolean        @default(true)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

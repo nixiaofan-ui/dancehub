@@ -105,6 +105,16 @@ ALTER TABLE \`Studio\`
   ADD COLUMN \`district\` VARCHAR(32) NULL;
 `;
 
+/**
+ * Studio.lat / Studio.lng（经纬度，GCJ-02，与微信/腾讯地图同一套坐标系）
+ * 对应 schema.prisma 的 model Studio 里的 lat / lng。
+ */
+const STUDIO_LATLNG_SQL = `
+ALTER TABLE \`Studio\`
+  ADD COLUMN \`lat\` DOUBLE NULL,
+  ADD COLUMN \`lng\` DOUBLE NULL;
+`;
+
 async function run(label, sql) {
   try {
     await prisma.$executeRawUnsafe(sql);
@@ -142,5 +152,8 @@ export async function ensureSchema() {
   }
   if (!(await columnExists("Studio", "district"))) {
     await run("Studio.district", STUDIO_DISTRICT_SQL);
+  }
+  if (!(await columnExists("Studio", "lat"))) {
+    await run("Studio.lat/lng", STUDIO_LATLNG_SQL);
   }
 }

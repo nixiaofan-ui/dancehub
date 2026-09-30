@@ -19,6 +19,8 @@ const {
   toggleAllActive,
   isAllOn,
 } = require("../../utils/style-filter");
+const { sortByDistance, llOf } = require("../../utils/geo");
+const { getOrigin } = require("../../utils/locate");
 
 /** 一张关注卡片最多铺几节课：再多就成了第二份课表，把门店清单挤没了 */
 const COURSES_PER_CARD = 3;
@@ -45,6 +47,11 @@ Page({
     styleAllOn: true,
     // 列表空着是因为「被筛掉了」而不是「没关注」——空态文案靠它分岔
     emptyFiltered: false,
+    // 「按距离」开关。默认关：关注列表按关注时间排，且**关着时绝不碰定位权限** ——
+    // 页面一进来就弹授权框属于过度索取，用户还没说过想看距离
+    nearFirst: false,
+    // 排完序后没能算距离的店还有几家（没坐标的排在有坐标的后面，不隐藏也不编距离）
+    unknownCount: 0,
     bookings: [],
     reminders: [],
     // 「我的课表」：我录的课（/imports/mine）和我约的课（/bookings）合并去重后的结果。
@@ -386,7 +393,15 @@ Page({
 
   buildFollowView(rows) {
     const decorated = (rows || []).map((r) => this.decorateFollow(r));
-    return filterByStyle(decorated, (x) => this.stylesOf(x), this.activeStyles);
+    const filtered = filterByStyle(decorated, (x) => this.stylesOf(x), this.activeStyles);
+    if (!this.nearFirst || !this.origin) {
+      this._unknownCount = 0;
+      return filtered;
+    }
+    // 坐标在 studio 上（关注接口把 lat/lng 挂在 studio 里）
+    const r = sortByDistance(filtered, this.origin, (x) => llOf(x.studio));
+    this._unknownCount = r.unknownCount;
+    return r.list;
   },
 
   applyFollowView() {
@@ -396,7 +411,31 @@ Page({
       followsView: view,
       emptyFiltered: rows.length > 0 && view.length === 0,
       styleCleared: Array.isArray(this.activeStyles) && this.activeStyles.length === 0,
+      unknownCount: this.nearFirst ? this._unknownCount || 0 : 0,
     });
+  },
+
+  /**
+   * 关注列表「按距离」。只有用户主动点才去定位 —— 授权弹窗必须由明确动作触发，
+   * 拿不到就静默退回按时间排，不弹错误也不纠缠。
+   */
+  async tapNearFirst() {
+    if (this.nearFirst) {
+      this.nearFirst = false;
+      this.origin = null;
+      this.setData({ nearFirst: false });
+      this.applyFollowView();
+      return;
+    }
+    const origin = await getOrigin({ ask: true });
+    if (!origin) {
+      toast(this, "没拿到定位，可到「发现」页开启后再试");
+      return;
+    }
+    this.origin = origin;
+    this.nearFirst = true;
+    this.setData({ nearFirst: true });
+    this.applyFollowView();
   },
 
   /**

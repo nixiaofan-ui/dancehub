@@ -36,6 +36,11 @@ router.get(
           platform: f.studio.platform,
           city: f.studio.city?.name,
           region: f.studio.city?.region,
+          district: f.studio.district || null,
+          // 距离排序要用。没坐标的店给 null，前端一律排在有距离的后面 ——
+          // 不会拿城市中心点顶替，那会显示出一个看起来真实、实际是编的距离
+          lat: f.studio.lat ?? null,
+          lng: f.studio.lng ?? null,
           styles: styleMap.get(f.studio.id) || [],
         },
       })),

@@ -362,6 +362,16 @@ async function pruneVanished(seen) {
  */
 export async function importSchedules(config, rows, ensureStudios = []) {
   /**
+   * 建店用的档案。⚠ address 是**配置顶层**字段，不在 config.studio 里 ——
+   * 早期只展开 config.studio（name/city/region），于是配置里那 1100 条真地址
+   * 一条都没进库（库里地址覆盖率常年只有 14%），区名和坐标全都抽不出来。
+   */
+  const baseRef = {
+    ...config.studio,
+    ...(config.address ? { address: config.address } : {}),
+  };
+
+  /**
    * 只要建店、不排课的门店。
    * 有的平台（嘉禾）课表接口只返回「今天有课」的门店，当天没排课的分店
    * 会整个从库里消失 —— 用户翻列表时以为没接入。档案接口能拿到全量门店，
@@ -371,9 +381,10 @@ export async function importSchedules(config, rows, ensureStudios = []) {
     if (!ref || !ref.name) continue;
     try {
       const studioRef = {
-        ...config.studio,
+        ...baseRef,
         name: ref.name,
         ...(ref.city ? { city: ref.city } : {}),
+        // 上游实时拿到的地址比配置里写死的准优先
         ...(ref.address ? { address: ref.address } : {}),
       };
       await findOrCreateStudio(studioRef, {
@@ -411,7 +422,7 @@ export async function importSchedules(config, rows, ensureStudios = []) {
       if (v) rowOverride[key] = v;
     }
     const studioRef = {
-      ...config.studio,
+      ...baseRef,
       name: studioName,
       ...(rowOverride._officialUrl ? { officialUrl: rowOverride._officialUrl } : {}),
       ...(rowOverride._platform ? { platform: rowOverride._platform } : {}),
