@@ -24,6 +24,9 @@ import { crawl } from "./engine.js";
 import { importSchedules } from "./importer.js";
 import { dedupeStudios } from "../lib/dedupe-studios.js";
 import { maybeDedupeSchedules } from "../lib/dedupe-schedules.js";
+import { ensureAddress } from "../lib/fill-address.js";
+import { ensureLatLng } from "../lib/fill-latlng.js";
+import { ensureDistrict } from "../lib/fill-district.js";
 import {
   crawlerConfigs,
   getCrawlerConfig,
@@ -366,7 +369,44 @@ export async function maybeDedupeStudios(reason = "tick") {
  * 下次到期判断，也增加被目标平台限流的窗口。这里开 3 个并发（约 3 分钟），
  * 并用 TICK_BUDGET_MS 兜底——超预算就把剩下的留给下一轮，它们仍然到期，
  * 不会漏抓（CrawlState 记的是「上次成功时间」，没抓成功就还是 due）。
- */async function tick(reason = "heartbeat") {
+ */
+
+/**
+ * 抓完一轮把新门店的三件元数据补齐：**地址 → 坐标 → 行政区**（顺序不能换，区名从地址抽）。
+ *
+ * 为什么不能只靠启动时那一次：云端容器启动时，新接入的门店还没被创建（抓取要等启动
+ * 之后才跑），而那三个回填都被「一个进程只跑一次」锁住 → 那批新店在库里地址/坐标/区名
+ * 永远是 null。表现极具迷惑性：本地跑两轮全对，云端却是空的（2026-10-01 舞岚三家店
+ * 地址坐标都在、区名为 null 就是这么来的）。
+ *
+ * 三个回填内部只查「还是 null」的行，所以每轮重复调用几乎是空查询，成本可忽略。
+ *
+ * 串行化：启动流程（src/index.js）也会调这三个，并发跑没有正确性问题（都是幂等 update），
+ * 但会重复写、日志翻倍 → 用一条 Promise 链把调用串起来。
+ */
+let metaChain = Promise.resolve();
+
+export function fillStudioMeta(reason = "tick") {
+  metaChain = metaChain.then(async () => {
+    try {
+      const a = await ensureAddress({ force: true });
+      const l = await ensureLatLng({ force: true });
+      const d = await ensureDistrict({ force: true });
+      const filled =
+        (a?.filled || 0) + (l?.filled || 0) + (d?.filled || 0) + (d?.addressed || 0);
+      if (filled) {
+        console.log(
+          `[crawler] ${reason}：门店元数据回填 地址 ${a?.filled || 0} / 坐标 ${l?.filled || 0} / 行政区 ${d?.filled || 0}`,
+        );
+      }
+    } catch (e) {
+      console.error("[crawler] 门店元数据回填失败:", e.message);
+    }
+  });
+  return metaChain;
+}
+
+async function tick(reason = "heartbeat") {
   // 先自愈「同一家店被插了两条」再去抓：抓取时若两家同名门店都在库里，
   // 课程会分叉到两条记录上，用户看到的课表就是两家的并集（多出来的课约不到）
   await maybeDedupeStudios(reason);
@@ -433,6 +473,9 @@ export async function maybeDedupeStudios(reason = "tick") {
 
   // 常规补跑结束后顺带热刷新一轮（有人正在看的店，人数要新鲜）
   await maybeHotRefresh();
+
+  // 新门店是在抓取里才被创建的，启动时那次回填看不见它们 → 这里补一次
+  await fillStudioMeta(reason);
 }
 
 /**

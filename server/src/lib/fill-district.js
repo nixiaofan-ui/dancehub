@@ -68,15 +68,15 @@ function districtOfName(name, city) {
   return list.includes(tag) ? tag : "";
 }
 
-/** 一个进程只跑一次 */
+/** 一个进程只跑一次；抓取流程会带 `force` 重跑（见 fill-address.js 的说明） */
 let done = false;
 
 /**
- * @param {{ log?: (msg: string) => void }} [opts]
+ * @param {{ log?: (msg: string) => void, force?: boolean }} [opts]
  * @returns {Promise<{ checked: number, filled: number, addressed: number }>}
  */
 export async function ensureDistrict(opts = {}) {
-  if (done) return { checked: 0, filled: 0, addressed: 0 };
+  if (done && !opts.force) return { checked: 0, filled: 0, addressed: 0 };
   done = true;
 
   const log = opts.log || (() => {});

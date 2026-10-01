@@ -22,7 +22,13 @@ import { prisma } from "./prisma.js";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CRAWLER_DIR = path.resolve(HERE, "../crawler");
 
-/** 一个进程只跑一次 */
+/**
+ * 一个进程只跑一次 —— 但**抓取流程会带 `force` 重跑**。
+ *
+ * 为什么需要 force：这个回填原本只挂在启动流程里，而云端容器启动时新接入的
+ * 门店往往还不存在（抓取是启动后几分钟才跑），于是那批新店永远补不上，
+ * 直到下次重启。表现是「地址/坐标/区名在本地都对、云端却是 null」。
+ */
 let done = false;
 
 /** 地址里总得有个「路/街/号/楼」之类；配置里也有拿店名凑数当 address 的 */
@@ -82,7 +88,7 @@ function canon(s) {
  * @returns {Promise<{ checked: number, matched: number, filled: number }>}
  */
 export async function ensureAddress(opts = {}) {
-  if (done) return { checked: 0, matched: 0, filled: 0 };
+  if (done && !opts.force) return { checked: 0, matched: 0, filled: 0 };
   done = true;
 
   const log = opts.log || (() => {});

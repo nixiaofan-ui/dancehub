@@ -31,11 +31,11 @@ function loadJson(file) {
 const LAT_RANGE = [3, 54];
 const LNG_RANGE = [73, 136];
 
-/** 一个进程只跑一次 */
+/** 一个进程只跑一次；抓取流程会带 `force` 重跑（见 fill-address.js 的说明） */
 let done = false;
 
 export async function ensureLatLng(opts = {}) {
-  if (done) return { checked: 0, matched: 0, filled: 0 };
+  if (done && !opts.force) return { checked: 0, matched: 0, filled: 0 };
   done = true;
 
   const log = opts.log || (() => {});
