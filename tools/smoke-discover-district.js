@@ -1,10 +1,12 @@
 /**
  * 发现页行政区筛选的烟测（pages/discover）。
  *
- * 覆盖两件容易写错的事：
+ * 覆盖三件容易写错的事：
  *   1. 「全选 / 清除」二合一：清除了就是一个区都不留，不是「不筛」
  *   2. 只有一个区（或一个都没有）时筛选条收起 —— 这时候必须当成**没在筛**，
  *      而不是「用户清除了」，否则同城列表会一家都不剩（线上真出过）
+ *   3. 换城市要回到全选 —— 旧城市的区名对新城市无效，取交集只剩「未标注」，
+ *      整页只剩没定到区的店（线上真出过）
  *
  *   /usr/local/bin/node tools/smoke-discover-district.js
  */
@@ -70,7 +72,8 @@ const STUDIOS = [
   { id: 4, name: "丁舞蹈", district: null },
 ];
 
-function feed(page, studios) {
+function feed(page, studios, cityId) {
+  if (cityId !== undefined) page.data.cityId = cityId;
   page._studios = studios;
   page._brandList = [];
   page.data.globalMode = true; // 不做同城品牌合并，直接按店数断言
@@ -80,6 +83,7 @@ function feed(page, studios) {
 
 (async () => {
   const page = makePage();
+  page.data.cityId = 1;
 
   console.log("\n[1] 首次进入：全选，抽不到区的归「未标注」且默认带上");
   feed(page, STUDIOS);
@@ -123,6 +127,40 @@ function feed(page, studios) {
   ]);
   check("不给筛选条", page.data.showDistrictBar, false);
   check("课照常出来", countStudios(page), 2);
+
+  console.log("\n[6] 换城市回到全选（用户没动过筛选）");
+  feed(page, STUDIOS, 1);
+  check("北京 4 家都在", countStudios(page), 4);
+  const SHANGHAI = [
+    { id: 11, name: "戊舞蹈", district: "黄浦区" },
+    { id: 12, name: "己舞蹈", district: "徐汇区" },
+    { id: 13, name: "庚舞蹈", district: null },
+    { id: 14, name: "辛舞蹈", district: null },
+  ];
+  feed(page, SHANGHAI, 2);
+  // 关键：不能只剩「未标注」那 2 家（旧写法两城唯一的交集就是这个）
+  check("上海 4 家都在", countStudios(page), 4);
+  check("按钮回到全选态", page.data.districtAllOn, true);
+  check(
+    "chip 换成上海的区（「未标注」是合成档位，固定排最后，不按数量走）",
+    page.data.districtChips.map((c) => `${c.label}${c.count}`),
+    ["黄浦区1", "徐汇区1", "未标注2"],
+  );
+
+  console.log("\n[7] 换城市前用户取消过区，换城市同样回到全选");
+  feed(page, STUDIOS, 1);
+  page.tapDistrictChip({ currentTarget: { dataset: { label: "海淀区" } } });
+  check("北京先筛成 2 家", countStudios(page), 2);
+  feed(page, SHANGHAI, 2);
+  check("上海仍是 4 家", countStudios(page), 4);
+  check("按钮是全选态", page.data.districtAllOn, true);
+
+  console.log("\n[8] 同一城市内重复 load 不能把用户的勾选冲掉");
+  feed(page, STUDIOS, 1);
+  page.tapDistrictChip({ currentTarget: { dataset: { label: "海淀区" } } });
+  check("筛成 2 家", countStudios(page), 2);
+  feed(page, STUDIOS, 1);
+  check("同城重载后还是 2 家（保留用户的勾选）", countStudios(page), 2);
 
   console.log(`\n${failed ? `✖ ${failed} 项失败` : "✔ 全部通过"}`);
   process.exit(failed ? 1 : 0);

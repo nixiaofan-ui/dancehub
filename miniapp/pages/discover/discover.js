@@ -601,6 +601,15 @@ Page(
    * 而实际还有一百多家只是我们没定到区。数字摆出来，让他自己决定看不看。
    */
   syncDistrictChips(studios) {
+    // ⚠ 换城市必须回到「全选」（= 没在筛）。
+    //   上一次勾的区名是新城市的，在新城市里绝大多数不存在；而「未标注」这个名字
+    //   每座城市都有 → 取交集只剩它一个 → 切过去整页只剩没定到区的店。
+    //   更隐蔽的是：不点任何 chip 也会中招 —— 第一次 load 会把 activeDistricts
+    //   落成第一座城市的全部区名（见下面的 active 赋值），于是从第二次切城市起就错。
+    const cityChanged =
+      this._districtCityId !== undefined && this._districtCityId !== this.data.cityId;
+    this._districtCityId = this.data.cityId;
+
     const tally = new Map();
     let unlabeled = 0;
     studios.forEach((s) => {
@@ -636,9 +645,10 @@ Page(
     // ⚠ 两种「空」要分开：从未筛过（null）→ 全选；用户点了「清除」（[]）→ 一个不留。
     //   混在一起的话，清除后一搜或者一切城市，筛选条又自己全勾上了。
     let active = [];
-    if (this.data.keyword || this.activeDistricts == null) {
+    if (this.data.keyword || this.activeDistricts == null || cityChanged) {
       // 搜索态一律放弃上次勾的区：搜「trex」时若还挂着「朝阳」，命中的店会被
       // 悄悄筛掉，用户只会以为这家店没收录。
+      // 换城市同理：新城市的区名对不上旧勾选，留着等于暗中筛掉大半。
       active = chips.map((c) => c.label);
     } else {
       active = this.activeDistricts.filter((l) => known.has(l));
