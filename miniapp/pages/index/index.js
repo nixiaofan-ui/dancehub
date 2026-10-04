@@ -62,6 +62,11 @@ Page(
     styleAllOn: true,
     // 列表空着，但原因是「被筛掉了」而不是「这天没课」——空态文案靠它分岔
     emptyFiltered: false,
+    // 空态的具体归因：filtered（门店/舞种筛掉了）/ no-booked（这天确实没约）/
+    // booked-hidden（已约的课被门店/舞种挡住）/ booked-blocked（已约的课在屏蔽教练那层）
+    // ⚠ 只看已约开着 + 已约计数 > 0 时列表却空着，原因绝不是「没约课」——
+    //   文案归因错了，用户照提示关掉开关列表还是空，只会更懵（线上真实事故）
+    emptyReason: "",
     // 因「屏蔽老师」而隐藏的课
     hiddenCount: 0,
     showBlocked: false,
@@ -450,9 +455,51 @@ Page(
    */
   commitVisible(items, extra) {
     const base = this.allItems || [];
+    const emptyFiltered = base.length > 0 && items.length === 0;
     this.setData(
-      Object.assign({ items, emptyFiltered: base.length > 0 && items.length === 0 }, extra),
+      Object.assign(
+        {
+          items,
+          emptyFiltered,
+          emptyReason: emptyFiltered ? this.diagEmpty(base) : "",
+        },
+        extra,
+      ),
     );
+  },
+
+  /**
+   * 空态归因：列表被筛空时，说清「被哪层筛掉的」。
+   *
+   * 已约计数（bookedCount）按全量课算、不受筛选影响，所以存在这种组合：
+   * 开关写「已约 3 节」，列表却空着 —— 此时原因只能是已约的课被某层挡住了：
+   *   - booked-hidden：被门店/舞种筛选挡住（在 base 里，只是没进可见列表）；
+   *   - booked-blocked：整层被「屏蔽教练」滤掉（根本没进 base）；
+   *   - no-booked：这天确实一节已约都没有（计数为 0，文案可以老实说）。
+   */
+  diagEmpty(base) {
+    if (!this.data.onlyBooked) return "filtered";
+    const bookedFull = (this.rawItems || base).filter((i) => !!i.bookingStatus).length;
+    if (bookedFull === 0) return "no-booked";
+    const bookedInBase = base.filter((i) => !!i.bookingStatus).length;
+    return bookedInBase === 0 ? "booked-blocked" : "booked-hidden";
+  },
+
+  /**
+   * 空态里的一键恢复：清掉门店/舞种筛选，回到「没在筛」。
+   *
+   * ⚠ 存储要写 null（删掉字段、回到「从没筛过」），不能把当前全量清单
+   *   写死进去 —— 写死的话，之后新出现的门店/舞种会被这份旧勾选悄悄挡住。
+   */
+  resetFilters() {
+    this.activeIds = null;
+    this.activeStyles = null;
+    prefs.writeHomeStores(this.data.cityId, null);
+    prefs.writeHomeStyles(null);
+    const base = this.allItems || [];
+    this.syncStoreChips(base);
+    this.syncStyleChips(base);
+    this.commitVisible(this.applyFilters(base));
   },
 
   /**

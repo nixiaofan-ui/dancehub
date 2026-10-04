@@ -157,14 +157,19 @@
         <view class="d-limb d-leg-l"></view>
         <view class="d-limb d-leg-r"></view>
       </view>
-      <!-- 有课但被筛掉了 ≠ 这天没课：说错原因，用户会以为数据漏了 -->
+      <!-- 有课但被筛掉了 ≠ 这天没课：说错原因，用户会以为数据漏了。
+           ⚠ 归因必须按 emptyReason 说准：「已约 3 节」+ 列表空着时，
+           原因是筛选挡住了已约的课，绝不能说「这天没有已约的课」——
+           用户照提示关掉开关，列表还是空，只会更懵。 -->
       <view wx:if="{{emptyFiltered}}" class="empty-title">这些筛选下没有课</view>
       <view wx:else class="empty-title">今日暂无课程</view>
-      <!-- 开了「只看已约」却空着：原因就是这天没预约，别让人以为课表没数据 -->
-      <view wx:if="{{emptyFiltered && onlyBooked}}" class="empty-sub">这天没有已约的课，关掉「只看已约」看全部</view>
-      <view wx:elif="{{emptyFiltered}}" class="empty-sub">点上方「全选」恢复，或换一天看看</view>
+      <view wx:if="{{emptyReason === 'booked-hidden'}}" class="empty-sub">你已约的课被门店/舞种筛选挡住了</view>
+      <view wx:elif="{{emptyReason === 'booked-blocked'}}" class="empty-sub">已约的课在「屏蔽教练」那层，点上方「已隐藏」展开</view>
+      <view wx:elif="{{emptyReason === 'no-booked'}}" class="empty-sub">这天没有已约的课，关掉「只看已约」看全部</view>
+      <view wx:elif="{{emptyFiltered}}" class="empty-sub">门店/舞种筛选把课都挡住了，可一键恢复</view>
       <view wx:else class="empty-sub">去「发现」页搜索并关注舞室吧</view>
       <button wx:if="{{!emptyFiltered}}" class="btn-pri empty-btn" hover-class="press" bindtap="goDiscover">去发现</button>
+      <button wx:elif="{{emptyReason === 'booked-hidden' || emptyReason === 'filtered'}}" class="btn-pri empty-btn" hover-class="press" bindtap="resetFilters">恢复全部课程</button>
       <!-- 空列表恰恰是最该出现补录入口的时刻：这天没课，多半是这家店没被抓到 -->
       <view class="empty-alt" hover-class="press" bindtap="goImport">＋ 这天有课没抓到？补录一节</view>
     </view>
