@@ -133,12 +133,9 @@ Page(
 
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
       // 城市在别处（或本页）被换掉了，以最新值渲染一遍。
-      // 旧城市算出来的「预约在别城」提示跟着作废，下一次重算。
-      this.cityHintOff = false;
-      this.setData({
-        ...this.syncCityView(g.region, g.cityId, g.cities || []),
-        cityHint: null,
-      });
+      // 旧城市算出来的「预约在别城」提示跟着作废，重算（refreshCityHint）。
+      this.setData(this.syncCityView(g.region, g.cityId, g.cities || []));
+      this.refreshCityHint();
       this.load();
       return;
     }
@@ -661,6 +658,7 @@ Page(
     const city = filteredCities[0];
     app.setCity(region, city.id, "manual");
     this.setData(this.syncCityView(region, city.id, cities));
+    this.refreshCityHint();
     this.load();
   },
 
@@ -725,6 +723,19 @@ Page(
     }
   },
 
+  /**
+   * 换城市之后重算提示条。
+   *
+   * 提示条的内容是「相对当前城市」算出来的：换了城市，上一轮算的结论就过期了
+   * ——留在屏上会出现自相矛盾的文案（人已经在深圳，还写着「你在深圳还有 3 节预约」）。
+   * 所以每次城市变化都要先清掉再重算，而不是只在 onShow 里碰运气。
+   */
+  refreshCityHint() {
+    this.cityHintOff = false; // 换了城市就是新上下文，允许重新提示
+    if (this.data.cityHint) this.setData({ cityHint: null });
+    this.checkBookedCityHint();
+  },
+
   applyLocated(city) {
     const cities = app.globalData.cities || [];
     // source 记 locate 而不是 manual：定位是系统给的，不算用户表态 ——
@@ -732,6 +743,7 @@ Page(
     app.setCity(city.region, city.id, "locate");
     this.setData(this.syncCityView(city.region, city.id, cities));
     toast(this, `已定位到${city.name}`);
+    this.refreshCityHint();
     this.load();
   },
 
@@ -743,6 +755,7 @@ Page(
   applyCity(cityId) {
     app.setCity(this.data.region, cityId, "manual");
     this.setData(this.syncCityView(this.data.region, cityId, this.data.cities));
+    this.refreshCityHint();
     this.load();
   },
 
