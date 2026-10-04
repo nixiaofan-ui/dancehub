@@ -8,6 +8,7 @@ import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
 import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
+import { ensureManualStores } from "./lib/ensure-manual-stores.js";
 import { fixStudioDistrictNames } from "./lib/fix-district-name.js";
 import { ensureAddress } from "./lib/fill-address.js";
 import { ensureDistrict } from "./lib/fill-district.js";
@@ -50,6 +51,13 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       ensureJiaheStores({ log: (m) => console.log(m) }).catch((err) =>
         console.warn(`[dancehub] 嘉禾门店补齐失败: ${err.message}`)
+      )
+    )
+    // 手工建档（幂等）：抓不到课表的店（会员墙/闭源 SaaS）也要能被搜到 ——
+    // 上海 INSPACE 是闻道软件系统，课表只对会员开放，先只建门店档案。
+    .then(() =>
+      ensureManualStores({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 手工门店建档失败: ${err.message}`)
       )
     )
     // 区名自愈（幂等）：配置生成器早期把「南京市秦淮区」切成了「市秦淮」，
