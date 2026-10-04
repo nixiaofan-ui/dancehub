@@ -20,7 +20,8 @@ const {
   isAllOn,
 } = require("../../utils/style-filter");
 const { sortByDistance, llOf } = require("../../utils/geo");
-const { getOrigin } = require("../../utils/locate");
+const { getOrigin, readOriginCache } = require("../../utils/locate");
+const prefs = require("../../utils/prefs");
 
 /** 一张关注卡片最多铺几节课：再多就成了第二份课表，把门店清单挤没了 */
 const COURSES_PER_CARD = 3;
@@ -70,7 +71,11 @@ Page({
   },
 
   async onLoad() {
-    this.setData({ region: app.globalData.region });
+    // 上次停在哪个 tab 就回哪个（不然从「我的课表」退出去再进来又跳回「关注」）
+    this.setData({ region: app.globalData.region, tab: prefs.readProfileTab() });
+    // 关注列表的舞种筛选：舞种是全国统一口径，跨会话保留；null = 从没筛过（全选）
+    this.activeStyles = prefs.readFollowStyles();
+    this.restoreNearFirst();
     this.loadAll();
   },
 
@@ -286,7 +291,9 @@ Page({
   },
 
   switchTab(e) {
-    this.setData({ tab: e.currentTarget.dataset.tab });
+    const tab = e.currentTarget.dataset.tab;
+    this.setData({ tab });
+    prefs.writeProfileTab(tab);
   },
 
   goAbout() {
@@ -426,6 +433,22 @@ Page({
   },
 
   /**
+   * 恢复上次的「按距离」开关。
+   *
+   * ⚠ 两个条件缺一不可：用户上次确实开着，且**定位坐标还没过期**（30 分钟内）。
+   *   坐标过期还硬开，开关亮着却算不出距离，列表顺序和按钮文案就会对不上。
+   *   这里只读坐标缓存、**不触发定位授权** —— 页面一加载就弹授权框属于过度索取。
+   */
+  restoreNearFirst() {
+    if (!prefs.readFollowNear()) return;
+    const origin = readOriginCache();
+    if (!origin) return;
+    this.origin = origin;
+    this.nearFirst = true;
+    this.setData({ nearFirst: true });
+  },
+
+  /**
    * 关注列表「按距离」。只有用户主动点才去定位 —— 授权弹窗必须由明确动作触发，
    * 拿不到就静默退回按时间排，不弹错误也不纠缠。
    */
@@ -434,6 +457,7 @@ Page({
       this.nearFirst = false;
       this.origin = null;
       this.setData({ nearFirst: false });
+      prefs.writeFollowNear(false);
       this.applyFollowView();
       return;
     }
@@ -445,6 +469,7 @@ Page({
     this.origin = origin;
     this.nearFirst = true;
     this.setData({ nearFirst: true });
+    prefs.writeFollowNear(true);
     this.applyFollowView();
   },
 
@@ -485,6 +510,7 @@ Page({
       styleChips: chips.map((c) => ({ ...c, on: active.has(c.label) })),
       styleAllOn: isAllOn(chips, [...active]),
     });
+    prefs.writeFollowStyles(this.activeStyles);
     this.applyFollowView();
   },
 
@@ -497,6 +523,7 @@ Page({
       styleChips: chips.map((c) => ({ ...c, on: active.indexOf(c.label) >= 0 })),
       styleAllOn: isAllOn(chips, active),
     });
+    prefs.writeFollowStyles(this.activeStyles);
     this.applyFollowView();
   },
 

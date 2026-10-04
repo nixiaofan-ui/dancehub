@@ -16,6 +16,7 @@ const { onNavTop } = require("../../utils/scroll-top");
 // 跳老师主页统一走这里：详情页/周课表页也是同一个实现，行为保持一致
 const { onTapCoach } = require("../../utils/coach-nav");
 const CP = require("../../utils/city-picker-mixin");
+const prefs = require("../../utils/prefs");
 const {
   styleOfCourse,
   buildStyleChips,
@@ -85,6 +86,10 @@ Page(
     this.seenDirty = app.globalData.dirty || 0;
     const g = app.globalData;
     this.setData(this.syncCityView(g.region, g.cityId, g.cities || []));
+    // 恢复上次的筛选：门店筛选挂钩城市（换城市旧勾选本就不适用），
+    // 舞种是全国统一口径，跨城市照旧。null = 从没筛过（首屏全选）。
+    this.activeIds = prefs.readHomeStores(g.cityId);
+    this.activeStyles = prefs.readHomeStyles();
     this.rebuildDates(this.currentDate);
     this.load();
   },
@@ -150,7 +155,15 @@ Page(
    * @returns 切了城市返回 true（调用方别再重复 load）
    */
   async followBookedCity() {
-    if (this.cityFollowOff) return false;
+    // 三种「别抢方向盘」的情况：
+    //   1. 本页本次会话已经手动切过城市；
+    //   2. 用户自己在本次会话里选了城市；
+    //   3. 定位已经把课表放到他所在的城市了 —— 再按预约拽走就是跟定位打架，
+    //      用户会觉得「怎么又给我换了」。
+    // ⚠ cityFollowOff 只在 onShow 的某条分支里赋值，首屏那次判断它是 undefined，
+    //   所以必须同时看 globalData，否则「第一次进课表」必然跟着预约跑，
+    //   而且旧实现那次切城会把「用户选过城市」的落盘标记一起抹掉。
+    if (this.cityFollowOff || app.globalData.cityManual || app.globalData.locateOk) return false;
     let list;
     try {
       list = await api.apiBookings();
@@ -313,6 +326,15 @@ Page(
    * 只有 1 家时不显示 —— 只有一个选项的开关是纯粹的噪音。
    */
   syncStoreChips(items) {
+    // ⚠ 换城市要重新取勾选：上个城市的门店 id 在这个城市里一家都对不上，
+    //   带着这份勾选等于把列表整个筛空。判据必须是 cityId —— 只看「交集为空」
+    //   不够，因为用户主动「清除」时交集也是空，而那种情况必须保住空态。
+    //   切回来时也顺带把那个城市自己的勾选恢复出来。
+    if (this._storeCityId !== undefined && this._storeCityId !== this.data.cityId) {
+      this.activeIds = prefs.readHomeStores(this.data.cityId);
+    }
+    this._storeCityId = this.data.cityId;
+
     const map = new Map();
     items.forEach((i) => {
       const sid = i.studio && i.studio.id;
@@ -324,10 +346,12 @@ Page(
     });
     const chips = [...map.values()].sort((a, b) => b.count - a.count);
 
-    // 首次进来全选；之后保留用户上次勾选，但剔掉已经不在列表里的门店
-    let ids = this.activeIds || [];
-    ids = ids.filter((id) => map.has(id));
-    if (!ids.length) ids = chips.map((c) => c.id);
+    // 保留用户上次的勾选，但要先跟「当前可选项」对齐：门店下架、换城市
+    // （旧勾选在新城市里一家都对不上）都会自动回到全选。
+    // ⚠ 用户点过「清除」（activeIds=[]）必须保持清除 —— 这个方法每次 load 都跑，
+    //   把空数组当成「首次」重新全选的话，清除按钮就永远失效了。
+    const aligned = prefs.alignPicked(this.activeIds, chips, (c) => c.id);
+    const ids = aligned == null ? chips.map((c) => c.id) : aligned;
     this.activeIds = ids;
 
     const active = new Set(ids);
@@ -377,6 +401,18 @@ Page(
 
   filterByStyle(items) {
     return filterByStyle(items, (i) => [styleOfCourse(i.courseName)], this.activeStyles);
+  },
+
+  /**
+   * 门店/舞种勾选落盘 —— 用户下次进小程序不用重新勾一遍。
+   * 只在用户真的点了筛选时调用，别在 sync 里顺手写：那样每次 load 都会写一次存储。
+   */
+  persistStorePick() {
+    prefs.writeHomeStores(this.data.cityId, this.activeIds);
+  },
+
+  persistStylePick() {
+    prefs.writeHomeStyles(this.activeStyles);
   },
 
   /**
@@ -442,6 +478,7 @@ Page(
       styleChips: chips.map((c) => ({ ...c, on: active.has(c.label) })),
       styleAllOn: isAllOn(chips, [...active]),
     });
+    this.persistStylePick();
     this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
@@ -458,6 +495,7 @@ Page(
       styleChips: chips.map((c) => ({ ...c, on: active.indexOf(c.label) >= 0 })),
       styleAllOn: isAllOn(chips, active),
     });
+    this.persistStylePick();
     this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
@@ -500,6 +538,7 @@ Page(
       storeChips: chips.map((c) => ({ ...c, on: active.has(c.id) })),
       storeAllOn: isAllOn(chips, [...active]),
     });
+    this.persistStorePick();
     this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
@@ -516,6 +555,7 @@ Page(
       storeChips: chips.map((c) => ({ ...c, on: active.indexOf(c.id) >= 0 })),
       storeAllOn: isAllOn(chips, active),
     });
+    this.persistStorePick();
     this.commitVisible(this.applyFilters(this.allItems || []));
   },
 
@@ -610,6 +650,8 @@ Page(
   applyLocated(city) {
     const cities = app.globalData.cities || [];
     app.setCity(city.region, city.id, "locate");
+    // 用户主动点了定位：本次会话的城市就定在这儿，别再被「跟随预约」拽走
+    app.globalData.locateOk = true;
     this.setData(this.syncCityView(city.region, city.id, cities));
     toast(this, `已定位到${city.name}`);
     this.load();

@@ -5,7 +5,8 @@ const { API_HOST } = require("../../utils/config");
 const { onNavTop } = require("../../utils/scroll-top");
 const CP = require("../../utils/city-picker-mixin");
 const { buildBrandGroups, splitStudioName } = require("../../utils/brand");
-const { locateCity, getOrigin } = require("../../utils/locate");
+const { locateCity, getOrigin, readOriginCache } = require("../../utils/locate");
+const prefs = require("../../utils/prefs");
 const { sortByDistance, llOf } = require("../../utils/geo");
 const { goToCoach } = require("../../utils/coach-nav");
 
@@ -215,6 +216,10 @@ Page(
         this.syncCityView(g.region, g.cityId, g.cities || []),
       ),
     );
+    // 恢复上次勾的行政区。挂钩城市：换城市后旧区名在新城市里对不上，
+    // 读出来的就是 null（＝没在筛），不会拿一份失效的勾选把列表筛空。
+    this.activeDistricts = prefs.readDiscoverDistricts(g.cityId);
+    this.restoreNearFirst();
     this.load();
   },
 
@@ -484,6 +489,7 @@ Page(
       this.origin = null;
       patch.nearFirst = false;
       patch.unknownCount = 0;
+      prefs.writeDiscoverNear(false);
     }
     // 搜索状态下切城市 = 把搜索范围收窄到这个城市。
     // 否则带关键词的请求根本不传 cityId，用户会以为「切了城市没反应」。
@@ -609,6 +615,9 @@ Page(
     const cityChanged =
       this._districtCityId !== undefined && this._districtCityId !== this.data.cityId;
     this._districtCityId = this.data.cityId;
+    // 换城市 → 上次勾的区名在新城市里几乎全对不上，取该城市自己的记录
+    //（没有就是 null ＝ 没在筛 → 全选）；切回来时也能恢复这个城市的勾选。
+    if (cityChanged) this.activeDistricts = prefs.readDiscoverDistricts(this.data.cityId);
 
     const tally = new Map();
     let unlabeled = 0;
@@ -641,19 +650,21 @@ Page(
       this.setData({ districtChips: [], showDistrictBar: false, unlabeledCount: unlabeled });
       return;
     }
-    const known = new Set(chips.map((c) => c.label));
     // ⚠ 两种「空」要分开：从未筛过（null）→ 全选；用户点了「清除」（[]）→ 一个不留。
     //   混在一起的话，清除后一搜或者一切城市，筛选条又自己全勾上了。
-    let active = [];
-    if (this.data.keyword || this.activeDistricts == null || cityChanged) {
-      // 搜索态一律放弃上次勾的区：搜「trex」时若还挂着「朝阳」，命中的店会被
-      // 悄悄筛掉，用户只会以为这家店没收录。
-      // 换城市同理：新城市的区名对不上旧勾选，留着等于暗中筛掉大半。
+    // ⚠ 搜索态一律按「没在筛」渲染：命中的店本来就没几家，再拿上次勾的区去筛，
+    //   用户搜一家明明存在的店却什么都看不到，只会以为没收录。
+    //   但**不能把结果写回 activeDistricts** —— 清空搜索后他该回到原来那份勾选。
+    let active;
+    if (this.data.keyword) {
       active = chips.map((c) => c.label);
     } else {
-      active = this.activeDistricts.filter((l) => known.has(l));
+      // 存下来的勾选要先跟「当前有哪些区」对齐：区名对不上（换了城市/区名改了）
+      // 就自动回到全选；用户点过「清除」则保持一个都不留。
+      const aligned = prefs.alignPicked(this.activeDistricts, chips, (c) => c.label);
+      active = aligned == null ? chips.map((c) => c.label) : aligned;
+      this.activeDistricts = active;
     }
-    this.activeDistricts = active;
 
     const on = new Set(active);
     this.setData({
@@ -670,6 +681,9 @@ Page(
    * 早期写法把 [] 也当成「不筛」，于是「清除」点了跟没点一样，列表纹丝不动。
    */
   applyDistrictFilter(studios) {
+    // 搜索态不按区筛：命中的店本来就没几家，再拿上次勾的区去筛，
+    // 用户搜一家明明存在的店却什么都看不到。详见 syncDistrictChips。
+    if (this.data.keyword) return studios;
     const active = this.activeDistricts;
     if (active == null) return studios;
     const on = new Set(active);
@@ -693,6 +707,7 @@ Page(
       districtCleared: false,
       ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
     });
+    prefs.writeDiscoverDistricts(this.data.cityId, this.activeDistricts);
   },
 
   /** 全选 / 清除 二合一，与分店条、舞种条同款 */
@@ -707,6 +722,7 @@ Page(
       districtCleared: allOn,
       ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
     });
+    prefs.writeDiscoverDistricts(this.data.cityId, this.activeDistricts);
   },
 
   /**
@@ -735,6 +751,21 @@ Page(
   },
 
   /**
+   * 恢复上次的「按距离」开关。
+   *
+   * ⚠ 只有定位坐标还在（30 分钟内）才恢复 —— 开关亮着却算不出距离，
+   *   列表顺序和按钮文案就会对不上。这里只读缓存，**不弹定位授权**。
+   */
+  restoreNearFirst() {
+    if (!prefs.readDiscoverNear()) return;
+    const origin = readOriginCache();
+    if (!origin) return;
+    this.origin = origin;
+    this.nearFirst = true;
+    this.setData({ nearFirst: true });
+  },
+
+  /**
    * 发现页「按距离」。
    * 拿不到定位就静默退回按名称排 —— 不弹错、不纠缠，用户没授权本来就是常态。
    */
@@ -746,6 +777,7 @@ Page(
         nearFirst: false,
         ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
       });
+      prefs.writeDiscoverNear(false);
       return;
     }
     const origin = await getOrigin({ ask: true });
@@ -759,6 +791,7 @@ Page(
       nearFirst: true,
       ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
     });
+    prefs.writeDiscoverNear(true);
   },
 
   /**

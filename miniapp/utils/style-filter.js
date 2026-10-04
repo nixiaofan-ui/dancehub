@@ -68,8 +68,16 @@ function buildStyleChips(items, labelsOf, prevActive, prevLabels) {
       if (!prevLabels.has(l) && active.indexOf(l) < 0) active.push(l);
     });
   }
-  // 只有首次才默认全选；清除了就保持空
-  if (!active.length && !prevActive) chips.forEach((c) => active.push(c.label));
+  // 默认全选有两种情况：
+  //   1. 首次进页面（prevActive 为 null）；
+  //   2. 上次勾的舞种这次**一个都不在** —— 换了城市，或者今天这家店没排那几门课。
+  //      不回全选的话，用户切进来看到一整页空白，而筛选条上他勾的那个舞种
+  //      因为列表里已经没有、连 chip 都不显示了，「为什么空」根本看不出来。
+  // ⚠ 用户主动「清除」（prevActive=[]）必须保住空态，不能被这条覆盖 ——
+  //   `!prevActive` 为假、`prevActive.length` 为 0，正好把两种情况分开。
+  if (!active.length && (!prevActive || prevActive.length)) {
+    chips.forEach((c) => active.push(c.label));
+  }
 
   const on = new Set(active);
   // 按 chip 顺序输出：补选的新舞种是 push 到末尾的，不重排的话

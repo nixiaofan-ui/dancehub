@@ -17,8 +17,17 @@ App({
     initError: "",
     // 后台定位成功后放在这里，课表页 onShow 取用并清空
     locatedCity: null,
-    // 用户是否手动选过城市（选过就不再自动定位，别抢方向盘）
+    /**
+     * 「本次会话」用户手动选过城市。
+     *
+     * ⚠ 这是**会话级**状态，不落盘，也刻意不用它挡住下次启动的自动定位 ——
+     * 用户要的行为是「每次进小程序都定位到当前位置」，所以启动时该覆盖就覆盖；
+     * 它的作用只有一个：本次会话里别让定位的迟到结果、或「跟随预约城市」
+     * 把用户刚选的城市抢走。
+     */
     cityManual: false,
+    /** 本次启动定位成功接管过城市：课表已经在他所在地了，别再按预约拽走 */
+    locateOk: false,
   },
 
   onLaunch() {
@@ -50,19 +59,23 @@ App({
    * 页面里切换地区/城市统一走这里，避免各处各自 setData 却忘了落盘，
    * 导致重启后回落到国内。
    *
-   * @param {"manual"|"locate"|"follow"} source 城市是怎么来的：
-   *   manual —— 用户自己选的，写进 dh_city_manual，以后不再自动定位；
-   *   locate/follow —— 系统给的，不算用户选择，仍可被预约城市拽走。
+   * @param {"manual"|"locate"} [source] 城市是怎么来的：
+   *   manual —— 用户自己在本次会话里选的：本次会话内不再被定位/预约抢方向盘。
+   *   locate —— 定位给的，不算用户表态。
+   *
+   * ⚠ 这里**不再写** `dh_city_manual`。
+   *   旧实现把它当「用户选过城市」的长期标记，一旦为真就永久停掉自动定位；
+   *   而「跟随预约城市」切城时没带 source，会把标记悄悄抹成 false ——
+   *   结果就是用户手动选过的城市保不住，还得每次进来重新选。
+   *   现在按用户的要求：定位每次启动都跑，手动选择只在本次会话内有效。
    */
   setCity(region, cityId, source) {
     this.globalData.region = region;
     this.globalData.cityId = cityId;
-    const manual = source === "manual";
-    this.globalData.cityManual = manual;
+    if (source === "manual") this.globalData.cityManual = true;
     try {
       wx.setStorageSync("dh_region", region);
       wx.setStorageSync("dh_cityId", cityId);
-      wx.setStorageSync("dh_city_manual", manual);
     } catch (e) {
       // 存储失败不影响本次使用（下次启动回落默认城市）
     }
@@ -72,15 +85,19 @@ App({
    * 后台定位，不阻塞首屏。
    *
    * 为什么不在 init 里 await：用户面对授权弹窗可能一直不点，await 会把首屏
-   * 卡死在空白。宁可先用默认城市渲染出来，定位好了再切（课表页 onShow 会接管）。
-   * 但「7 天内定位过」的缓存是同步可读的，那种情况下 init 里就直接用，
-   * 老用户不会看到城市跳变。
+   * 卡死在空白。宁可先用上次的城市渲染出来，定位好了再切（课表页 onShow 会接管）。
+   *
+   * ⚠ 每次都真定位（useCache: false），不用定位缓存「省掉」这一趟 ——
+   *   用户报的就是「每次进来都不是我所在的城市」。缓存只在首屏和失败兜底时读，
+   *   见 utils/locate 的 CACHE_TTL 注释。
    */
   locateInBackground() {
-    if (wx.getStorageSync("dh_city_manual")) return; // 用户选过，不再打扰
-    locateCity({ useCache: true })
+    locateCity({ useCache: false })
       .then((r) => {
         if (!r || r.code !== "ok" || !r.city) return;
+        this.globalData.locateOk = true;
+        // 用户本次会话已经自己选过城市：以他选的为准，别拿迟到的定位结果盖掉
+        if (this.globalData.cityManual) return;
         if (r.city.id === this.globalData.cityId) return;
         this.setCity(r.city.region, r.city.id, "locate");
         this.globalData.locatedCity = r.city;
@@ -118,24 +135,24 @@ App({
   },
 
   async doInit() {
-      this.globalData.cityManual = !!wx.getStorageSync("dh_city_manual");
+      // 会话级状态，每次启动清零：定位马上会重跑一遍（见 locateInBackground）
+      this.globalData.cityManual = false;
+      this.globalData.locateOk = false;
       const res = await apiLogin();
       this.globalData.token = res.token;
 
       const cities = await apiCities();
       this.globalData.cities = cities;
-      // 记住上次选的城市：切到海外后重启不该被拉回国内。
-      // 已失效（城市下架/改名）时回落到国内第一个城市。
+      // 记住上次用的城市：切到海外后重启不该被拉回国内，
+      // 同时也是定位失败/没权限时的兜底。已失效（城市下架/改名）则回落到国内第一个城市。
       const savedRegion = wx.getStorageSync("dh_region");
       const savedCityId = wx.getStorageSync("dh_cityId");
       const saved = cities.find((c) => c.id === savedCityId && c.region === savedRegion);
-      // 没手动选过城市时，先用一周内的定位缓存（同步读，首屏就是对的）
-      const cachedLoc = this.globalData.cityManual
-        ? null
-        : (function () {
-            const c = readLocateCache();
-            return c ? cities.find((x) => x.id === c.cityId) : null;
-          })();
+      // 二级兜底：上次城市没了（下架/改名）时，用一天内的定位缓存顶上
+      const cachedLoc = (function () {
+        const c = readLocateCache();
+        return c ? cities.find((x) => x.id === c.cityId) : null;
+      })();
       // 兜底是「门店最多的国内城市」——没有定位权限时的默认展示
       const fallback = cities.find((c) => c.region === "CN") || cities[0];
       const picked = saved || cachedLoc || fallback;

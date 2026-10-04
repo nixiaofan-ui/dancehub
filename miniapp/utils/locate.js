@@ -20,7 +20,17 @@ const { apiLocateCity } = require("../services/api");
 
 const SCOPE = "scope.userFuzzyLocation";
 const CACHE_KEY = "dh_locate_cache";
-const CACHE_TTL = 7 * 24 * 3600 * 1000; // 一周内不再反复定位
+/**
+ * 定位结果的缓存时长。
+ *
+ * ⚠ 它**不是**「多久才定位一次」—— 现在的策略是每次启动都真定位一次
+ * （见 app.locateInBackground），这个缓存只干两件事：
+ *   1. 首屏渲染前同步读到上次的城市，避免「先显示上海再跳到杭州」；
+ *   2. 定位失败/没权限时，还有一个比「门店最多的城市」更贴用户的兜底。
+ * 所以取一天：跨天出门换城市，兜底立刻跟上；同一天内反复启动也不至于
+ * 因为兜底值太旧而闪一下。
+ */
+const CACHE_TTL = 24 * 3600 * 1000;
 // 距离排序用的坐标缓存。比城市缓存短得多：人在城里移动几公里，排序就该变
 const GEO_KEY = "dh_geo_origin";
 const GEO_TTL = 30 * 60 * 1000;
@@ -181,10 +191,24 @@ function readLocateCache() {
   return readCache();
 }
 
+/**
+ * 同步读「距离排序用的坐标」，拿不到就 null。
+ *
+ * 给「按距离」这类开关做恢复判断用：坐标还在（30 分钟内）才恢复开关，
+ * 否则开关亮着但算不出距离，列表顺序和按钮文案会对不上。
+ * 注意它**只读**，不会触发授权弹窗 —— 页面加载不该弹定位。
+ *
+ * @returns {{lat:number,lng:number,at:number}|null}
+ */
+function readOriginCache() {
+  return readGeo();
+}
+
 module.exports = {
   locateCity,
   openSetting,
   readLocateCache,
+  readOriginCache,
   getOrigin,
   LOCATE_SCOPE: SCOPE,
 };
