@@ -210,6 +210,37 @@
 }
 
 /*
+  预约在别座城市：只提示、不切城市。
+  故意用描边条，而不是 reminder-strip 那种高亮实心条 —— 那条是「待办」，
+  这条是「顺带一提」，两个都发亮会互相盖过，用户会以为两件事一样急。
+*/
+.city-hint {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+  padding: 16rpx 20rpx;
+  border: 1rpx solid rgba(0, 245, 212, 0.45);
+  border-radius: 16rpx;
+  background: rgba(0, 245, 212, 0.08);
+  font-size: 25rpx;
+}
+.ch-text {
+  flex: 1;
+  color: #cfe9e4;
+}
+.ch-go {
+  margin-left: 12rpx;
+  color: #00f5d4;
+  font-weight: 700;
+}
+.ch-close {
+  margin-left: 20rpx;
+  padding: 0 8rpx;
+  color: #6b7a99;
+  font-size: 28rpx;
+}
+
+/*
   只看已约：做成开关而不是又一个 chip，是因为它和门店/舞种筛选不是一类东西 ——
   那两条是「从全部课里挑」，这条是「换一种视角」。
 */

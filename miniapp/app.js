@@ -26,8 +26,6 @@ App({
      * 把用户刚选的城市抢走。
      */
     cityManual: false,
-    /** 本次启动定位成功接管过城市：课表已经在他所在地了，别再按预约拽走 */
-    locateOk: false,
   },
 
   onLaunch() {
@@ -95,7 +93,6 @@ App({
     locateCity({ useCache: false })
       .then((r) => {
         if (!r || r.code !== "ok" || !r.city) return;
-        this.globalData.locateOk = true;
         // 用户本次会话已经自己选过城市：以他选的为准，别拿迟到的定位结果盖掉
         if (this.globalData.cityManual) return;
         if (r.city.id === this.globalData.cityId) return;
@@ -137,7 +134,6 @@ App({
   async doInit() {
       // 会话级状态，每次启动清零：定位马上会重跑一遍（见 locateInBackground）
       this.globalData.cityManual = false;
-      this.globalData.locateOk = false;
       const res = await apiLogin();
       this.globalData.token = res.token;
 

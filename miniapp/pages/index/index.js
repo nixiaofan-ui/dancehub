@@ -78,6 +78,12 @@ Page(
     bookedCount: 0,
 
     panel: { visible: false, item: null },
+
+    /**
+     * 「你的预约在别的城市」提示条（null = 不显示）：{ id, region, name, count }。
+     * ⚠ 只提示、不切城市 —— 见 checkBookedCityHint 的说明。
+     */
+    cityHint: null,
   }),
 
   async onLoad() {
@@ -102,21 +108,28 @@ Page(
     }
     const g = app.globalData;
 
-    // 后台定位刚落地：切过去并说明，本次不再跑「跟随预约城市」
+    // 后台定位刚落地：切过去并说明
     const located = g.locatedCity;
     if (located && located.id !== this.data.cityId) {
       g.locatedCity = null;
-      this.setData(this.syncCityView(located.region, located.id, g.cities || []));
+      this.cityHintOff = false;
+      this.setData({
+        ...this.syncCityView(located.region, located.id, g.cities || []),
+        cityHint: null,
+      });
       toast(this, `已定位到${located.name}`);
       this.load();
       return;
     }
 
     if (this.data.region !== g.region || this.data.cityId !== g.cityId) {
-      // 用户在别处（或本页）手动选了城市，以他选的为准；
-      // 系统自动切过来的（定位/跟随预约）不关掉跟随。
-      this.cityFollowOff = !!g.cityManual;
-      this.setData(this.syncCityView(g.region, g.cityId, g.cities || []));
+      // 城市在别处（或本页）被换掉了，以最新值渲染一遍。
+      // 旧城市算出来的「预约在别城」提示跟着作废，下一次重算。
+      this.cityHintOff = false;
+      this.setData({
+        ...this.syncCityView(g.region, g.cityId, g.cities || []),
+        cityHint: null,
+      });
       this.load();
       return;
     }
@@ -125,10 +138,9 @@ Page(
     this.cityChecked = true;
     this.seenDirty = dirty;
 
-    // 刚约完课 / 首次进课表：先看一眼该停在哪个城市，再决定刷不刷
+    // 刚约完课 / 首次进课表：看一眼预约是不是落在别的城市（只提示，不切城市）
     if (needFollow) {
-      const moved = await this.followBookedCity();
-      if (moved) return; // 内部已经 load 过了
+      await this.checkBookedCityHint();
       this.load({ silent: true });
       return;
     }
@@ -141,36 +153,28 @@ Page(
   },
 
   /**
-   * 把课表停在「有预约的那座城市」。
+   * 看一眼「预约是不是落在别的城市」，但**只提示、不切城市**。
    *
-   * 预约往往是在发现页/搜索里跨城市发生的 —— 回到课表时当前城市可能根本不是
-   * 你约了课的地方，列表里一节都看不到，只能自己想起来去切城市。
-   * 这里查一次 /bookings：当前城市一节预约都没有、别处有时，切过去并说明原因。
+   * 预约经常是在发现页/搜索里跨城市发生的：回到课表，当前城市一节都看不到，
+   * 用户只能自己想起来去切城市。早先这里是直接把城市切过去 ——
+   * 但那会和「每次启动定位」打架：人明明在上海，课表却被拽去北京，
+   * 观感是「我选的城市又被吞了」（用户反馈的就是这个毛病）。
+   * 所以改成顶部一条可点的提示条：不抢方向盘，信息也不丢，点一下才切。
    *
-   * 三条约束：
-   *   1) 只统计今天及以后的预约（上过的课不该把城市拽回去）
-   *   2) 当前城市本来就有预约时不动，避免跟用户抢方向盘
-   *   3) 用户手动切过城市后（cityFollowOff）本次会话不再自动跟
-   *
-   * @returns 切了城市返回 true（调用方别再重复 load）
+   * 三条口径：
+   *   1) 只统计今天及以后的预约 —— 上过的课不该一直挂着提示
+   *   2) 当前城市本来就有预约 → 不提示（没什么可提醒的）
+   *   3) 用户关掉过（cityHintOff）→ 本次会话不再出现
    */
-  async followBookedCity() {
-    // 三种「别抢方向盘」的情况：
-    //   1. 本页本次会话已经手动切过城市；
-    //   2. 用户自己在本次会话里选了城市；
-    //   3. 定位已经把课表放到他所在的城市了 —— 再按预约拽走就是跟定位打架，
-    //      用户会觉得「怎么又给我换了」。
-    // ⚠ cityFollowOff 只在 onShow 的某条分支里赋值，首屏那次判断它是 undefined，
-    //   所以必须同时看 globalData，否则「第一次进课表」必然跟着预约跑，
-    //   而且旧实现那次切城会把「用户选过城市」的落盘标记一起抹掉。
-    if (this.cityFollowOff || app.globalData.cityManual || app.globalData.locateOk) return false;
+  async checkBookedCityHint() {
+    if (this.cityHintOff) return;
     let list;
     try {
       list = await api.apiBookings();
     } catch (e) {
-      return false; // 没登录或接口挂了：照常显示当前城市，不打扰
+      return; // 没登录或接口挂了：静默保持原样，不打扰
     }
-    if (!Array.isArray(list) || !list.length) return false;
+    if (!Array.isArray(list) || !list.length) return;
 
     const today = todayKey();
     const counts = new Map();
@@ -182,24 +186,48 @@ Page(
       if (!name) continue;
       counts.set(name, (counts.get(name) || 0) + 1);
     }
-    if (!counts.size) return false;
+    if (!counts.size) return;
 
     const cities = app.globalData.cities || [];
     const cur = cities.find((c) => c.id === this.data.cityId);
-    if (cur && counts.has(cur.name)) return false;
+    if (cur && counts.has(cur.name)) {
+      // 当前城市就有预约，这条提示没有意义；上一轮留下的要撤掉
+      if (this.data.cityHint) this.setData({ cityHint: null });
+      return;
+    }
 
     // 多座城市都有预约时，取课最多的那座
     const [name, n] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
     const city =
       cities.find((c) => c.name === name && c.region === this.data.region) ||
       cities.find((c) => c.name === name);
-    if (!city || city.id === this.data.cityId) return false;
+    if (!city || city.id === this.data.cityId) return;
 
-    app.setCity(city.region, city.id);
-    this.setData(this.syncCityView(city.region, city.id, cities));
-    toast(this, `已切到${city.name}：你有 ${n} 节预约`);
+    this.setData({
+      cityHint: { id: city.id, region: city.region, name: city.name, count: n },
+    });
+  },
+
+  /**
+   * 点提示条 = 用户表态「我要看那座城市」，这时候才切。
+   * 按 manual 记：本次会话里，迟到的定位结果不能再把他拽回来。
+   */
+  async tapCityHint() {
+    const h = this.data.cityHint;
+    if (!h) return;
+    app.setCity(h.region, h.id, "manual");
+    this.setData({
+      ...this.syncCityView(h.region, h.id, app.globalData.cities || []),
+      cityHint: null,
+    });
+    toast(this, `已切到${h.name}`);
     await this.load();
-    return true;
+  },
+
+  /** 关掉提示条：本次会话不再提示（换城市后重新计算） */
+  dismissCityHint() {
+    this.cityHintOff = true;
+    this.setData({ cityHint: null });
   },
 
   // 下拉刷新：用户主动下拉时不再静默，显示骨架屏 + 出错要提示
@@ -581,7 +609,6 @@ Page(
     }
     const city = filteredCities[0];
     app.setCity(region, city.id, "manual");
-    this.cityFollowOff = true; // 自己选的城市，别再被预约拽走
     this.setData(this.syncCityView(region, city.id, cities));
     this.load();
   },
@@ -649,9 +676,9 @@ Page(
 
   applyLocated(city) {
     const cities = app.globalData.cities || [];
+    // source 记 locate 而不是 manual：定位是系统给的，不算用户表态 ——
+    // 但本次会话里它已经是「用户点过定位」的结果，晚到的后台定位不会再覆盖。
     app.setCity(city.region, city.id, "locate");
-    // 用户主动点了定位：本次会话的城市就定在这儿，别再被「跟随预约」拽走
-    app.globalData.locateOk = true;
     this.setData(this.syncCityView(city.region, city.id, cities));
     toast(this, `已定位到${city.name}`);
     this.load();
@@ -664,7 +691,6 @@ Page(
    */
   applyCity(cityId) {
     app.setCity(this.data.region, cityId, "manual");
-    this.cityFollowOff = true; // 自己选的城市，别再被预约拽走
     this.setData(this.syncCityView(this.data.region, cityId, this.data.cities));
     this.load();
   },

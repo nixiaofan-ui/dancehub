@@ -153,7 +153,6 @@ function resetApp() {
   await settle();
   check("城市不变", fakeApp.globalData.cityId, 1);
   check("不打扰", fakeApp.globalData.locatedCity, null);
-  check("但标记了「定位成功过」（课表页据此不再被预约拽走）", fakeApp.globalData.locateOk, true);
 
   console.log("\n[6] 城市已经下架 → 回落到国内第一个城市");
   store.clear();

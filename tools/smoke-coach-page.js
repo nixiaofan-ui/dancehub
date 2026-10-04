@@ -34,6 +34,34 @@ global.Component = () => {};
 global.App = () => {};
 global.Behavior = (c) => c;
 
+const { dateKey, parseKey, addDays, todayKey } = require(path.join(MINIAPP, "utils/date.js"));
+
+/**
+ * ⚠ fixture 里的日期一律**相对今天算**，绝不写死字面量。
+ *
+ * 页面是用真实的今天去算「今天 / 明天」这类标签的（见 coach/index 的 dayLabel），
+ * 写死的日期每过一天就变成别的日子 —— 2026-10-04 就踩过一次：
+ * fixture 里的 `2026-09-30`（写测试那天恰好是今天）过了四天之后，
+ * 「今天那节标成「今天」」这条断言就挂了，而页面代码其实是好的。
+ * 日期全部由 dayAt(n) 生成，跑测试的那天是哪天都不影响。
+ */
+const TODAY = todayKey();
+const dayAt = (n) => dateKey(addDays(parseKey(TODAY), n));
+/** 2026-10-04 → 10-04，门店条上只放得下这么长 */
+const md = (key) => key.slice(5);
+
+/** 最近一个「周几」（严格早于今天）—— 用来造「上周固定档期」 */
+function lastWeekday(wd) {
+  const d = parseKey(TODAY);
+  const back = (d.getDay() - wd + 7) % 7 || 7;
+  return dayAt(-back);
+}
+
+const PAST_MON = lastWeekday(1);
+const PAST_SUN = lastWeekday(0);
+/** 未来某天：换一家店，用来验证门店条按日期排 */
+const LATER_DAY = dayAt(11);
+
 const ST = (id, name, short) => ({ id, name, short, cityId: 1 });
 
 /** 过去一周：同一家店两节（周日、周一） */
@@ -41,30 +69,30 @@ const PAST = {
   name: "雪霏",
   cityId: 1,
   direction: "past",
-  from: "2026-09-23",
-  to: "2026-09-29",
-  studios: [{ ...ST(7, "RB Dance Studio（普陀）", "RB Dance…"), count: 2, firstDate: "2026-09-27" }],
+  from: dayAt(-7),
+  to: dayAt(-1),
+  studios: [{ ...ST(7, "RB Dance Studio（普陀）", "RB Dance…"), count: 2, firstDate: PAST_SUN }],
   items: [
-    { id: 1, courseName: "Jazz基础", scheduleDate: "2026-09-27", startTime: "13:00", endTime: "14:00", studio: ST(7, "RB Dance Studio（普陀）", "RB Dance…"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: null },
-    { id: 2, courseName: "Hiphop入门", scheduleDate: "2026-09-28", startTime: "18:30", endTime: "19:30", studio: ST(7, "RB Dance Studio（普陀）", "RB Dance…"), coach: { name: "雪霏" }, difficulty: "BASIC", bookingStatus: null },
+    { id: 1, courseName: "Jazz基础", scheduleDate: PAST_SUN, startTime: "13:00", endTime: "14:00", studio: ST(7, "RB Dance Studio（普陀）", "RB Dance…"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: null },
+    { id: 2, courseName: "Hiphop入门", scheduleDate: PAST_MON, startTime: "18:30", endTime: "19:30", studio: ST(7, "RB Dance Studio（普陀）", "RB Dance…"), coach: { name: "雪霏" }, difficulty: "BASIC", bookingStatus: null },
   ],
 };
 
-/** 未来两周：今天在陆家嘴两节，10-11 在杭州一家新店 */
+/** 未来两周：今天在陆家嘴两节，LATER_DAY 在另一家新店一节 */
 const FUTURE = {
   name: "雪霏",
   cityId: 1,
   direction: "future",
-  from: "2026-09-30",
-  to: "2026-10-13",
+  from: TODAY,
+  to: dayAt(13),
   studios: [
-    { ...ST(5, "MAX POWER STUDIO（陆家嘴店）", "陆家嘴店"), count: 2, firstDate: "2026-09-30", today: true },
-    { ...ST(9, "SIX DANCE", "SIX DANCE"), count: 1, firstDate: "2026-10-11", today: false },
+    { ...ST(5, "MAX POWER STUDIO（陆家嘴店）", "陆家嘴店"), count: 2, firstDate: TODAY, today: true },
+    { ...ST(9, "SIX DANCE", "SIX DANCE"), count: 1, firstDate: LATER_DAY, today: false },
   ],
   items: [
-    { id: 3, courseName: "Kpop女团", scheduleDate: "2026-09-30", startTime: "18:05", endTime: "19:05", studio: ST(5, "MAX POWER STUDIO（陆家嘴店）", "陆家嘴店"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: null },
-    { id: 4, courseName: "Jazz编舞", scheduleDate: "2026-09-30", startTime: "19:15", endTime: "20:15", studio: ST(5, "MAX POWER STUDIO（陆家嘴店）", "陆家嘴店"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: "CONFIRMED" },
-    { id: 5, courseName: "Waacking", scheduleDate: "2026-10-11", startTime: "15:00", endTime: "16:00", studio: ST(9, "SIX DANCE", "SIX DANCE"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: null },
+    { id: 3, courseName: "Kpop女团", scheduleDate: TODAY, startTime: "18:05", endTime: "19:05", studio: ST(5, "MAX POWER STUDIO（陆家嘴店）", "陆家嘴店"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: null },
+    { id: 4, courseName: "Jazz编舞", scheduleDate: TODAY, startTime: "19:15", endTime: "20:15", studio: ST(5, "MAX POWER STUDIO（陆家嘴店）", "陆家嘴店"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: "CONFIRMED" },
+    { id: 5, courseName: "Waacking", scheduleDate: LATER_DAY, startTime: "15:00", endTime: "16:00", studio: ST(9, "SIX DANCE", "SIX DANCE"), coach: { name: "雪霏" }, difficulty: "ALL_LEVELS", bookingStatus: null },
   ],
 };
 
@@ -117,14 +145,14 @@ function check(label, got, want) {
   check("没有错误", page.data.loadError, "");
 
   // ── 过去一周：按周几归并成「排课规律」 ──
-  // 周一在周日前面：一周从周一开始排（09-28 周一 18:30 / 09-27 周日 13:00）
+  // 周一排在周日前面：一周从周一开始排（数据见 fixture，周一是 18:30、周日是 13:00）
   check("过去一周归并成两天", page.data.weekdays.map((w) => w.weekday), ["周一", "周日"]);
   check("每天几节", page.data.weekdays.map((w) => w.count), [1, 1]);
   check("同一天内按时间排", page.data.weekdays[0].items.map((i) => i.startTime), ["18:30"]);
   check("过去一周总课数", page.data.pastTotal, 2);
 
   // ── 未来：按日期分小节，能约的课要出来 ──
-  check("未来拆成两个日期", page.data.days.map((d) => d.key), ["2026-09-30", "2026-10-11"]);
+  check("未来拆成两个日期", page.data.days.map((d) => d.key), [TODAY, LATER_DAY]);
   check("今天那节标成「今天」", page.data.days[0].label.startsWith("今天"), true);
   check("未来总课数", page.data.total, 3);
   check("已约的课带出状态", page.data.days[0].items.map((i) => i.bookingStatus), [null, "CONFIRMED"]);
@@ -133,7 +161,7 @@ function check(label, got, want) {
   check(
     "门店条：有未来课的在前，带日期",
     page.data.studios.map((s) => `${s.short}|${s.badge}`),
-    ["陆家嘴店|今天有课", "SIX DANCE|10-11 有课", "RB Dance…|上周 2 节"],
+    ["陆家嘴店|今天有课", `SIX DANCE|${md(LATER_DAY)} 有课`, "RB Dance…|上周 2 节"],
   );
   check("只有今天的店标 hot", page.data.studios.map((s) => s.hot), [true, false, false]);
 

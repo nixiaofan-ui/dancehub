@@ -47,6 +47,18 @@
     📌 您有 {{pendingCount}} 节未确认预约，记得点「我已约好」
   </view>
 
+  <!--
+    预约在别座城市的提示条。
+    ⚠ 只提示、不切城市：课表停在用户所在的城市（或他自己选的城市），
+      但「我约的那节课在哪」这件事不能丢 —— 给一条可点的入口，
+      点一下才切过去。点 ✕ 关掉，本次会话不再出现。
+  -->
+  <view wx:if="{{cityHint}}" class="city-hint" hover-class="press" bindtap="tapCityHint">
+    <text class="ch-text">你在{{cityHint.name}}还有 {{cityHint.count}} 节预约</text>
+    <text class="ch-go">切过去 ›</text>
+    <text class="ch-close" catchtap="dismissCityHint">✕</text>
+  </view>
+
   <!-- 日期滑条 -->
   <view class="date-nav">
     <view class="arrow" hover-class="press" bindtap="prevDay">‹</view>
