@@ -1,7 +1,8 @@
 import { prisma } from "./prisma.js";
 
 /**
- * 课表重复自愈：同店 + 同日 + 同课名 + 同开始时间，只应存在一条。
+ * 课表重复自愈：同店 + 同日 + 同课名 + 同开始时间 + 同教练，只应存在一条。
+ * （教练在键里：同名同时刻、不同教练 = 两个班，OG Dance「特邀导师」实况）
  *
  * 为什么要单独做这件事（2026-09-29）：
  *   `Schedule` 表**没有任何唯一约束**（只有索引），去重全靠 `importer.upsertSchedule`
@@ -204,13 +205,16 @@ export async function dedupeSchedules(opts = {}) {
   //     全角空格 U+3000 用 `_utf8mb4 0xE38080` 写死，避免受连接字符集影响）
   //   - 直接 GROUP BY startTime 太宽：同店同时间通常有 3–5 门不同的课，
   //     会把全库 13822 个门店日全拉进来（实测），绝大多数白跑
+  //
+  // ⚠ coachId 必须参与分组：同名同时刻的双班是两节独立的课（OG Dance
+  //   「特邀导师」Bala/酸酸同在 18:30，各占一个教室），按教练分开才算重复。
   const dupKeys = await prisma.$queryRaw`
     SELECT studioId, scheduleDate
     FROM Schedule
     WHERE ownerId IS NULL
     GROUP BY studioId, scheduleDate,
              REPLACE(REPLACE(courseName, ' ', ''), _utf8mb4 0xE38080, ''),
-             startTime
+             startTime, coachId
     HAVING COUNT(*) > 1
   `;
 
@@ -245,7 +249,8 @@ export async function dedupeSchedules(opts = {}) {
 
     const byKey = new Map();
     for (const r of rows) {
-      const k = `${courseKey(r.courseName)}|${hhmm(r.startTime)}`;
+      // 教练进分组键：同名同时刻、不同教练 = 两个班（见上方 SQL 侧注释）
+      const k = `${courseKey(r.courseName)}|${hhmm(r.startTime)}|${r.coachId ?? "-"}`;
       if (!byKey.has(k)) byKey.set(k, []);
       byKey.get(k).push(r);
     }

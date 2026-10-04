@@ -248,7 +248,26 @@ function keepOldOnMissing(entry, existing) {
   return patch;
 }
 
-export async function upsertSchedule(entry) {
+/**
+ * 把一组「同一节课」的候选行合并掉并写入最新数据，返回 updated 结果。
+ * upsertSchedule 的三个分支（同教练命中 / 换老师合并 / 库里已有重复）共用。
+ */
+async function updateCollapsed(rows, entry) {
+  let merged = 0;
+  let keep = rows[0];
+  if (rows.length > 1) {
+    const { keepId } = await collapseGroup(rows);
+    keep = rows.find((m) => m.id === keepId) || rows[0];
+    merged = rows.length - 1;
+  }
+  await prisma.schedule.update({
+    where: { id: keep.id },
+    data: keepOldOnMissing(entry, keep),
+  });
+  return { action: "updated", id: keep.id, ...(merged ? { merged } : {}) };
+}
+
+export async function upsertSchedule(entry, { ambiguous = false } = {}) {
   const eh = entry.startTime.getUTCHours();
   const em = entry.startTime.getUTCMinutes();
   const sameSlot = (c) =>
@@ -283,25 +302,22 @@ export async function upsertSchedule(entry) {
     matched = dayRows.filter((c) => courseKey(c.courseName) === want && sameSlot(c));
   }
 
-  if (matched.length === 1) {
-    const existing = matched[0];
-    await prisma.schedule.update({
-      where: { id: existing.id },
-      data: keepOldOnMissing(entry, existing),
-    });
-    return { action: "updated", id: existing.id };
-  }
-
-  if (matched.length > 1) {
-    // 库里这一节已经是重复状态（历史遗留，或本轮并发刚各插了一条）：
-    // 就地合并成一条再更新，别让它继续以两条的形态留在课表上。
-    const { keepId } = await collapseGroup(matched);
-    const keep = matched.find((m) => m.id === keepId) || matched[0];
-    await prisma.schedule.update({
-      where: { id: keep.id },
-      data: keepOldOnMissing(entry, keep),
-    });
-    return { action: "updated", id: keep.id, merged: matched.length - 1 };
+  // ③ 同名同时刻可能不止一个班：OG Dance 的「特邀导师」Bala 和酸酸同在
+  //    18:30-20:00 开课（各占一个教室、各自名额）。老的匹配键不含教练，
+  //    两个班会先后写进同一行，后写的把先写的顶掉 —— Bala 的课在我们课表上
+  //    凭空消失，用户对着舞室小程序数不出我们少的那节（2026-10-04 反馈）。
+  //    现在优先认同教练的行；没有同教练的行时再看本轮语境：
+  //    - 本轮该时段只有一个同名班 → 视为「换老师」，合并进原行（保 id，
+  //      用户挂在上面的预约/提醒不连坐）—— 这是老行为的保留；
+  //    - 本轮该时段有多个同名班（ambiguous）→ 必须新建一行，不能顶掉别人。
+  if (entry.coachId != null) {
+    const mine = matched.filter((c) => c.coachId === entry.coachId);
+    if (mine.length) return updateCollapsed(mine, entry);
+    if (matched.length && !ambiguous) return updateCollapsed(matched, entry);
+    // ambiguous 且没有本教练的行 → 落到下面 create
+  } else if (matched.length) {
+    // 平台不给教练（coachId 为 null）时维持老口径：按 课名+时分 匹配
+    return updateCollapsed(matched, entry);
   }
 
   const created = await prisma.schedule.create({ data: entry });
@@ -309,15 +325,19 @@ export async function upsertSchedule(entry) {
 }
 
 /**
- * 幂等键：与 upsertSchedule 的匹配口径保持一致（门店 + 日期 + 课名 + 开始时分）。
+ * 幂等键：与 upsertSchedule 的匹配口径保持一致（门店 + 日期 + 课名 + 开始时分 + 教练）。
  * 用「课程指纹」而不是自增 id 来记「本轮抓到过什么」，
  * 这样即使 upsert 中途跳过了某条，也不会把库里那节课误判成已消失。
+ *
+ * 教练必须进指纹：同名同时刻的双班（OG Dance「特邀导师」Bala/酸酸）是两节
+ * 独立的课，上游只取消其中一个时，不带教练的指纹会把库里另一节也判成「还在」，
+ * 幽灵课永远清不掉。
  */
-function fingerprint(studioId, scheduleDate, courseName, startTime) {
+function fingerprint(studioId, scheduleDate, courseName, startTime, coachId = null) {
   const day = scheduleDate.toISOString().slice(0, 10);
   const hh = String(startTime.getUTCHours()).padStart(2, "0");
   const mm = String(startTime.getUTCMinutes()).padStart(2, "0");
-  return `${studioId}|${day}|${courseName}|${hh}:${mm}`;
+  return `${studioId}|${day}|${courseName}|${hh}:${mm}|${coachId ?? "-"}`;
 }
 
 /**
@@ -361,7 +381,7 @@ async function pruneVanished(seen) {
     const dates = [...days].map((d) => new Date(`${d}T00:00:00Z`));
     const existing = await prisma.schedule.findMany({
       where: { studioId, ownerId: null, scheduleDate: { in: dates } },
-      select: { id: true, courseName: true, scheduleDate: true, startTime: true },
+      select: { id: true, courseName: true, scheduleDate: true, startTime: true, coachId: true },
     });
     if (!existing.length) continue;
 
@@ -372,7 +392,7 @@ async function pruneVanished(seen) {
         (e) => e.scheduleDate.toISOString().slice(0, 10) === day,
       );
       const kept = sameDay.filter((e) =>
-        seen.has(fingerprint(studioId, date, e.courseName, e.startTime)),
+        seen.has(fingerprint(studioId, date, e.courseName, e.startTime, e.coachId)),
       );
       const stale = sameDay.filter((e) => !kept.includes(e));
       if (!stale.length) continue;
@@ -490,6 +510,12 @@ export async function importSchedules(config, rows, ensureStudios = []) {
       ...(rowCoord ? { lat: rowCoord.lat, lng: rowCoord.lng } : {}),
     };
     const studio = await findOrCreateStudio(studioRef, extra);
+
+    // 先把全部原始行映射成库条目（要过 findOrCreateCoach，拿到稳定 coachId），
+    // 再统计「同日 + 同名课 + 同时分」在本轮出现了几次 —— 出现 ≥2 次说明
+    // 舞室在同一时段开了多个同名班（OG Dance 的「特邀导师」Bala/酸酸同在 18:30），
+    // upsertSchedule 必须按教练区分，不能把后一个班顶进前一行的槽位。
+    const entries = [];
     for (const row of groupRows) {
       const coach = await findOrCreateCoach(studio.id, row.coach, row._coachAvatar);
       const entry = mapRawToSchedule(row, {
@@ -501,8 +527,23 @@ export async function importSchedules(config, rows, ensureStudios = []) {
         skipped += 1;
         continue;
       }
-      seen.add(fingerprint(studio.id, entry.scheduleDate, entry.courseName, entry.startTime));
-      const res = await upsertSchedule(entry);
+      entries.push(entry);
+    }
+
+    const slotKeyOf = (e) =>
+      `${e.scheduleDate.toISOString().slice(0, 10)}|${courseKey(e.courseName)}|` +
+      `${String(e.startTime.getUTCHours()).padStart(2, "0")}:${String(e.startTime.getUTCMinutes()).padStart(2, "0")}`;
+    const slotCount = new Map();
+    for (const e of entries) {
+      const k = slotKeyOf(e);
+      slotCount.set(k, (slotCount.get(k) || 0) + 1);
+    }
+
+    for (const entry of entries) {
+      seen.add(
+        fingerprint(studio.id, entry.scheduleDate, entry.courseName, entry.startTime, entry.coachId),
+      );
+      const res = await upsertSchedule(entry, { ambiguous: slotCount.get(slotKeyOf(entry)) > 1 });
       if (res.action === "created") created[studioName] = (created[studioName] || 0) + 1;
       else updated[studioName] = (updated[studioName] || 0) + 1;
     }
