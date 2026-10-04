@@ -46,10 +46,13 @@ const CITIES = [
 ];
 
 const setCityCalls = [];
-global.getApp = () => ({
+// ⚠ index.js 在模块顶层就 `const app = getApp()`，必须是单例，
+//   后面用例才能往 globalData 里塞 locatedCity（每次新建对象的话塞不进去）
+const appMock = {
   globalData: { cities: CITIES, cityId: 1, region: "CN", dirty: 0 },
   setCity: (region, cityId, source) => setCityCalls.push([region, cityId, source || null]),
-});
+};
+global.getApp = () => appMock;
 
 /** 相对今天生成，别写死日期 —— 写死的「今天」过几天就不是今天了 */
 const dayAt = (n) => dateKey(addDays(new Date(), n));
@@ -164,6 +167,24 @@ const bk = (city, day) => ({ schedule: { city, scheduleDate: day } });
   bookings = [bk("北京", dayAt(2))];
   await page.checkBookedCityHint();
   check("当前城市有预约 → 提示撤掉", page.data.cityHint, null);
+
+  console.log("\n[8] 后台定位落地自动切城 → 切完当屏就要提示「预约在原城市」");
+  // 线上场景：人在三亚（定位切过去），预约全在深圳 —— 旧代码在这个分支
+  // 直接 return，跳过 checkBookedCityHint，用户看到一屏解释不了的空白。
+  setCityCalls.length = 0;
+  bookings = [bk("上海", dayAt(1)), bk("上海", dayAt(2))]; // 预约在原来的城市
+  page = makePage();
+  page.data.cityId = 1; // 当前在上海
+  appMock.globalData.locatedCity = { id: 2, region: "CN", name: "北京" }; // 定位落地北京
+  global.__toast = "";
+  await page.onShow();
+  check("按定位切到北京", page.data.cityId, 2);
+  check("当屏就出提示条（预约还在上海）", page.data.cityHint && {
+    name: page.data.cityHint.name,
+    count: page.data.cityHint.count,
+  }, { name: "上海", count: 2 });
+  check("有定位交代", global.__toast, "已定位到北京");
+  delete appMock.globalData.locatedCity;
 
   console.log(`\n${failed ? `✖ ${failed} 项失败` : "✔ 全部通过"}`);
   process.exit(failed ? 1 : 0);

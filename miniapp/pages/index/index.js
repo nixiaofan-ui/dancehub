@@ -123,6 +123,10 @@ Page(
         cityHint: null,
       });
       toast(this, `已定位到${located.name}`);
+      // ⚠ 切完也要看一眼「预约是否落在刚才那座城」：定位晚到时用户是
+      //   被我们拽走的，原城市若有今天的预约，这屏就该给提示条，
+      //   不能等他下次切 tab 回来才补（那之前是一屏解释不了的空白）。
+      await this.checkBookedCityHint();
       this.load();
       return;
     }
