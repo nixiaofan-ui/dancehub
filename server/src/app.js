@@ -18,6 +18,7 @@ import importRoutes from "./routes/import.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import configRoutes from "./routes/config.routes.js";
 import crawlerRoutes from "./crawler/routes.js";
+import { tagEntry } from "./middleware/entry.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.js";
 
 export function createApp() {
@@ -25,6 +26,10 @@ export function createApp() {
 
   app.use(cors());
   app.use(express.json());
+  // 入口判定：给每个请求打上 req.entry（网关 / 公网）。
+  // ⚠ 这是**分流标签，不是鉴权** —— 公网请求可以完整伪造 x-wx-* 头，
+  //   所以任何「只有 req.entry==='gateway' 才安全」的前提都不成立。详见 middleware/entry.js。
+  app.use(tagEntry);
 
   app.use("/api", healthRoutes);
   app.use("/api/auth", authRoutes);

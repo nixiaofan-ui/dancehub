@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { pingRedis } from "../lib/redis.js";
 import { config } from "../config.js";
 import { buildClassReminderData } from "../services/reminder.service.js";
+import { probeCode2session } from "../services/auth.service.js";
 
 const router = Router();
 
@@ -38,7 +39,16 @@ router.get("/health", async (_req, res) => {
 const mask = (v) => (v && v.length > 8 ? `${v.slice(0, 4)}***${v.slice(-4)}(${v.length})` : v || "");
 
 router.get("/diag/net", async (req, res) => {
-  const out = { wechatApi: "unknown", dns: "unknown", baidu: "unknown", wxHeaders: {} };
+  const out = {
+    wechatApi: "unknown",
+    dns: "unknown",
+    baidu: "unknown",
+    wxHeaders: {},
+    // 本次请求被判定成哪条入口进来 —— 用它就能确认「小程序走的是网关、curl 走的是公网」
+    entry: req.entry || "unknown",
+    entryWhy: req.entryWhy || "",
+    authPolicy: config.gatewayIdentity,
+  };
 
   // 网关到底注没注入 x-wx-openid，决定了登录能不能绕开 code2session
   for (const k of Object.keys(req.headers)) {
@@ -73,6 +83,20 @@ router.get("/diag/net", async (req, res) => {
     out.baidu = "unreachable: " + (e?.message || e);
   }
 
+  res.json(out);
+});
+
+/**
+ * 登录通道自检：code2session 能不能走通、走的是哪条路。
+ *
+ * 为什么需要它：修复「网关头当身份」这个漏洞之后，登录身份**完全依赖 code2session**。
+ * 而本容器的公网出口是没有的（见 /api/diag/net 的 wechatApi: unreachable），
+ * 唯一指望是云调用内网通道。这条通道挂掉时登录会降级到网关头兜底 ——
+ * 那个降级在安全上是退步，必须能远程看见它有没有发生。
+ */
+router.get("/diag/wxauth", async (_req, res) => {
+  const out = await probeCode2session();
+  out.authPolicy = config.gatewayIdentity;
   res.json(out);
 });
 

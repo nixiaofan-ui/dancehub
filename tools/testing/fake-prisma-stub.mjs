@@ -22,6 +22,9 @@ const db = {
   coach: [],
   city: [],
   follow: [],
+  // 登录链路（auth.routes）要用：findUnique(openid) + create。
+  // 「伪造网关头不做身份」这条回归必须能断言「没有建号」，没有这张表就断不了。
+  user: [],
 };
 
 export function __reset() {
@@ -169,6 +172,7 @@ export const prisma = {
   coach: model("coach"),
   city: model("city"),
   follow: model("follow"),
+  user: model("user"),
   $queryRaw: async () => [],
   $transaction: async (fns) => Promise.all(fns),
 };
