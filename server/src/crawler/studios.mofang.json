@@ -1,0 +1,34 @@
+[
+  {
+    "id": "mofang-978069-11A-DANCE",
+    "enabled": true,
+    "label": "11A DANCE",
+    "auto": true,
+    "studio": {
+      "name": "11A DANCE·保利中心店（武侯）",
+      "city": "成都",
+      "region": "CN",
+      "platform": "WECHAT",
+      "officialUrl": null
+    },
+    "mode": "mofang",
+    "mofang": {
+      "baseUrl": "https://saas.yqdicloud.com",
+      "appId": "wx2f6734758de0b8a6",
+      "tenantId": "978069",
+      "spanDays": 14
+    },
+    "dateMode": "nextDays",
+    "days": 14,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "address": "四川省成都市武侯区保利中心东区C座",
+    "_meta": {
+      "platformName": "MOFANG",
+      "storeId": "1894594512250070597",
+      "note": "魔方约课（saas.yqdicloud.com）。⚠ 小程序提示「只有正式会员可以查看课表」是**前端墙**，接口免登录（实测未登录拿到全部课程 + 真实已约人数）。tenantId 由 appId 换（/system/client/getAppParams），这里写死避免每轮多一次请求；课表 /dance/home/list 的参数名是 time（不是 date），tenantId 走 query（进 header 会 500）。窗口取 14 天（其他平台 7 天）：接口只返回「今天及以后」，且排课成块发布、可甩到 11 天以外（09-30 实测就能看到 10-08~10-11），按 7 天抓会连续好几天漏掉那一块。⚠ previewPoster 是 .mp4 视频不是封面图，本平台无课程图片封面 → 不写 _photoUrl。"
+    }
+  }
+]

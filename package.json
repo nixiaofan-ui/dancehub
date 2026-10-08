@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "check:register": "node tools/check-miniapp-register.js"
+    "check:register": "node tools/check-miniapp-register.js",
+    "smoke": "bash tools/run-smokes.sh"
   },
   "devDependencies": {
     "miniprogram-automator": "^0.12.1"

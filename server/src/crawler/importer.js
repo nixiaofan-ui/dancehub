@@ -77,6 +77,8 @@ export async function findOrCreateStudio(studioRef, extra = {}) {
     patch.platform = wantPlatform;
   }
   if (studioRef.address && !existing.address) patch.address = studioRef.address;
+  // 电话同理只填空值：上游偶尔不给 phone，不能把已经拿到（或人工补的）号码擦掉
+  if (studioRef.contact && !existing.contact) patch.contact = studioRef.contact;
   // 坐标：只在库里还是空的时候补（有值不动，避免把人工校准过的坐标覆盖掉）
   if ((existing.lat == null || existing.lng == null) && Number.isFinite(studioRef.lat) && Number.isFinite(studioRef.lng)) {
     patch.lat = studioRef.lat;
@@ -160,6 +162,7 @@ async function createStudioOnce(studioRef, extra, city) {
       name: studioRef.name,
       cityId: city.id,
       address: studioRef.address || null,
+      contact: studioRef.contact || null,
       lat: Number.isFinite(studioRef.lat) ? studioRef.lat : null,
       lng: Number.isFinite(studioRef.lng) ? studioRef.lng : null,
       platform: resolvePlatform(studioRef),
@@ -457,6 +460,8 @@ export async function importSchedules(config, rows, ensureStudios = []) {
         ...(ref.city ? { city: ref.city } : {}),
         // 上游实时拿到的地址比配置里写死的准优先
         ...(ref.address ? { address: ref.address } : {}),
+        // 门店电话（魔方约课这类门店清单接口直接给 phone）
+        ...(ref.contact ? { contact: ref.contact } : {}),
         ...(coord ? { lat: coord.lat, lng: coord.lng } : {}),
       };
       await findOrCreateStudio(studioRef, {

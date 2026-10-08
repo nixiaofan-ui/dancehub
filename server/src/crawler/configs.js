@@ -16,6 +16,7 @@ const AUTO_CONFIG_FILES = [
   "studios.jiahe.json",
   "studios.csdsp.json",
   "studios.feiyuntoo.json",
+  "studios.mofang.json",
   "studios.newdance.json",
   "studios.iwod-extra.json",
   // 2026-09-30 手写接入的四套新平台（都是手机抓包逆向所得，见 engine.js 各引擎注释）
@@ -454,6 +455,8 @@ function mergeConfigs(manual, auto) {
     if (c.mode === "http" && c.http?.boxId != null) return `box:${c.http.boxId}`;
     if (c.mode === "fityun" && c.fityun?.orgId) return `org:${c.fityun.orgId}`;
     if (c.mode === "styd" && c.styd?.brandCode) return `brand:${c.styd.brandCode}`;
+    // 魔方约课：一个 tenantId = 一个品牌（旗下多门店共用），与菲体云 orgId 同级
+    if (c.mode === "mofang") return `mofang:${c.mofang?.tenantId || c.mofang?.appId || c.id}`;
     if (c.mode === "foxdance") return `fox:${c.id}`;
     if (c.mode === "gsteps") return `gsteps:${c.id}`;
     if (c.mode === "jiahe") return `jiahe:${c.id}`;

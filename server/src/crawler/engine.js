@@ -2076,6 +2076,199 @@ async function crawlWithAutomator(config) {
   }
 }
 
+/* ───────────────────────── 魔方约课（yqdicloud.com）抓取 ───────────────────────── */
+
+/**
+ * 魔方约课（saas.yqdicloud.com）SaaS 约课系统
+ * —— 2026-10-08 由成都 11A DANCE 的小程序包解密 + 接口探测获得。
+ *
+ * ⭐ 最重要的一条：「只有正式会员可以查看课表」是**前端画出来的墙**，
+ *    课表接口本身完全免登录（和咪哩约课一样，不是闻道软件那种真墙）。
+ *    拿真机复现时，未登录照样能拿到全部课程 + 真实已约人数。
+ *
+ * 逆向要点：
+ * - 租户标识 tenantId **可以用小程序 appId 换**，免登录：
+ *     GET /system/client/getAppParams?appId=<appId> → { tenantId, clientId, grantType }
+ *     （小程序端也是这么初始化的，结果缓存 7 天，见包里的 app_dynamic_config）
+ *   ⚠ 这条比其它平台省事得多：不抓包也能定位 tenantId，只要有 appId。
+ * - 门店清单：GET /dance/home/getStoreList?tenantId=<T>
+ *     → [{ id, name, address, phone, longitude, latitude, description, img, status }]
+ * - 课表：GET /dance/home/list?tenantId=<T>&storeId=<S>&time=YYYY-MM-DD
+ *     → [{ id, danceCourseName, teacherInfoName, teacherInfoPhoto,
+ *          startTime "14:30", endTime "15:50", scheduleDate, limitPeople 容量,
+ *          applyPeople 已约, roomName, difficult, cateName, status, previewPoster }]
+ *   ⚠ 参数名是 **time**（不是 date）—— 传 date 会报
+ *     "Required request parameter 'time' ... is not present"，被误当成接口不可用。
+ *   ⚠ tenantId 走 **query**；放进 header 会 500（"数据错误，请重新进入小程序查看"）。
+ *   ⚠ 其余 /dance/** 接口（courseReservation/courseList、getCourseCateList…）都要 token，
+ *     只有 home/list 与 getStoreList 在免登录白名单里（包里的 isTokenNeedless）。
+ * - `applyPeople` = 已约、`limitPeople` = 容量（与菲体云/styd 同向，**不是** iWOD 那种反向语义）。
+ *   实测 2026-10-08 18:30 JAZZ 25/25（满）、20:00 23/25，交叉验证通过。
+ * - ⚠ 课表的日期口径（两次实测，别被误导）：
+ *     ① 接口**只返回「今天及以后」**的排课；过去的日期一律返回空数组。
+ *        所以**绝不能**用这个接口判断「这门课/这家店以前有没有课」，
+ *        也别把某天的空结果当成「店家那天没排课」——先确认那天不是过去。
+ *        （曾把 10-06/10-07 的空当成「国庆空档」，其实是那两天已经过去了。）
+ *     ② 排课是**成块**发布的，块可以甩到很远处：10-08 那天实测能看到 10-08~10-11；
+ *        而 09-30 那天同一接口就能看到 10-08~10-11（**8~11 天以外**），
+ *        中间 10-06/10-07 没有任何数据。
+ *     结论：窗口必须 ≥ 11 天，配置里取 14 天。按 7 天抓的后果是——
+ *     在你「看见」远处那一块之前，页面会连续好几天显示这家店没课。
+ *     判「这家店没课」同样要跨天采样，不能只看今天。
+ * - ⛔ `previewPoster` 是 **.mp4 视频**直链（公开、不过期），不是封面图；
+ *   本平台没有课程图片封面字段（只有教练头像 teacherInfoPhoto）→ 不写 _photoUrl。
+ *
+ * @param {object} config 抓取配置（含 config.mofang）
+ * @param {Date} date 抓取起始日期
+ * @returns {Promise<Array>} 原始条目
+ */
+async function crawlWithMofang(config, date) {
+  const baseUrl = (config.mofang?.baseUrl || "https://saas.yqdicloud.com").replace(/\/$/, "");
+  const appId = config.mofang?.appId;
+  let tenantId = config.mofang?.tenantId;
+
+  const get = async (path) => {
+    const resp = await fetch(`${baseUrl}${path}`, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 MicroMessenger/8.0",
+      },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!resp.ok) throw new Error(`魔方约课接口 ${path} HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (!json || Number(json.code) !== 200) {
+      throw new Error(`魔方约课接口 ${path} 返回异常: ${json?.msg || json?.code || "unknown"}`);
+    }
+    return json.data;
+  };
+
+  // tenantId：配置里写死优先；没写就用 appId 换（免登录，结果进程内缓存）
+  if (!tenantId) {
+    if (!appId) throw new Error("mofang 配置缺少 tenantId 或 appId");
+    tenantId = await resolveMofangTenant(baseUrl, appId);
+  }
+  if (!tenantId) throw new Error("魔方约课 tenantId 解析失败");
+
+  const stores = await get(`/dance/home/getStoreList?tenantId=${encodeURIComponent(tenantId)}`);
+  const storeList = Array.isArray(stores) ? stores : [];
+  if (!storeList.length) throw new Error("魔方约课门店列表为空，检查 tenantId 是否有效");
+
+  // 门店名规范：单店配置用配置里的名字（带城市/商圈后缀，便于用户辨认），
+  // 多店用「品牌·分店」拼（与爱舞功同规则，避免不同品牌的同名分店被合并）。
+  const storeName = (s) => {
+    const raw = String(s.name || "").trim();
+    if (storeList.length === 1 && config.studio?.name) return config.studio.name;
+    return composeStudioName(config.studio?.name || raw, raw) || raw;
+  };
+
+  const out = [];
+  out.ensureStudios = storeList.map((s) => ({
+    name: storeName(s),
+    address: String(s.address || "").trim(),
+    lat: Number(s.latitude) || null,
+    lng: Number(s.longitude) || null,
+    contact: String(s.phone || "").trim() || null,
+  }));
+
+  // ⛔ 别直接用 Number()：Number(null) === 0、Number("") === 0。
+  //    上游「没给这个字段」会被静默当成「已约 0 人」，正好违反 mapper 的约定
+  //    （bookedNum 存 null 才是「不知道」，0 是「确认没人约」）。
+  const num = (v) => {
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const span = Math.max(Number(config.mofang?.spanDays) || 4, 1);
+  for (let i = 0; i < span; i += 1) {
+    const day = new Date(date.getTime() + i * 86400000);
+    const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(
+      day.getDate()
+    ).padStart(2, "0")}`;
+
+    for (const store of storeList) {
+      const storeId = String(store.id || "");
+      if (!storeId) continue;
+      const rows = await get(
+        `/dance/home/list?tenantId=${encodeURIComponent(tenantId)}&storeId=${encodeURIComponent(
+          storeId
+        )}&time=${dateStr}`
+      );
+      for (const r of Array.isArray(rows) ? rows : []) {
+        const courseName = cleanCourseName(r.danceCourseName);
+        if (!courseName) continue;
+        const limit = num(r.limitPeople) || 0;
+        const usedNum = num(r.applyPeople);
+        out.push({
+          courseName,
+          coach: String(r.teacherInfoName || "").trim(),
+          time: `${String(r.startTime || "").trim()}-${String(r.endTime || "").trim()}`,
+          // 「剩余/容量」口径：已约人数单独走 _bookedNum，别让下游从字符串反推
+          capacity: limit ? `${Math.max(limit - (usedNum || 0), 0)}/${limit}` : "",
+          status: limit && usedNum != null && usedNum >= limit ? "已满" : "可预约",
+          _bookedNum: usedNum,
+          _coachAvatar: pickImageUrl(r.teacherInfoPhoto),
+          _studioName: storeName(store),
+          _roomName: String(r.roomName || "").trim() === "-" ? "" : String(r.roomName || "").trim(),
+          _address: String(store.address || "").trim(),
+          _city: config.studio?.city,
+          _lat: Number(store.latitude) || null,
+          _lng: Number(store.longitude) || null,
+          _difficulty: mapMofangDifficulty(r.difficult),
+          // ⛔ 不要给 _photoUrl：魔方约课唯一的海报字段 previewPoster 是 **.mp4 视频**直链，
+          //    当图片塞进去只会变成一张裂图。该平台没有课程图片封面（只有教练头像 teacherInfoPhoto）。
+          //    视频本身公开、不过期，但 Schedule.videoRef 是 VARCHAR(64) 装不下 URL，
+          //    要接得先扩列 → 记为后续可选项，不在本轮范围内。
+          _photoUrl: null,
+          _remark: String(r.cateName || "").trim() || null,
+          _scheduleDate: normalizeDate(r.scheduleDate) || dateStr,
+        });
+      }
+      if (storeList.length > 1) await sleep(120);
+    }
+  }
+  return out;
+}
+
+/** tenantId 解析结果的进程内缓存（同一个 appId 不用反复换） */
+const mofangTenantCache = new Map();
+
+async function resolveMofangTenant(baseUrl, appId) {
+  if (mofangTenantCache.has(appId)) return mofangTenantCache.get(appId);
+  const resp = await fetch(
+    `${baseUrl}/system/client/getAppParams?appId=${encodeURIComponent(appId)}`,
+    { signal: AbortSignal.timeout(20000) }
+  );
+  if (!resp.ok) throw new Error(`魔方约课 getAppParams HTTP ${resp.status}`);
+  const json = await resp.json();
+  // 校验 code：服务端在 appId 无效时返回 {code:500,msg:"数据错误"}，data 为 null。
+  // 不看 code 就会静默返回 null，最后报成含糊的「tenantId 解析失败」，排查时白绕一圈。
+  if (!json || Number(json.code) !== 200) {
+    throw new Error(
+      `魔方约课 getAppParams 返回异常（appId=${appId}）: ${json?.msg || json?.code || "unknown"}`
+    );
+  }
+  const tenantId = json?.data?.tenantId ? String(json.data.tenantId) : null;
+  if (!tenantId) throw new Error(`魔方约课 getAppParams 没返回 tenantId（appId=${appId}）`);
+  mofangTenantCache.set(appId, tenantId);
+  return tenantId;
+}
+
+/**
+ * 魔方约课的难度是数字（实测只出现 0/2/4，0 = 店家没设）。
+ * 本轮样本里「JAZZ入门」= 2、常规课 = 4 → 按 2 一档换算。
+ * ⚠ 样本只有一家店，等接入第二家再校正；判不准的宁可不标（null）。
+ */
+function mapMofangDifficulty(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n <= 2) return "BEGINNER";
+  if (n <= 4) return "INTERMEDIATE";
+  return "ADVANCED";
+}
+
 /** 统一入口：返回原始条目数组 [{ courseName, coach, time, capacity, status }] */
 export async function crawl(config, date = new Date()) {
   if (!config) throw new Error("缺少抓取配置");
@@ -2092,6 +2285,7 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "aiwugong") return crawlWithAiwugong(config, date);
   if (config.mode === "csdsp") return crawlWithCsdsp(config, date);
   if (config.mode === "feiyuntoo") return crawlWithFeiyuntoo(config, date);
+  if (config.mode === "mofang") return crawlWithMofang(config, date);
   if (config.mode === "oneMillion") return crawlWithOneMillion(config, date);
   if (config.mode === "avex") return crawlWithAvex(config, date);
   if (config.mode === "justjerk") return crawlWithJustjerk(config, date);
