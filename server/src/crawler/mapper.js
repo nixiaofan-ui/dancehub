@@ -78,10 +78,11 @@ export function mapRawToSchedule(raw, { studioId, coachId, date }) {
     bookingUrl: null,
     // 课程封面图（支持海外平台的 _photoUrl 和 iWOD 的 picUrl）
     coursePicUrl: raw._photoUrl || raw.picUrl || null,
-    // 课程预告视频的「取址」：形如 `fityun|<机构ID>|<排课ID>`（非空即代表有预告）。
-    // 不存视频 URL 本身 —— 菲体云给的是腾讯云点播签名链接，签名 1 小时就过期，
-    // 存下来半小时后就是死链；详情页打开时按需回源换新的，
-    // 见 services/fityun-video.js。
+    // 课程预告视频：非空即代表这节课有预告。两种形态并存 ——
+    //   · `fityun|<机构ID>|<排课ID>` 取址（菲体云的腾讯云点播签名链接 1 小时过期，
+    //     存 URL 等于存死链，只能存「去哪儿取」）；
+    //   · 以 http(s) 开头的直链（魔方约课的 mp4，公开且不过期，存 URL 即可）。
+    // 两者由 services/schedule-video.js 统一分派成可播放地址。
     videoRef: raw._videoRef || null,
     remark: remark || null,
   };

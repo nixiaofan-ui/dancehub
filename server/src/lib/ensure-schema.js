@@ -88,12 +88,31 @@ ALTER TABLE \`Schedule\`
 `;
 
 /**
- * 课程预告视频的「取址」（形如 `fityun|11058641|34103272`，非空即代表有预告）。
- * 存的是取址不是 URL：菲体云给的是腾讯云点播签名链接，1 小时就过期。
+ * 课程预告视频的「取址」或直链（非空即代表这节课有预告）。
+ * 两形态并存，分派见 src/services/schedule-video.js：
+ *   · `fityun|11058641|34103272` —— 菲体云，存「取址」不存 URL
+ *     （腾讯云点播签名链接 1 小时过期，落库即死链）；
+ *   · `https://media.yqdicloud.com/....mp4` —— 魔方约课，公开且不过期，直接存 URL。
+ * ⚠ 长度按直链定：实测魔方约课一条 75 字符，VARCHAR(64) 装不下（MySQL 严格模式下
+ *    报 1406 Data too long），所以列宽是 512。别改小。
  */
+const VIDEO_REF_LEN = 512;
+
 const SCHEDULE_VIDEOREF_SQL = `
 ALTER TABLE \`Schedule\`
-  ADD COLUMN \`videoRef\` VARCHAR(64) NULL;
+  ADD COLUMN \`videoRef\` VARCHAR(${VIDEO_REF_LEN}) NULL;
+`;
+
+/**
+ * 存量库里 videoRef 已经建成了 VARCHAR(64)（20260929 那版），
+ * ⚠️ 光靠上面的 ADD COLUMN 分支变不宽 —— `columnExists` 只判断「有没有」，
+ *    列已经在了就直接跳过，新的宽度永远落不到线上，表现是魔方约课的视频
+ *    在详情页整块不出现（写入时被截断/报错，库里是 NULL）。
+ *    所以必须单独判一次宽度再 MODIFY。
+ */
+const SCHEDULE_VIDEOREF_WIDEN_SQL = `
+ALTER TABLE \`Schedule\`
+  MODIFY COLUMN \`videoRef\` VARCHAR(${VIDEO_REF_LEN}) NULL;
 `;
 
 /**
@@ -134,6 +153,23 @@ async function columnExists(table, column) {
     )
     .catch(() => [{ c: 1 }]);
   return Number(rows?.[0]?.c || 0) > 0;
+}
+
+/**
+ * 列的当前字符长度上限（VARCHAR 用 CHARACTER_MAXIMUM_LENGTH）。
+ * 查不到时返回 null —— 调用方据此跳过「加宽」，宁可不变也别乱 MODIFY。
+ */
+async function columnLength(table, column) {
+  const rows = await prisma
+    .$queryRawUnsafe(
+      `SELECT CHARACTER_MAXIMUM_LENGTH AS n FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      table,
+      column,
+    )
+    .catch(() => []);
+  const n = Number(rows?.[0]?.n);
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 async function indexExists(table, index) {
@@ -203,8 +239,15 @@ export async function ensureSchema() {
   if (!(await columnExists("Schedule", "bookedNum"))) {
     await run("Schedule.bookedNum", SCHEDULE_BOOKEDNUM_SQL);
   }
+  // videoRef 既要「没有就建」，也要「建窄了就加宽」——存量库是 VARCHAR(64)，
+  // 装不下魔方约课的 mp4 直链（75 字符）。详见上面的 WIDEN 注释。
   if (!(await columnExists("Schedule", "videoRef"))) {
     await run("Schedule.videoRef", SCHEDULE_VIDEOREF_SQL);
+  } else {
+    const len = await columnLength("Schedule", "videoRef");
+    if (len !== null && len < VIDEO_REF_LEN) {
+      await run("Schedule.videoRef widen", SCHEDULE_VIDEOREF_WIDEN_SQL);
+    }
   }
   if (!(await columnExists("Studio", "district"))) {
     await run("Studio.district", STUDIO_DISTRICT_SQL);

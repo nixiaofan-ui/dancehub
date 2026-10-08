@@ -2115,8 +2115,15 @@ async function crawlWithAutomator(config) {
  *     结论：窗口必须 ≥ 11 天，配置里取 14 天。按 7 天抓的后果是——
  *     在你「看见」远处那一块之前，页面会连续好几天显示这家店没课。
  *     判「这家店没课」同样要跨天采样，不能只看今天。
- * - ⛔ `previewPoster` 是 **.mp4 视频**直链（公开、不过期），不是封面图；
- *   本平台没有课程图片封面字段（只有教练头像 teacherInfoPhoto）→ 不写 _photoUrl。
+ * - ⭐ `previewPoster` 是**课程预告片**，不是封面图：每节课一条独立的 .mp4 直链
+ *   （2026-10-08 实测 32 节课 → 8 个 URL、0 复用），而且**公开且不过期**
+ *   （HEAD 实测 200 / video/mp4 / `Cache-Control: max-age=93312000` ≈ 3 年）。
+ *   → 可以直接落进 `Schedule.videoRef`，详情页 `<video>` 原生播，**不需要回源**。
+ *   这与菲体云（腾讯云点播签名 1 小时，只能存「取址」+ 按需回源）完全相反，
+ *   也正是 videoRef 从 VARCHAR(64) 放宽到 VARCHAR(512) 的直接原因（直链 75 字符）。
+ *   ⚠ 字段名叫 poster 却装视频：当封面塞进 _photoUrl 只会渲染成裂图。
+ *     故按扩展名分流 —— 是视频进 _videoRef，真是图片才进 _photoUrl
+ *     （该平台本没有课程图，若某个租户传了图，反倒白捡一个封面）。
  *
  * @param {object} config 抓取配置（含 config.mofang）
  * @param {Date} date 抓取起始日期
@@ -2201,6 +2208,17 @@ async function crawlWithMofang(config, date) {
         if (!courseName) continue;
         const limit = num(r.limitPeople) || 0;
         const usedNum = num(r.applyPeople);
+        // previewPoster 装的是课程预告片（.mp4 直链，公开且不过期，见函数头注释）。
+        // 字段名叫 poster，所以按扩展名分流，别因为名字里有 poster 就当图片用。
+        // ⚠ 两处都只认**绝对 URL**：videoRef / coursePicUrl 最终会原样交给小程序的
+        //   <video> / <image>，相对路径在那边没有 base 可拼，只会得到一块黑屏或裂图。
+        const media =
+          String(r.previewPoster || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)[0] || "";
+        const isVideo = MOFANG_VIDEO_RE.test(media); // 该正则自带 http(s):// 前缀锚
+        const isImageUrl = /^https?:\/\//i.test(media) && !isVideo;
         out.push({
           courseName,
           coach: String(r.teacherInfoName || "").trim(),
@@ -2217,11 +2235,10 @@ async function crawlWithMofang(config, date) {
           _lat: Number(store.latitude) || null,
           _lng: Number(store.longitude) || null,
           _difficulty: mapMofangDifficulty(r.difficult),
-          // ⛔ 不要给 _photoUrl：魔方约课唯一的海报字段 previewPoster 是 **.mp4 视频**直链，
-          //    当图片塞进去只会变成一张裂图。该平台没有课程图片封面（只有教练头像 teacherInfoPhoto）。
-          //    视频本身公开、不过期，但 Schedule.videoRef 是 VARCHAR(64) 装不下 URL，
-          //    要接得先扩列 → 记为后续可选项，不在本轮范围内。
-          _photoUrl: null,
+          // 视频进 _videoRef（落 Schedule.videoRef，详情页按需播）；
+          // 只有「确实是绝对 URL 的图片」才进 _photoUrl，脏值两边都不进。
+          _photoUrl: isImageUrl ? media : null,
+          _videoRef: isVideo ? media : null,
           _remark: String(r.cateName || "").trim() || null,
           _scheduleDate: normalizeDate(r.scheduleDate) || dateStr,
         });
@@ -2255,6 +2272,13 @@ async function resolveMofangTenant(baseUrl, appId) {
   mofangTenantCache.set(appId, tenantId);
   return tenantId;
 }
+
+/**
+ * 判断 previewPoster 里那条 URL 是不是视频。
+ * ⚠ 必须带协议前缀一起校验：上游「没有预告片」时给的是空串而不是 null，
+ *   只测扩展名会把 undefined/相对路径也算成视频。
+ */
+const MOFANG_VIDEO_RE = /^https?:\/\/\S+\.(mp4|mov|m4v|webm)(\?\S*)?$/i;
 
 /**
  * 魔方约课的难度是数字（实测只出现 0/2/4，0 = 店家没设）。

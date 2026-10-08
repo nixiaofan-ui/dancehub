@@ -15,7 +15,7 @@ import {
   toDateKey,
 } from "../services/schedule.service.js";
 import { searchCourseVideo } from "../services/video.service.js";
-import { getFityunVideoUrl } from "../services/fityun-video.js";
+import { resolveScheduleVideoUrl } from "../services/schedule-video.js";
 
 const router = Router();
 
@@ -69,9 +69,10 @@ router.get(
     if (!schedule) return fail(res, 404, "课程不存在");
     if (!schedule.videoRef) return ok(res, { scheduleId: schedule.id, url: "" });
 
-    // 上游给的是腾讯云点播签名链接（1 小时过期），这里每 50 分钟才回源一次；
+    // videoRef 有两形态：菲体云的「取址」（签名 1 小时，要回源换新）与魔方约课
+    // 给的**永久公开直链**（直接用）。分派逻辑与理由见 services/schedule-video.js。
     // 取不到就返回空串，前端把「课程预告」整块藏掉，不影响约课。
-    const url = await getFityunVideoUrl(schedule.videoRef);
+    const url = await resolveScheduleVideoUrl(schedule.videoRef);
     ok(res, { scheduleId: schedule.id, url });
   }),
 );

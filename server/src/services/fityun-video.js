@@ -1,6 +1,10 @@
 /**
  * 菲体云「课程预告视频」按需回源。
  *
+ * ⚠ 这是 `Schedule.videoRef` 的**其中一种**形态（`fityun|机构ID|排课ID` 这种「取址」）。
+ *   另一种是上游直接给的永久直链（魔方约课），不需要回源。
+ *   调用方请走 services/schedule-video.js 的分派，别直接调本文件的函数。
+ *
  * 背景（2026-09-29 逆向确认）：菲体云的课表接口只在有预告视频的课上打
  * `has_video = 1`，**不带地址**；真正的播放地址要另打
  * `GET /tuancourse/scheduleappointinfo?scheduleid=<排课ID>`（请求头只要 orgid，

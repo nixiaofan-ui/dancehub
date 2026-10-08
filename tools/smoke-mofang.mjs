@@ -9,7 +9,9 @@
  *   ⚠ tenantId 必须走 **query**；放进 header 会被服务端以 500 挡掉（"数据错误"）。
  *   ⚠ `applyPeople` 是**已约**、`limitPeople` 是**容量** —— 和菲体云/styd 同向，
  *     和 iWOD 的 `remain`（已约/总）完全不同向，写反了整页人数都是错的。
- *   ⚠ `previewPoster` 是 **.mp4 视频**不是封面图 → 绝不能进 _photoUrl，否则每张卡都是裂图。
+ *   ⚠ `previewPoster` 字段名叫 poster，装的却是**课程预告片**（.mp4 直链，公开不过期）。
+ *     它既不能当封面塞进 _photoUrl（每张卡都是裂图），也不该因为名字里有 poster 就丢掉 ——
+ *     只有按扩展名分流（视频 → _videoRef、图片 → _photoUrl）才对。
  * 这几条都只在「跑起来」时才暴露，肉眼 review 看不出来，所以按行为断言。
  */
 import { register } from "node:module";
@@ -105,7 +107,8 @@ const ROWS = [
     applyPeople: 13,
     difficult: 0,
     status: "3",
-    previewPoster: null,
+    // 反向情形：字段名一样，但上游这次给的是真图片 → 该当封面（该平台本没有课程图）
+    previewPoster: "https://media.yqdicloud.com/2026/10/07/b7d85fdb3b2a45ea9c51b331959aeecb.jpg",
   },
   // ④ 教练头像是上游的默认占位图 → 必须当「没有」（否则每张卡都是同一张灰脸）
   {
@@ -122,7 +125,8 @@ const ROWS = [
     applyPeople: 5,
     difficult: 8,
     status: "3",
-    previewPoster: null,
+    // 脏数据：相对路径，既不是可播的视频也不是可渲染的封面 → 两处都必须丢掉
+    previewPoster: "/static/upload/poster.png",
   },
   // ⑤ 没有容量、也没有已约（上游字段缺失）→ capacity "" / bookedNum 必须是 null 而不是 0
   {
@@ -239,6 +243,12 @@ const byName = (n) => rows.find((r) => r.courseName === n);
   check("① 难度 4 → INTERMEDIATE", r._difficulty, "INTERMEDIATE");
   check("① 场地 '-' 归一成空", r._roomName, "");
   check("⛔ ① previewPoster 是 .mp4 → 不得进 _photoUrl", r._photoUrl, null);
+  check(
+    "⭐ ① 但 mp4 要进 _videoRef（课程预告视频，公开不过期，可直接落库）",
+    r._videoRef,
+    "https://media.yqdicloud.com/2026/10/07/aedc83a8e21c4e57948eba9e8f1369cc.mp4",
+  );
+  check("① 预告直链长度 > VARCHAR(64) —— 这就是要加宽列的原因", r._videoRef.length > 64, true);
   check("① 教练头像保留", r._coachAvatar, "https://media.yqdicloud.com/2026/08/27/a68d49dff94242e5bc58a35088a0d2ef.JPG");
   check("① 门店名用配置里的（单店）", r._studioName, "11A DANCE·保利中心店（武侯）");
   check("① 排课日用上游 scheduleDate", r._scheduleDate, "2026-10-08");
@@ -252,16 +262,25 @@ const byName = (n) => rows.find((r) => r.courseName === n);
   check("② 已约 25", r._bookedNum, 25);
   check("② 难度 2 → BEGINNER", r._difficulty, "BEGINNER");
   check("② 场地保留", r._roomName, "大教室");
+  check("② 上游没给海报 → 封面/视频都空", [r._photoUrl, r._videoRef], [null, null]);
 }
 
-// ③ 课名清洗
+// ③ 课名清洗 + 同一个字段给了图片时的反向分流
 check("③ 课名首尾的 '.' 被洗掉", byName("SWAG") !== undefined, true);
 check("③ 难度 0（店家没设）→ 不标", byName("SWAG")._difficulty, null);
 check("③ 已约 13", byName("SWAG")._bookedNum, 13);
+check(
+  "⭐ ③ previewPoster 给的是图片 → 当封面落 _photoUrl",
+  byName("SWAG")._photoUrl,
+  "https://media.yqdicloud.com/2026/10/07/b7d85fdb3b2a45ea9c51b331959aeecb.jpg",
+);
+check("③ 图片不得混进 _videoRef", byName("SWAG")._videoRef, null);
 
-// ④ 占位头像
+// ④ 占位头像 + 脏数据海报
 check("④ 上游默认占位头像 → 当没有", byName("HIPHOP")._coachAvatar, null);
 check("④ 难度 8 → ADVANCED", byName("HIPHOP")._difficulty, "ADVANCED");
+check("④ 相对路径海报 → 不当封面", byName("HIPHOP")._photoUrl, null);
+check("④ 相对路径海报 → 也不当视频（否则 <video> 会去加载一个 404）", byName("HIPHOP")._videoRef, null);
 
 // ⑤ 字段缺失
 {
@@ -270,6 +289,7 @@ check("④ 难度 8 → ADVANCED", byName("HIPHOP")._difficulty, "ADVANCED");
   check("⑤ 没有已约 → bookedNum 是 null 不是 0", r._bookedNum, null);
   check("⑤ status 仍给可预约", r.status, "可预约");
   check("⑤ 没有头像 → null", r._coachAvatar, null);
+  check("⑤ 连 previewPoster 字段都没有 → 两处都 null（不是 undefined）", [r._photoUrl, r._videoRef], [null, null]);
 }
 
 // 门店档案
@@ -363,7 +383,30 @@ check("课表 5 条", scheds.length, 5);
   check("已满课：开始时间是北京 18:30", jazz.startTime.toISOString().slice(11, 16), "10:30");
   const urban = scheds.find((s) => s.courseName === "URBAN");
   check("没给已约人数的课：存 null 不是 0", urban.bookedNum, null);
-  check("⛔ 全表课程封面都是 null（mp4 没混进来）", scheds.every((s) => s.coursePicUrl === null), true);
+  check(
+    "⛔ 没有任何 mp4 混进 coursePicUrl（封面列只放图片）",
+    scheds.every((s) => !/\.(mp4|mov|webm)/i.test(String(s.coursePicUrl || ""))),
+    true,
+  );
+  check(
+    "⛔ 相对路径的脏海报两边都没进库",
+    [
+      scheds.find((s) => s.courseName === "HIPHOP").coursePicUrl,
+      scheds.find((s) => s.courseName === "HIPHOP").videoRef,
+    ],
+    [null, null],
+  );
+  check(
+    "图片海报进了 coursePicUrl（该平台本无课程图，白捡一张）",
+    scheds.find((s) => s.courseName === "SWAG").coursePicUrl,
+    "https://media.yqdicloud.com/2026/10/07/b7d85fdb3b2a45ea9c51b331959aeecb.jpg",
+  );
+  check(
+    "⭐ 预告视频直链入库：videoRef 直接存 URL（公开不过期，无需回源）",
+    scheds.find((s) => s.courseName === "CHOREO").videoRef,
+    "https://media.yqdicloud.com/2026/10/07/aedc83a8e21c4e57948eba9e8f1369cc.mp4",
+  );
+  check("5 节课里只有 1 节带预告视频", scheds.filter((s) => s.videoRef).length, 1);
 }
 
 const coaches = await prisma.coach.findMany();
