@@ -119,6 +119,44 @@
     "timeFormat": "HH:mm-HH:mm"
   },
   {
+    "id": "styd-dongzhe",
+    "enabled": true,
+    "label": "东者舞馆",
+    "studio": { "name": "东者舞馆", "city": "成都", "region": "CN" },
+    "mode": "styd",
+    "styd": {
+      "baseUrl": "https://stmember.styd.cn",
+      "brandCode": "a2Lzbb2QPQR",
+      "brandId": "2152014084112903",
+      "shops": [
+        {
+          "id": "2151702883578497",
+          "name": "东者舞馆·招商大魔方店（武侯）",
+          "city": "成都",
+          "address": "四川省成都市武侯区招商大魔方A馆4楼4001号",
+          "lat": 30.57554,
+          "lng": 104.07053
+        },
+        {
+          "id": "3691453021231028",
+          "name": "东者舞馆·光环店（锦江）",
+          "city": "成都",
+          "address": "四川省成都市锦江区沙河街道东大街东大路段333号成都光环购物公园B馆2号门2楼1号"
+        }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm",
+    "_meta": {
+      "platformName": "STYD",
+      "note": "2026-10-09 接入。来源：老板在 Mac 微信打开过「东者舞馆」小程序 → capture/peek_app.py 解包拿到 ext.brand_code=a2Lzbb2QPQR（styd 这套只有 brand_code 是钥匙，且必须走 HTTP 头 app-id/brand-code/shop-id）。门店与课表都用 brand_code 免登录拉到，课表带 reserve_max/reserved_num（已约数）。⚠ 只有「招商大魔方店」有坐标：styd 唯一给 lat/lng 的接口是 /v1/shop/default，而它**只认品牌默认门店，传 shop-id 头也一样** —— 光环店因此没有坐标（宁可空着也不猜，距离排序里它会排在有坐标的后面）。地址两家都是上游门店档案原文，区名靠 lib/fill-district.js 从地址抽。"
+    }
+  },
+  {
     "id": "styd-jiutiaojie",
     "enabled": true,
     "label": "九條街 舞蹈室",
