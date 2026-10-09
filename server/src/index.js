@@ -6,6 +6,7 @@ import { startCrawlScheduler, probeOutbound, maybeDedupeStudios } from "./crawle
 import { maybeDedupeSchedules } from "./lib/dedupe-schedules.js";
 import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
+import { renameStudios } from "./lib/rename-studios.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
 import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
 import { ensureManualStores } from "./lib/ensure-manual-stores.js";
@@ -39,6 +40,16 @@ app.listen(port, "0.0.0.0", () => {
   // 没有它线上就会一直缺表。失败只 warn，不让整个服务起不来。
   ensureSchema()
     .catch((err) => console.warn(`[dancehub] ensure-schema 失败: ${err.message}`))
+    // 门店改名自愈（幂等）：配置里的 studio.name 改了、库里还是旧名时，
+    // importer 认不出同一家店，下一轮抓取会再建一条（课表分叉成两条记录）。
+    // ⚠ 必须紧跟 ensureSchema、排在整条链的**最前面**：后面的 calibrate/ensure*
+    //   会打网络请求、可能要跑几十秒，而抓取调度器 10 秒后就 tick 了 ——
+    //   改名赶不上第一轮抓取就又会产生一条空壳店。
+    .then(() =>
+      renameStudios({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 门店改名失败: ${err.message}`)
+      )
+    )
     // G-STEPS 分店城市校准（幂等）：早期把上海分店挂到了北京名下。
     // 挂在启动流程里是因为云端库没法从本机改，为了跑一次校准去开云库公网不划算。
     .then(() =>

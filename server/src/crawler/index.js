@@ -24,6 +24,7 @@ import { crawl } from "./engine.js";
 import { importSchedules } from "./importer.js";
 import { dedupeStudios } from "../lib/dedupe-studios.js";
 import { maybeDedupeSchedules } from "../lib/dedupe-schedules.js";
+import { renameStudios } from "../lib/rename-studios.js";
 import { ensureAddress } from "../lib/fill-address.js";
 import { ensureLatLng } from "../lib/fill-latlng.js";
 import { ensureDistrict } from "../lib/fill-district.js";
@@ -407,6 +408,13 @@ export function fillStudioMeta(reason = "tick") {
 }
 
 async function tick(reason = "heartbeat") {
+  // 改名必须早于抓取：配置里改了 studio.name 而库里还是旧名时，
+  // importer 的「同名 → 归一化同名」两档都命中不了 → 同一家店会被再建一条，
+  // 课表分叉到两条记录上（用户看到两家同名门店，其中一条从此不再更新）。
+  // 启动流程（src/index.js）也会喊一次，这里是「抓取前必达」的保险 ——
+  // 两个调用点共享同一个「本进程只跑一次」标记，稳态下一次库查询就返回。
+  await renameStudios({ log: (m) => console.log(m) });
+
   // 先自愈「同一家店被插了两条」再去抓：抓取时若两家同名门店都在库里，
   // 课程会分叉到两条记录上，用户看到的课表就是两家的并集（多出来的课约不到）
   await maybeDedupeStudios(reason);

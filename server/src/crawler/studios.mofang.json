@@ -5,7 +5,8 @@
     "label": "11A DANCE",
     "auto": true,
     "studio": {
-      "name": "11A DANCE·保利中心店（武侯）",
+      "name": "11A DANCE",
+      "legacyNames": ["11A DANCE·保利中心店（武侯）"],
       "city": "成都",
       "region": "CN",
       "platform": "WECHAT",
@@ -28,7 +29,7 @@
     "_meta": {
       "platformName": "MOFANG",
       "storeId": "1894594512250070597",
-      "note": "魔方约课（saas.yqdicloud.com）。⚠ 小程序提示「只有正式会员可以查看课表」是**前端墙**，接口免登录（实测未登录拿到全部课程 + 真实已约人数）。tenantId 由 appId 换（/system/client/getAppParams），这里写死避免每轮多一次请求；课表 /dance/home/list 的参数名是 time（不是 date），tenantId 走 query（进 header 会 500）。窗口取 14 天（其他平台 7 天）：接口只返回「今天及以后」，且排课成块发布、可甩到 11 天以外（09-30 实测就能看到 10-08~10-11），按 7 天抓会连续好几天漏掉那一块。⚠ previewPoster 是 .mp4 视频不是封面图：按扩展名分流，视频进 Schedule.videoRef（字段名叫 poster 但装的是课程预告片），真是图片才进 _photoUrl。它的直链公开且不过期（HEAD 实测 Cache-Control ≈ 3 年），可直接落库、不用回源 —— 这正是 videoRef 从 VARCHAR(64) 放宽到 VARCHAR(512) 的原因（直链 75 字符）。"
+      "note": "魔方约课（saas.yqdicloud.com）。⚠ 小程序提示「只有正式会员可以查看课表」是**前端墙**，接口免登录（实测未登录拿到全部课程 + 真实已约人数）。tenantId 由 appId 换（/system/client/getAppParams），这里写死避免每轮多一次请求；课表 /dance/home/list 的参数名是 time（不是 date），tenantId 走 query（进 header 会 500）。窗口取 14 天（其他平台 7 天）：接口只返回「今天及以后」，且排课成块发布、可甩到 11 天以外（09-30 实测就能看到 10-08~10-11），按 7 天抓会连续好几天漏掉那一块。⚠ previewPoster 是 .mp4 视频不是封面图：按扩展名分流，视频进 Schedule.videoRef（字段名叫 poster 但装的是课程预告片），真是图片才进 _photoUrl。它的直链公开且不过期（HEAD 实测 Cache-Control ≈ 3 年），可直接落库、不用回源 —— 这正是 videoRef 从 VARCHAR(64) 放宽到 VARCHAR(512) 的原因（直链 75 字符）。⭐ 店名从「11A DANCE·保利中心店（武侯）」改成「11A DANCE」：成都在营只有这一家，分店名是纯噪音（地址里已经写着保利中心东区C座），而且显示层会按「·」拆品牌 —— 品牌名整个会变成「11A DANCE·保利中心店」。⚠ legacyNames 是给 lib/rename-studios.js 的自愈线索（启动时把库里那条旧名记录改成新名），**改名字必须连库一起改**，删掉 legacyNames 而库里还是旧名的话，下一轮抓取认不出同一家店，会在库里再建一条空壳。"
     }
   }
 ]
