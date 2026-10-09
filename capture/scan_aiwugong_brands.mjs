@@ -27,6 +27,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+// 城市从地址抽的规则必须与服务端**共用同一份实现**（两边各写一份、只要差一点，
+// 生成出来的配置和服务端校正结果就会不一致，而且肉眼看不出来）。
+import { cityFromAddress } from "../server/src/lib/city-names.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -118,7 +121,10 @@ async function fetchBrand(id) {
       slogan: (b.slogan || "").trim(),
       address: (b.address || "").trim(),
       city: b.city,
-      cityName: cityOf(b.city),
+      // 城市：**优先从门店地址抽**。「爱舞功开发版」注册地在北京、门店地址在
+      // 广州市荔湾区，只认 `b.city`（注册地的行政区划码）会让整条链的店都标成
+      // 北京 —— 用户按「广州」搜不到，按「北京」点进去是家广州的店。
+      cityName: cityFromAddress(b.address) || cityOf(b.city),
       synopsis: (b.synopsis || "").trim(),
       show: Number(b.notlogin_isshowcourse) === 1,
       status: b.status,

@@ -99,16 +99,20 @@ function matches(row, where = {}) {
       if (got !== null) return false;
       continue;
     }
-    if (k === "scheduleDate") {
-      if (dayKey(got) !== dayKey(v)) return false;
-      continue;
-    }
     if (Array.isArray(v)) {
       if (!v.includes(got)) return false;
       continue;
     }
+    // ⚠ 操作符对象（in / gte / lte / not / none…）必须**先于**下面的标量分支判断。
+    //   早先把 `k === "scheduleDate"` 放前面，于是 `scheduleDate: { in: [...] }`
+    //   会走 `dayKey({in:[…]})` → Invalid Date → null → 永远不等 → 一行都匹配不上。
+    //   表现是「静默返回空」，比抛错更难发现：pruneVanished 于是从来没被真正测过。
     if (typeof v === "object") {
       if (!matchOperator(row, k, got, v)) return false;
+      continue;
+    }
+    if (k === "scheduleDate") {
+      if (dayKey(got) !== dayKey(v)) return false;
       continue;
     }
     if (got !== v) return false;

@@ -8,6 +8,8 @@ import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
 import { renameStudios } from "./lib/rename-studios.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
+import { calibrateStudioCity } from "./lib/calibrate-studio-city.js";
+import { retireStudios } from "./lib/retire-studios.js";
 import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
 import { ensureManualStores } from "./lib/ensure-manual-stores.js";
 import { fixStudioDistrictNames } from "./lib/fix-district-name.js";
@@ -101,6 +103,16 @@ app.listen(port, "0.0.0.0", () => {
         console.warn(`[dancehub] 行政区回填失败: ${err.message}`)
       )
     )
+    // 城市校正（幂等）：库里有店挂在错城市下 —— 生成器用坐标框判城市，广州的框把
+    // 佛山整个包住（「DT舞蹈禅城店」标成了广州）；爱舞功用品牌注册地的行政区码
+    // （「爱舞功开发版」注册北京、门店在广州）。判据取**地址里写明的城市名**。
+    // ⚠ 必须排在 ensureDistrict 之前：区名候选表按城市限定（district-names.json
+    //   是 {城市:[区名]}），城市错了区名必然跟着错。
+    .then(() =>
+      calibrateStudioCity({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 门店城市校正失败: ${err.message}`)
+      )
+    )
     // 重复门店自愈（幂等）：同一个抓取目标被两份配置/两个实例各建了一条门店，
     // 用户会在对比页看到「两家同名门店」，课表是两个库的并集（多出来的课约不到）。
     // 2026-09-29 南京 D-DAY 舞蹈 就是这么被老板发现的 —— 云端库没法从本机改，
@@ -118,6 +130,14 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       maybeDedupeSchedules("startup").catch((err) =>
         console.warn(`[dancehub] 重复课表自愈失败: ${err.message}`)
+      )
+    )
+    // 停抓门店退休（幂等）：配置里标了 `retired: true` 的门店置为不可见并清未来课。
+    // 这类店不在抓取队列里，pruneVanished 永远覆盖不到（澜·锦序上游 14 天全空、
+    // 库里旧课却一直在），必须主动清。
+    .then(() =>
+      retireStudios({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 停抓门店退休失败: ${err.message}`)
       )
     );
 

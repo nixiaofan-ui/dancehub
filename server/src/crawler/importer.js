@@ -351,16 +351,28 @@ function fingerprint(studioId, scheduleDate, courseName, startTime, coachId = nu
  * 9/29 12:00 这个时段：上游只有 1 节课，我们库里挤了 6 节 —— 用户点进去看课表，
  * 多出来那 5 节在官方的约课系统里根本约不到，比没接还糟。
  *
- * 判定范围严格收窄，只动「本轮确实抓到过课的 门店+日期」：
- *   - 本轮该门店该日期一节课都没抓到 → 整组跳过（接口抽风返回空时不会清库）
+ * 判定范围以**本轮抓取窗口**为界（`windowDays`），而不是「本轮抓到过课的日期」：
+ *   - 门店本轮**一天都没抓到课** → 整个不动（接口抽风/平台停摆时不能清库）
+ *   - 门店本轮**至少有一天**抓到课 → 说明该门店的接口是活的，于是窗口内
+ *     「空返回的那几天」也算明确信号，照常清理
+ *
+ * ⚠ 为什么第二档必须存在：菲体云、嘉禾这类平台是「成块发布」的 —— 课表提前一周
+ *   才排出来，今天看未来三天可能就是空的。老逻辑只清「抓到课的门店+日期」，于是
+ *   上游把已发布的课撤回去（重新排课）时，我们库里那几天的旧课**永远不会被清**
+ *   （1758DanceStudio 亮马店、澜·锦序都是这么留下滞留课的）。
+ *
+ * 其余保护不变：
  *   - 用户手录的课（ownerId 非空）→ 永远不碰
  *   - 有预约 / 有提醒的课 → 保留（删了会连带删掉用户自己的记录）
- *   - 骤减保护：库里有 8 节以上而本轮只抓到不足三成 → 疑似平台改版/分页没翻完，
- *     跳过并告警，宁可留脏数据也不做批量误删
+ *   - 骤减保护：只在该天**本轮确实抓到过课**时才判 —— 「库里 8 节以上、本轮只活下
+ *     不足三成」疑似平台改版/分页没翻完，跳过并告警。该天完全空返回属于明确信号，
+ *     不走这条保护（否则「整组空返回」永远清不掉，这正是本次要修的病）。
  *
+ * @param {Set<string>} seen 本轮抓到的课程指纹
+ * @param {Date[]|string[]} [windowDays] 本轮抓取覆盖的日期；不传则退回老行为
  * @returns {Promise<{ pruned: number, groups: number, skippedGroups: string[] }>}
  */
-async function pruneVanished(seen) {
+export async function pruneVanished(seen, windowDays) {
   // 应急开关：CRAWL_PRUNE=0 可整体关掉清理（默认开）。
   // 万一某个平台的接口悄悄改了分页/字段，导致抓到的课骤减，不用回滚代码就能先止血。
   if (String(process.env.CRAWL_PRUNE ?? "1") === "0") {
@@ -368,20 +380,30 @@ async function pruneVanished(seen) {
   }
 
   // 门店 → 本轮抓到过课的日期集合
-  const byStudio = new Map();
+  const hitDaysByStudio = new Map();
   for (const key of seen.keys()) {
     const [sid, day] = key.split("|");
-    if (!byStudio.has(sid)) byStudio.set(sid, new Set());
-    byStudio.get(sid).add(day);
+    if (!hitDaysByStudio.has(sid)) hitDaysByStudio.set(sid, new Set());
+    hitDaysByStudio.get(sid).add(day);
   }
+
+  // 本轮窗口（日期串）。传了就按窗口清（含「空返回」的天），没传退回老行为。
+  const windowList = Array.isArray(windowDays)
+    ? windowDays.map((d) =>
+        typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10),
+      )
+    : null;
 
   let pruned = 0;
   let groups = 0;
   const skippedGroups = [];
 
-  for (const [sid, days] of byStudio) {
+  // ⚠ 只遍历「本轮至少抓到过一天课」的门店 —— 一天都没抓到的门店整组不动
+  //   （接口抽风/平台停摆时不会把库清空）
+  for (const [sid, hitDays] of hitDaysByStudio) {
     const studioId = Number(sid);
-    const dates = [...days].map((d) => new Date(`${d}T00:00:00Z`));
+    const days = windowList ? [...new Set([...windowList, ...hitDays])] : [...hitDays];
+    const dates = days.map((d) => new Date(`${d}T00:00:00Z`));
     const existing = await prisma.schedule.findMany({
       where: { studioId, ownerId: null, scheduleDate: { in: dates } },
       select: { id: true, courseName: true, scheduleDate: true, startTime: true, coachId: true },
@@ -399,7 +421,10 @@ async function pruneVanished(seen) {
       );
       const stale = sameDay.filter((e) => !kept.includes(e));
       if (!stale.length) continue;
-      if (sameDay.length >= 8 && kept.length < sameDay.length * 0.3) {
+      // 骤减保护只对「该天本轮确实抓到过课」的天生效 —— 那是「抓到但骤减」，
+      // 疑似平台改版/分页没翻完。该天完全空返回是明确信号，不走这条保护，
+      // 否则「上游把课撤回去」这种情况永远清不掉。
+      if (hitDays.has(day) && sameDay.length >= 8 && kept.length < sameDay.length * 0.3) {
         skippedGroups.push(`${studioId}@${day} 库里${sameDay.length}节仅存活${kept.length}节`);
         continue;
       }
@@ -429,9 +454,12 @@ async function pruneVanished(seen) {
  * 批量导入
  * @param config 抓取配置（含 studio 引用）
  * @param rows 原始条目，每条需带 _date（Date 类型）；可带 _studioName 覆盖默认 studio
+ * @param ensureStudios 只要建店、不排课的门店清单
+ * @param {{ windowDays?: (Date|string)[] }} [opts] windowDays = 本轮抓取覆盖的日期，
+ *        交给 pruneVanished 判断「窗口内空返回的天」要不要算作上游已撤课
  * @returns {{ studios, created, updated, skipped, total, pruned }} 汇总（多门店时按门店细分）
  */
-export async function importSchedules(config, rows, ensureStudios = []) {
+export async function importSchedules(config, rows, ensureStudios = [], opts = {}) {
   /**
    * 建店用的档案。⚠ address 是**配置顶层**字段，不在 config.studio 里 ——
    * 早期只展开 config.studio（name/city/region），于是配置里那 1100 条真地址
@@ -555,7 +583,7 @@ export async function importSchedules(config, rows, ensureStudios = []) {
   }
 
   // 先按「本轮看到的课」清理幽灵课，再失效时间轴缓存（顺序反了会把旧数据缓存进去）
-  const prune = await pruneVanished(seen);
+  const prune = await pruneVanished(seen, opts.windowDays);
 
   await invalidateTimelineCache();
   return {

@@ -25,6 +25,8 @@ import { importSchedules } from "./importer.js";
 import { dedupeStudios } from "../lib/dedupe-studios.js";
 import { maybeDedupeSchedules } from "../lib/dedupe-schedules.js";
 import { renameStudios } from "../lib/rename-studios.js";
+import { maybeCalibrateStudioCity } from "../lib/calibrate-studio-city.js";
+import { maybeRetireStudios } from "../lib/retire-studios.js";
 import { ensureAddress } from "../lib/fill-address.js";
 import { ensureLatLng } from "../lib/fill-latlng.js";
 import { ensureDistrict } from "../lib/fill-district.js";
@@ -190,7 +192,7 @@ export async function runCrawl(configId, { dryRun = false } = {}) {
     }
     const report = dryRun
       ? { dryRun: true, total: rows.length, rows: rows.map((r) => ({ ...r, _date: r._date.toISOString().slice(0, 10) })) }
-      : await importSchedules(config, rows, ensureStudios);
+      : await importSchedules(config, rows, ensureStudios, { windowDays: loopDates });
 
     statusMap.set(configId, { state: "done", lastRunAt: startedAt, report, error: null });
     entry.lastSuccessAt = new Date().toISOString();
@@ -308,6 +310,8 @@ export async function maybeHotRefresh() {
         const raw = await crawl(config, date);
         rows.push(...raw.map((r) => ({ ...r, _date: date })));
       }
+      // ⚠ 热刷新**不传 windowDays**：它只抓今天+明天、20 分钟一轮，一旦接口
+      //   抖动就会高频误清「明天」。清理职责归 6h 一轮的常规抓取（窗口 7 天）。
       const report = await importSchedules(config, rows);
       hotRefreshed.set(id, Date.now());
       console.log(`[crawler] 热刷新 ${id}：${report.total} 条`);
@@ -414,6 +418,15 @@ async function tick(reason = "heartbeat") {
   // 启动流程（src/index.js）也会喊一次，这里是「抓取前必达」的保险 ——
   // 两个调用点共享同一个「本进程只跑一次」标记，稳态下一次库查询就返回。
   await renameStudios({ log: (m) => console.log(m) });
+
+  // 城市校正（幂等，6h 节流）：库里若还挂着错城市的店，importer 认店走的
+  // 「同城 + 归一化同名」兜底会查错城市 → 找不到 → 又建一条空壳店。
+  // 排在 rename 之后、抓取之前，和上面那条是同一类「抓取前必达」的元数据自愈。
+  await maybeCalibrateStudioCity(reason);
+
+  // 停抓门店退休（幂等，6h 节流）：上游已死/主动停接的门店置为不可见并清未来课。
+  // 这类门店不在抓取队列里，pruneVanished 永远覆盖不到它 —— 不主动清就是永久幽灵。
+  await maybeRetireStudios(reason);
 
   // 先自愈「同一家店被插了两条」再去抓：抓取时若两家同名门店都在库里，
   // 课程会分叉到两条记录上，用户看到的课表就是两家的并集（多出来的课约不到）

@@ -3747,7 +3747,7 @@
     "auto": true,
     "studio": {
       "name": "圣捷分店",
-      "city": "北京",
+      "city": "天津",
       "region": "CN"
     },
     "mode": "fityun",
@@ -3904,7 +3904,7 @@
     "auto": true,
     "studio": {
       "name": "DT舞蹈禅城店",
-      "city": "广州",
+      "city": "佛山",
       "region": "CN"
     },
     "mode": "fityun",
@@ -4671,7 +4671,7 @@
     "auto": true,
     "studio": {
       "name": "超节拍高明校区",
-      "city": "广州",
+      "city": "佛山",
       "region": "CN"
     },
     "mode": "fityun",
@@ -6876,7 +6876,7 @@
     "auto": true,
     "studio": {
       "name": "D+ DANCE STUDIO",
-      "city": "深圳",
+      "city": "珠海",
       "region": "CN"
     },
     "mode": "fityun",
@@ -7874,7 +7874,7 @@
     "auto": true,
     "studio": {
       "name": "索那木坚嘻哈潮流文化",
-      "city": "深圳",
+      "city": "拉萨",
       "region": "CN"
     },
     "mode": "fityun",
@@ -8967,7 +8967,7 @@
     "auto": true,
     "studio": {
       "name": "超节拍绿岛湖店",
-      "city": "广州",
+      "city": "佛山",
       "region": "CN"
     },
     "mode": "fityun",
@@ -9199,7 +9199,7 @@
     "auto": true,
     "studio": {
       "name": "苏苏舞室（北辰店）",
-      "city": "南京",
+      "city": "天津",
       "region": "CN"
     },
     "mode": "fityun",
@@ -9228,7 +9228,7 @@
     "auto": true,
     "studio": {
       "name": "超节拍里水店",
-      "city": "广州",
+      "city": "佛山",
       "region": "CN"
     },
     "mode": "fityun",
@@ -9489,7 +9489,7 @@
     "auto": true,
     "studio": {
       "name": "Ｃ-5舞蹈深圳总店",
-      "city": "广州",
+      "city": "深圳",
       "region": "CN"
     },
     "mode": "fityun",
@@ -9692,7 +9692,7 @@
     "auto": true,
     "studio": {
       "name": "MR.LZ DANCE",
-      "city": "广州",
+      "city": "深圳",
       "region": "CN"
     },
     "mode": "fityun",
@@ -9861,12 +9861,13 @@
   },
   {
     "id": "fityun-11057041",
-    "enabled": true,
+    "enabled": false,
+    "retired": true,
     "label": "澜·锦序",
     "auto": true,
     "studio": {
       "name": "澜·锦序",
-      "city": "北京",
+      "city": "银川",
       "region": "CN"
     },
     "mode": "fityun",
@@ -10628,7 +10629,7 @@
     "auto": true,
     "studio": {
       "name": "ADS街舞工作室",
-      "city": "广州",
+      "city": "佛山",
       "region": "CN"
     },
     "mode": "fityun",
