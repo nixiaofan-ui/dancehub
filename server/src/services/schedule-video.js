@@ -13,7 +13,12 @@
  *      上游直接给公开、不过期的 mp4（HEAD 实测 `Cache-Control: max-age=93312000`
  *      ≈ 3 年），没有签名也没有过期，**直接落库即可，不存在回源问题**。
  *
- * 两者对前端是同一件事：拿到一个能塞进 `<video src>` 的字符串，拿不到就是空串。
+ *   3. **取址**（形如 `iwod|<appId>|<boxId>|<classId>`）—— iWOD。
+ *      课表接口里根本没有预告信息，要另打 `/class/getClassDetail` 取 `videos`
+ *      （免登录），且那个数组里**视频和照片混在一起**，得按 `isPhoto` + 扩展名挑。
+ *      见 iwod-video.js。
+ *
+ * 三者对前端是同一件事：拿到一个能塞进 `<video src>` 的字符串，拿不到就是空串。
  * 分派规则刻意用「看起来像 URL 就直接用」而不是维护平台白名单 ——
  * 以后再有平台给永久直链，不用回来改这里。
  *
@@ -21,6 +26,7 @@
  *   什么都可能出现，宽松匹配会把莫名其妙的值当成地址丢给 `<video>` 去报错。
  */
 import { getFityunVideoUrl } from "./fityun-video.js";
+import { getIwodVideoUrl } from "./iwod-video.js";
 
 const DIRECT_URL_RE = /^https?:\/\//i;
 
@@ -38,6 +44,7 @@ export async function resolveScheduleVideoUrl(videoRef) {
   const ref = String(videoRef || "").trim();
   if (!ref) return "";
   if (isDirectVideoUrl(ref)) return ref;
-  // 非直链一律当菲体云的取址处理；getFityunVideoUrl 自己会对不认识的前缀返回空串
+  // 两种「取址」按前缀分派；不认识的前缀一律返回空串（别拿脏值去打上游）
+  if (ref.startsWith("iwod|")) return getIwodVideoUrl(ref);
   return getFityunVideoUrl(ref);
 }

@@ -10,6 +10,7 @@ import { renameStudios } from "./lib/rename-studios.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
 import { calibrateStudioCity } from "./lib/calibrate-studio-city.js";
 import { retireStudios } from "./lib/retire-studios.js";
+import { clearDefaultCoursePic } from "./lib/clear-default-pic.js";
 import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
 import { ensureManualStores } from "./lib/ensure-manual-stores.js";
 import { fixStudioDistrictNames } from "./lib/fix-district-name.js";
@@ -138,6 +139,14 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       retireStudios({ log: (m) => console.log(m) }).catch((err) =>
         console.warn(`[dancehub] 停抓门店退休失败: ${err.message}`)
+      )
+    )
+    // 假封面清理（幂等）：iWOD 商家没传封面时上游回落给**平台通用底图**
+    // （cdn.iwod.cn/lessonbgfour.png），抓取侧已过滤新数据，但存量被
+    // keepOldOnMissing 保护着永远清不掉 —— 详情页「课程预告图」是张通用素材。
+    .then(() =>
+      clearDefaultCoursePic({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 默认封面清理失败: ${err.message}`)
       )
     );
 

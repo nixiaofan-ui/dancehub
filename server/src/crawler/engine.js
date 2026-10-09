@@ -79,6 +79,14 @@ function stripBranchPrefix(name) {
 
 /* ───────────────────────── iWOD HTTP 抓取 ───────────────────────── */
 
+/**
+ * iWOD 的平台默认课程背景（不是课程照片）。
+ * 形如 `https://cdn.iwod.cn/lessonbgfour.png`、`lessonbgtwo.png` —— 平台内置的
+ * 几套通用课程卡片底图，商家没传封面时统一回落到这里。留着会让「课程预告图」
+ * 变成一张人人都一样的通用素材，比不显示更糟（用户会以为是这节课的照片）。
+ */
+const IWOD_DEFAULT_BG_RE = /\/lessonbg[a-z0-9]*\.(png|jpe?g|webp)$/i;
+
 /** 签名时排除的字段（与小程序端 app-service.js 逻辑一致） */
 const IWOD_SIGN_EXCLUDE = new Set(["pfx", "partner_key", "sign", "key"]);
 
@@ -173,7 +181,15 @@ async function crawlWithHttp(config, date) {
         status: c.newStatus || c.status || "",
         _bookedNum: bookedNum,
         // 课程封面图（iWOD 独有；CDN 有防盗链，小程序 image 天然带 Referer 可直连）
-        picUrl: c.pic || "",
+        // ⚠ 上游「没传封面」时给的是**平台通用背景模板**而不是空串
+        //   （`cdn.iwod.cn/lessonbgfour.png` / `lessonbgtwo.png` …），
+        //   实测同一天 15 节课里有 13 节是同一个 URL —— 展示它等于给每节课贴同一张
+        //   通用素材，用户会当成「这门课的照片」。一律过滤掉，宁可没有封面。
+        picUrl: IWOD_DEFAULT_BG_RE.test(String(c.pic || "")) ? "" : c.pic || "",
+        // ⭐ 课程预告视频的「取址」：iWOD 的课表接口**不带**预告信息，
+        //   要另打 /class/getClassDetail?classId=<本节课ID> 取 `videos`（免登录，
+        //   见 services/iwod-video.js）。这里只存「去哪儿取」，不存地址。
+        _videoRef: c.id ? `iwod|${appId}|${boxId}|${c.id}` : null,
         _studioName: fallbackName || (c.boxName || "").trim(),
         // 教室名（iWOD classroomName，如「大教室」），透传进 remark 供详情页展示
         _roomName: String(c.classroomName || c.classroom_name || "").trim(),
