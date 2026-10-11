@@ -41,7 +41,15 @@ router.get(
       probeOutbound(),
       Promise.resolve(getRuntimeMode()),
     ]);
-    ok(res, { ...outbound, mode });
+    // 顺带回一句「这个容器装了哪版配置」——排查「云端是不是还没切到新版本」时，
+    // 光看 status 里缺不缺某个 config 只能猜；这里直接给出总数 + 末尾几个 id，
+    // 和本地 listCrawlerConfigs() 一比就知道部署有没有落地（且不需要 admin token）。
+    const all = listCrawlerConfigs();
+    ok(res, {
+      ...outbound,
+      mode,
+      configs: { total: all.length, last: all.slice(-6).map((c) => c.id) },
+    });
   })
 );
 

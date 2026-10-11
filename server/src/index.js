@@ -3,6 +3,7 @@ import { createApp } from "./app.js";
 import { redis } from "./lib/redis.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
 import { startCrawlScheduler, probeOutbound, maybeDedupeStudios } from "./crawler/index.js";
+import { listCrawlerConfigs } from "./crawler/configs.js";
 import { maybeDedupeSchedules } from "./lib/dedupe-schedules.js";
 import { getRuntimeMode } from "./lib/runtime-mode.js";
 import { ensureSchema } from "./lib/ensure-schema.js";
@@ -38,6 +39,17 @@ app.listen(port, "0.0.0.0", () => {
     `[dancehub] NODE_ENV=${nodeEnv} CRAWL_MODE=${crawlMode}` +
       (skipReminder ? " SKIP_REMINDER" : "")
   );
+  // 把「这次部署到底带了哪些配置」写进启动日志：云端版本是否落后，是最常踩的坑，
+  // 而日志是唯一不依赖接口就能看到的事实（对照本地 listCrawlerConfigs() 即可）。
+  {
+    const all = listCrawlerConfigs();
+    console.log(
+      `[dancehub] 抓取配置 ${all.length} 个，最近 5 个: ${all
+        .slice(-5)
+        .map((c) => c.id)
+        .join(", ")}`
+    );
+  }
 
   // 补齐新增表（幂等 DDL）。容器不像本地那样跑 prisma migrate deploy，
   // 没有它线上就会一直缺表。失败只 warn，不让整个服务起不来。
