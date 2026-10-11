@@ -803,6 +803,297 @@ async function crawlWithQingcheng(config, date) {
   return out;
 }
 
+/* ─────────────── 随心瑜 / keepyoga（vcloud.keepyoga.com）抓取 ─────────────── */
+
+/**
+ * 带重试的 fetch。
+ *
+ * 为什么需要：随心瑜这类小型 SaaS 对「同一 IP 短时间内连打几十次」会直接不响应
+ * （一轮 nextDays:7 × 6 家馆 = 42 次 POST，实测撞到过 20s 超时）。
+ * 一次超时就让整轮抓取失败太脆，所以给一次退避重试；
+ * ⚠ signal 必须**每次重建** —— 复用同一个 AbortSignal 的话第二次会立刻 abort，
+ *   表现为「重试永远失败」，比不重试还难查。
+ */
+async function fetchWithRetry(url, init = {}, { retries = 1, backoffMs = 700, timeoutMs = 20000 } = {}) {
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    } catch (e) {
+      lastErr = e;
+      if (i < retries) await sleep(backoffMs * (i + 1));
+    }
+  }
+  throw lastErr;
+}
+
+/**
+ * 随心瑜（vcloud.keepyoga.com）—— 公众号/网页版预约 SaaS，**上海舞十八**在用。
+ *
+ * ⚠ 这是**公众号 H5 系统，没有小程序**。入口长这样：
+ *   https://vcloud.keepyoga.com/weixin/leagueSyllabus.php?brand_id=xxx&venue_id=N
+ *
+ * ⛔ API base 是 `https://vcloud.keepyoga.com`（**不带 /weixin**）。
+ *   页面在 /weixin/*.php，但页面里 APP.post 的相对路径 /course/api/xxx 直接挂在根上 ——
+ *   照着页面 URL 去拼 `/weixin/course/api/...` 会 404，很容易误判成「这平台没有接口」。
+ *
+ * - 课表（POST 表单）：`/course/api/wxccourselist`，参数 brand_id + venue_id + date_str
+ *     缺 brand_id → errno:32「品牌信息为空」；缺 venue_id → 「场馆信息为空」（拿它验参数）
+ *     页面源码里有 J_NotLoggedIn 分支，但**实测课表接口免登录返回全量**，别被分支名吓退
+ * - 场馆（POST 表单）：`/venue/api/wxcgetvenuebyidex` → data.venue{id,name,telephone,mobile}
+ *     ⚠ venue_id **不连续**（舞十八是 1/2/3/4/5/7，6 号不存在），接入前先扫 1..N 把有效场馆
+ *       捞全，别信商家口述的店名 —— 2026-10-11 老板口述的「虹口瑞虹坊/普陀中潭路」与接口
+ *       返回的「虹口友邦/普陀曹杨」对不上，以接口为准
+ *     ⛔ 场馆接口**不返回地址**（只有电话）→ 门店地址只能在配置里手写，拿不到就留空
+ * - 课程字段：course_name / coach_name 教练 / coach_avatar 教练头像 /
+ *     course_size 容量 / **occupied = 已约** / remain_num 剩余 / start + end "HH:mm" /
+ *     classroom 教室 / course_diff_level 难度 / status_desc
+ *
+ * ⚠⚠ **这家只发布「当天及以前」的课表**：`date_str` 传明天/后天一律 `list: []`
+ *   （2026-10-11 实测：当天 39 节，往后 6 天全空；返回里那个 stop_date=2027 是远期上限，
+ *   不代表有数据）。所以配置用 `days: 3` 而不是 7 —— 只抓今天既贵又接不住「提前放课」，
+ *   3 天是个折中：常态下只有第一天有数据，一旦上游提前排课也能第一时间接住。
+ */
+async function crawlWithKeepyoga(config, date) {
+  const { baseUrl = "https://vcloud.keepyoga.com", brandId, venues } = config.keepyoga || {};
+  if (!brandId) throw new Error("keepyoga 模式缺少 brandId 配置");
+  if (!Array.isArray(venues) || !venues.length) throw new Error("keepyoga 模式缺少 venues 配置");
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const brandName = (config.studio?.name || "").trim();
+  const out = [];
+  // 门店档案：当天没课的分店也要留在库里（与嘉禾 / csdsp 同策略）
+  out.ensureStudios = venues
+    .filter((v) => v && v.id != null && v.name)
+    .map((v) => ({
+      name: composeStudioName(brandName, v.name),
+      city: v.city,
+      address: v.address,
+      contact: v.contact,
+      lat: v.lat,
+      lng: v.lng,
+    }));
+
+  for (const venue of venues) {
+    const venueId = String(venue.id ?? "").trim();
+    if (!venueId) continue;
+    const resp = await fetchWithRetry(`${baseUrl}/course/api/wxccourselist`, {
+      method: "POST",
+      headers: {
+        "User-Agent": MILI_UA,
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        brand_id: brandId,
+        venue_id: venueId,
+        scene: "",
+        date_str: dateStr,
+      }),
+    });
+    if (!resp.ok) throw new Error(`随心瑜接口 HTTP ${resp.status}`);
+
+    const json = await resp.json();
+    // errno 非 0 = 该店当天没课（或参数失效），不抛错，避免一家店把整条链带断
+    if (json?.errno !== 0) {
+      await sleep(150);
+      continue;
+    }
+
+    for (const c of json?.data?.list || []) {
+      const courseName = cleanCourseName(c.course_name);
+      if (!courseName) continue;
+      const max = c.course_size != null ? Number(c.course_size) : null;
+      const used = c.occupied != null ? Number(c.occupied) : null;
+      out.push({
+        courseName,
+        coach: String(c.coach_name || "").trim(),
+        _coachAvatar: pickImageUrl(c.coach_avatar),
+        time: `${c.start || ""}-${c.end || ""}`,
+        capacity: max ? `${used ?? ""}/${max}` : "",
+        status: max && used != null && used >= max ? "已满" : "可预约",
+        _bookedNum: used,
+        _studioName: composeStudioName(brandName, venue.name),
+        _roomName: String(c.classroom || "").trim(),
+        _difficulty: keepyogaDifficulty(c.course_diff_level),
+        _city: venue.city,
+        _address: venue.address,
+        _lat: venue.lat,
+        _lng: venue.lng,
+      });
+    }
+    // 上游对密集请求会限流（实测连打会超时），店与店之间留一点间隔
+    await sleep(150);
+  }
+  return out;
+}
+
+/**
+ * 随心瑜的 `course_diff_level` 是**排课级**的数字难度（不是课程固有属性）。
+ * 实测样本（舞十八，3 天 39 条）：1 = 基本功训练 / 零基础入门类（19 条），
+ * 2 = K-pop / Choreo / 常规 JAZZ（19 条），3 = 1 条。
+ * 按 1→初级 2→中级 3→高级 换算；出现没见过的值就返回 null，
+ * 交给 mapper 的课名规则（「零基础」→ BEGINNER 之类）兜底 —— 判不准宁可不标。
+ */
+function keepyogaDifficulty(level) {
+  const n = Number(level);
+  if (n === 1) return "BEGINNER";
+  if (n === 2) return "INTERMEDIATE";
+  if (n === 3) return "ADVANCED";
+  return null;
+}
+
+/* ─────────────── 脉脉科技 / maimikj（CASTER）抓取 ─────────────── */
+
+/**
+ * 脉脉科技（maimikj）—— 场馆 SaaS，**CASTER 舞蹈教室**在用。
+ * base: `https://caster2021.casterstudio.com/api`
+ * （源码里另有 fancyfancy / cstchangzhou / caster2.maimikj.com / www.cast2.com 几套环境，
+ *   apiUrl 常量写死在 app-service.js 里，caster2021 是生产）
+ *
+ * ⛔⛔ **每个请求都必须带请求头 `client-type: student`**，否则一律返回
+ *   `{"code":500,"message":"非法客户端"}` —— 长得像「服务挂了」，其实只是缺个头。
+ *   （其余头：authorization（游客空串）+ content-type: json；GET 还要带 timestamp＝秒）
+ *
+ * - 课表：`/v1/student/course/casterlist?day=YYYY-MM-DD&store_id=0&slng=&slat=&page=&size=`
+ *     ⛔ 参数名是 **`day`**（写成 date 报「day不能为空」）
+ *     ⛔ 必须给 `slng`/`slat`（不传报 "Undefined index: slng"）
+ *     store_id=0 = 一次带出**全部门店**
+ * - 门店：`/v1/student/store/storelist` → [{id,title,address,lng,lat}]（地址与坐标只有这儿有）
+ * - 课程字段：title 课名 / style_name 舞种 / teacher_real_name 教练**实名** /
+ *     head_img **教练头像**（实测 59 位教练与 head_img 一一对应，不是课程封面）/
+ *     start_time + end_time "HH:mm:ss" / seat_number 容量 / seat_occupied_number 已约
+ *     （**实时直给，不需要单独回源接口**，比 iWOD 的 6 小时快照省事）
+ *     room_title 教室 / store_id 门店
+ * - ⚠ `level_name` 是**师资分类不是难度**（实测值有「0基础」「外聘导师」），别拿它当难度；
+ *     课名尾部的 `⭐` 数量含义未经证实，也一律不动 —— 原样保留，让人自己看
+ * - ⚠ 课表里的 store_title **有错别字**（同一 store_id 125 既出现「黄浦人广来福士店」
+ *     又出现「黄埔人广来福士店」）→ 门店名一律按 store_id 从 storelist 映射，
+ *     绝不采信课表里的那个字符串
+ * ⛔ teacher_phone 属个人信息，**不落库**（这里只取姓名与头像）
+ */
+async function crawlWithMaimikj(config, date) {
+  const {
+    baseUrl = "https://caster2021.casterstudio.com/api",
+    storeIds,
+    slng = "121.4737",
+    slat = "31.2304",
+    pageSize = 200,
+  } = config.maimikj || {};
+  if (!Array.isArray(storeIds) || !storeIds.length) {
+    throw new Error("maimikj 模式缺少 storeIds 配置");
+  }
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const brandName = (config.studio?.name || "").trim();
+  const wantIds = storeIds.map((x) => String(x));
+
+  const headers = {
+    "client-type": "student",
+    "content-type": "json",
+    authorization: "",
+    "User-Agent": MILI_UA,
+  };
+  const get = async (path, params) => {
+    const qs = new URLSearchParams({
+      ...params,
+      timestamp: String(Math.floor(Date.now() / 1000)),
+    });
+    const resp = await fetchWithRetry(`${baseUrl}${path}?${qs}`, { headers });
+    if (!resp.ok) throw new Error(`脉脉科技接口 HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (json?.code !== 200) {
+      throw new Error(`脉脉科技接口 code=${json?.code} ${json?.message || ""}`.trim());
+    }
+    return json.data;
+  };
+
+  // 门店档案：课表接口不返回地址/坐标，只能从门店接口取。
+  // 一轮 nextDays:7 会调 crawl 7 次 → 用进程内短缓存兜住，别把门店接口打 7 遍。
+  const stores = await maimikjStores(baseUrl, headers, wantIds, slng, slat);
+  if (!stores.length) throw new Error("脉脉科技门店列表为空（storeIds 是否已失效？）");
+
+  const byId = new Map(stores.map((s) => [String(s.id), s]));
+  const out = [];
+  out.ensureStudios = stores.map((s) => ({
+    name: composeStudioName(brandName, s.title),
+    city: config.studio?.city,
+    address: s.address,
+    lat: Number(s.lat),
+    lng: Number(s.lng),
+  }));
+
+  // 课表：store_id=0 一次给全店；按 count 分页兜住「大促日课程变多」
+  const all = [];
+  for (let page = 1; page <= 20; page++) {
+    const data = await get("/v1/student/course/casterlist", {
+      day: dateStr,
+      store_id: "0",
+      slng,
+      slat,
+      page: String(page),
+      size: String(pageSize),
+    });
+    const rows = Array.isArray(data?.data) ? data.data : [];
+    all.push(...rows);
+    const total = Number(data?.count ?? 0);
+    if (!rows.length || all.length >= total) break;
+    await sleep(150);
+  }
+
+  for (const c of all) {
+    const store = byId.get(String(c.store_id));
+    // 只落配置里列出的门店（品牌旗下可能还有没接入的分店）
+    if (!store) continue;
+    const courseName = cleanCourseName(c.title);
+    if (!courseName) continue;
+    const max = c.seat_number != null ? Number(c.seat_number) : null;
+    const used = c.seat_occupied_number != null ? Number(c.seat_occupied_number) : null;
+    out.push({
+      courseName,
+      coach: String(c.teacher_real_name || "").trim(),
+      _coachAvatar: pickImageUrl(c.head_img),
+      time: `${c.start_time || ""}-${c.end_time || ""}`,
+      capacity: max ? `${used ?? ""}/${max}` : "",
+      status: max && used != null && used >= max ? "已满" : "可预约",
+      _bookedNum: used,
+      _studioName: composeStudioName(brandName, store.title),
+      _roomName: String(c.room_title || "").trim(),
+      _city: config.studio?.city,
+      _address: store.address,
+      _lat: Number(store.lat),
+      _lng: Number(store.lng),
+    });
+  }
+  return out;
+}
+
+/** 脉脉科技门店清单的进程内缓存（10 分钟）：一轮 7 天不该把门店接口打 7 遍 */
+const maimikjStoreCache = new Map();
+
+async function maimikjStores(baseUrl, headers, wantIds, slng, slat) {
+  const key = `${baseUrl}|${wantIds.join(",")}`;
+  const hit = maimikjStoreCache.get(key);
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.stores;
+
+  const qs = new URLSearchParams({
+    slng,
+    slat,
+    timestamp: String(Math.floor(Date.now() / 1000)),
+  });
+  const resp = await fetchWithRetry(`${baseUrl}/v1/student/store/storelist?${qs}`, { headers });
+  if (!resp.ok) throw new Error(`脉脉科技门店接口 HTTP ${resp.status}`);
+  const json = await resp.json();
+  if (json?.code !== 200) {
+    throw new Error(`脉脉科技门店接口 code=${json?.code} ${json?.message || ""}`.trim());
+  }
+  const list = Array.isArray(json.data) ? json.data : [];
+  const want = new Set(wantIds);
+  const stores = list.filter((s) => want.has(String(s.id)));
+  maimikjStoreCache.set(key, { at: Date.now(), stores });
+  return stores;
+}
+
 /* ─────────────────── 嘉禾舞社（app.jiahewushe.com）抓取 ─────────────────── */
 
 /**
@@ -2319,6 +2610,8 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "yizhiniao") return crawlWithYizhiniao(config, date);
   if (config.mode === "haowan") return crawlWithHaowan(config, date);
   if (config.mode === "qingcheng") return crawlWithQingcheng(config, date);
+  if (config.mode === "keepyoga") return crawlWithKeepyoga(config, date);
+  if (config.mode === "maimikj") return crawlWithMaimikj(config, date);
   if (config.mode === "jiahe") return crawlWithJiahe(config, date);
   if (config.mode === "gsteps") return crawlWithGsteps(config, date);
   if (config.mode === "foxdance") return crawlWithFoxdance(config, date);

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "maimikj-caster",
+    "enabled": true,
+    "label": "CASTER 舞蹈教室（上海）",
+    "studio": { "name": "CASTER", "city": "上海", "region": "CN" },
+    "mode": "maimikj",
+    "maimikj": {
+      "baseUrl": "https://caster2021.casterstudio.com/api",
+      "slng": "121.4737",
+      "slat": "31.2304",
+      "_comment": "storeIds 取自 /v1/student/store/storelist（16 家，全上海）；门店名/地址/坐标运行时按 store_id 映射，不采信课表里的 store_title（有错别字）",
+      "storeIds": [2, 5, 92, 107, 108, 110, 113, 116, 118, 119, 120, 121, 124, 125, 126, 127]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

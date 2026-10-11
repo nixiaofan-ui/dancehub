@@ -1,0 +1,28 @@
+[
+  {
+    "id": "keepyoga-wushiba",
+    "enabled": true,
+    "label": "舞十八（上海）",
+    "studio": { "name": "舞十八", "city": "上海", "region": "CN" },
+    "mode": "keepyoga",
+    "keepyoga": {
+      "baseUrl": "https://vcloud.keepyoga.com",
+      "brandId": "M01_R0tRVGJMdEJML2s9",
+      "_comment": "venue_id 不连续（1/2/3/4/5/7，6 号不存在）；场馆接口不给地址，地址留空不编造；days=3 是因为该平台只发布当天课表（未来日期返回空，见 engine.js 注释）",
+      "venues": [
+        { "id": "1", "name": "长宁古北", "city": "上海", "contact": "18321004204" },
+        { "id": "2", "name": "静安星贸", "city": "上海", "contact": "18930852561" },
+        { "id": "3", "name": "普陀曹杨", "city": "上海", "contact": "17701845361" },
+        { "id": "4", "name": "虹口友邦", "city": "上海", "contact": "18930852561" },
+        { "id": "5", "name": "徐汇玖时", "city": "上海", "contact": "18930852561" },
+        { "id": "7", "name": "静安PAC", "city": "上海", "contact": "18930852561" }
+      ]
+    },
+    "dateMode": "nextDays",
+    "days": 3,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]
