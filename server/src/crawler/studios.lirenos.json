@@ -1,0 +1,22 @@
+[
+  {
+    "id": "lirenos-k57",
+    "enabled": true,
+    "label": "K57 Dance Studio（上海）",
+    "studio": { "name": "K57", "city": "上海", "region": "CN" },
+    "mode": "lirenos",
+    "lirenos": {
+      "baseUrl": "https://club.lirenos.com",
+      "_comment": "⛔ 主机必须是 club.lirenos.com。同一个 companyId 打 lrydapi.lirenos.com 会回 {code:200,data:[]}（HTTP 200、零报错），极易误判成「这家没数据」；lrydproxy 公网连不上",
+      "_companyId": "907 = K57舞蹈工作室，来自小程序 ext.json 的 {companyId:907,name:'K57舞蹈工作室'}。⛔ 别用包里的 defaultCompanyId:4635 —— 那是厂商自己的演示租户（厦门利刃运动 4 家店）",
+      "companyId": "907",
+      "storeIds": [998, 2557]
+    },
+    "dateMode": "nextDays",
+    "days": 7,
+    "dates": [],
+    "refreshHours": 6,
+    "cron": null,
+    "timeFormat": "HH:mm-HH:mm"
+  }
+]

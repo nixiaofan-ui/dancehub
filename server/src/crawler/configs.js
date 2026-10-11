@@ -24,9 +24,10 @@ const AUTO_CONFIG_FILES = [
   "studios.yizhiniao.json",
   "studios.haowan.json",
   "studios.qingcheng.json",
-  // 2026-10-11 上海三家逆向接入（keepyoga 随心瑜 / maimikj 脉脉科技）
+  // 2026-10-11 上海三家逆向接入（keepyoga 随心瑜 / maimikj 脉脉科技 / lirenos 利刃）
   "studios.keepyoga.json",
   "studios.maimikj.json",
+  "studios.lirenos.json",
 ];
 
 /**

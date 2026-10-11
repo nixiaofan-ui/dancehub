@@ -1094,6 +1094,167 @@ async function maimikjStores(baseUrl, headers, wantIds, slng, slat) {
   return stores;
 }
 
+/* ─────────────── 利刃 / lirenos（K57 Dance Studio）抓取 ─────────────── */
+
+/**
+ * 利刃运动（lirenos.com）—— 场馆 SaaS，**K57 Dance Studio（上海）**在用。
+ *
+ * ⛔⛔ 两个「不报错、只是什么都拿不到」的坑，任一踩中都得到空课表：
+ *  1. **base 是 `https://club.lirenos.com`，不是 `lrydapi.lirenos.com`。**
+ *     小程序包的 cApi 里同时写了 pro(=club) / proLR(=lrydapi) / proLR1(=lrydproxy)，
+ *     但 K57 的租户只活在 **club** 上：companyId=907 打 lrydapi 时
+ *     `store/all-store-name-list-nolimit` 回 `{code:200,data:[]}`、
+ *     `system/setup/company/query` 回 `data:null` —— **HTTP 全是 200、一条错都不报**，
+ *     换成 club 立刻出 2 家店 + 课表。（lrydproxy 从公网连不上）
+ *  2. **`companyId` 必须显式带**：K57 = **907**，来自小程序 ext.json 的
+ *     `{"companyId":907,"name":"K57舞蹈工作室"}`。
+ *     ⚠ 包里另有 `defaultCompanyId:4635` —— 那是**厂商自己的演示租户**
+ *     （厦门利刃运动的 4 家店），照抄会安安静静抓到别人家的课。
+ *
+ * - 门店：GET `store/all-store-name-list-nolimit?companyId=&storeId=`
+ *     → [{storeId, storeName, cityName, address, mapPoint, phone}]
+ * - 课表：GET `teamClass/teamSchedule/oneday?companyId=&storeId=&calendarStart=YYYY-MM-DD&status=1,2,3`
+ *     ⛔ 返回的 `data` 是**门店数组**，课在每项的 `timeScheduleList` 里（要多展一层）
+ *     ⛔ 缺 `calendarStart` 报「请选择查询日期」；缺 `storeId` 报「门店ID/公司ID不能为空」
+ * - 课程字段：**`anotherName` 才是课名**（`courseTitle` 恒为「常规课」这类大类名，
+ *     取了会让全站课名长一个样）、`appointCount` 已约 / `maxPeople` 容量（**实时直给**）、
+ *     `timeStartStr`+`timeEndStr`（"16:30"）、`venueName` 教室、
+ *     `coachNameArrayStr` 教练名 / `coachInfoArray[].coachHeadImg` 教练头像、
+ *     `masterImg` 课程图（实测 38 节只有 16 张、且多教练共用 → 是课程图不是教练图）、
+ *     `description` 课程简介
+ * - ⚠ 地址带重复城市前缀（"上海市上海市普陀区…"）→ collapseDupCity 折一层
+ * - ⚠ `mapPoint` 是 **"经度,纬度"**（与菲体云同一个坑）→ 必须范围校验，
+ *     反了会落到几内亚湾，而距离照样算得出来、不会报错
+ * - ⛔ `phone` 是门店联系电话，属个人信息，不落库
+ */
+async function crawlWithLirenos(config, date) {
+  const { baseUrl = "https://club.lirenos.com", companyId, storeIds } = config.lirenos || {};
+  if (!companyId) throw new Error("lirenos 模式缺少 companyId 配置");
+  if (!Array.isArray(storeIds) || !storeIds.length) throw new Error("lirenos 模式缺少 storeIds 配置");
+
+  const dateStr = date.toISOString().slice(0, 10);
+  const brandName = (config.studio?.name || "").trim();
+  const wantIds = storeIds.map((x) => String(x));
+  const headers = { "User-Agent": MILI_UA, "Content-Type": "application/json" };
+
+  const get = async (path) => {
+    const resp = await fetchWithRetry(`${baseUrl}/${path}`, { headers });
+    if (!resp.ok) throw new Error(`利刃接口 HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (json?.code !== 200) {
+      throw new Error(`利刃接口 code=${json?.code} ${json?.message || ""}`.trim());
+    }
+    return json.data;
+  };
+
+  const stores = await lirenosStores(baseUrl, headers, companyId, wantIds);
+  if (!stores.length) {
+    throw new Error(
+      "利刃门店列表为空（companyId 或 storeIds 失效？注意：用 lrydapi.lirenos.com 时任何租户都回空数组，必须用 club.lirenos.com）",
+    );
+  }
+
+  const out = [];
+  out.ensureStudios = stores.map((s) => {
+    const { lat, lng } = parseLirenosMapPoint(s.mapPoint);
+    return {
+      name: composeStudioName(brandName, s.storeName),
+      city: config.studio?.city,
+      address: collapseDupCity(s.address),
+      lat,
+      lng,
+    };
+  });
+
+  for (const s of stores) {
+    const data = await get(
+      `teamClass/teamSchedule/oneday?companyId=${companyId}&storeId=${s.storeId}` +
+        `&calendarStart=${dateStr}&status=1,2,3`,
+    );
+    const { lat, lng } = parseLirenosMapPoint(s.mapPoint);
+    const studioName = composeStudioName(brandName, s.storeName);
+    const address = collapseDupCity(s.address);
+
+    for (const st of Array.isArray(data) ? data : []) {
+      for (const c of st.timeScheduleList || []) {
+        // anotherName 是真实课名；courseTitle 只是「常规课」这种大类，别当课名用
+        const courseName = cleanCourseName(c.anotherName || c.courseTitle);
+        if (!courseName) continue;
+        const max = c.maxPeople != null ? Number(c.maxPeople) : null;
+        const used = c.appointCount != null ? Number(c.appointCount) : null;
+        out.push({
+          courseName,
+          coach: String(c.coachNameArrayStr || "").trim(),
+          _coachAvatar: pickImageUrl((c.coachInfoArray || [])[0]?.coachHeadImg),
+          time: `${c.timeStartStr || ""}-${c.timeEndStr || ""}`,
+          capacity: max ? `${used ?? ""}/${max}` : "",
+          status: max && used != null && used >= max ? "已满" : "可预约",
+          _bookedNum: used,
+          _photoUrl: pickImageUrl(c.masterImg),
+          _studioName: studioName,
+          _roomName: String(c.venueName || "").trim(),
+          _city: config.studio?.city,
+          _address: address,
+          _lat: lat,
+          _lng: lng,
+        });
+      }
+    }
+    await sleep(200);
+  }
+  return out;
+}
+
+/** 利刃门店清单的进程内缓存（10 分钟）：一轮 nextDays:7 不该把门店接口打 7 遍 */
+const lirenosStoreCache = new Map();
+
+async function lirenosStores(baseUrl, headers, companyId, wantIds) {
+  const key = `${baseUrl}|${companyId}|${wantIds.join(",")}`;
+  const hit = lirenosStoreCache.get(key);
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.stores;
+
+  const url = `${baseUrl}/store/all-store-name-list-nolimit?companyId=${companyId}&storeId=`;
+  const resp = await fetchWithRetry(url, { headers });
+  if (!resp.ok) throw new Error(`利刃门店接口 HTTP ${resp.status}`);
+  const json = await resp.json();
+  if (json?.code !== 200) {
+    throw new Error(`利刃门店接口 code=${json?.code} ${json?.message || ""}`.trim());
+  }
+  // 只留配置里列出的门店：一个 companyId 下可能还有没接入的分店
+  const want = new Set(wantIds);
+  const stores = (Array.isArray(json.data) ? json.data : []).filter((s) => want.has(String(s.storeId)));
+  lirenosStoreCache.set(key, { at: Date.now(), stores });
+  return stores;
+}
+
+/**
+ * 利刃 `mapPoint` → {lat,lng}。
+ * ⛔ 上游是**「经度,纬度」**（和菲体云同一个坑）：反着解析会落到几内亚湾，
+ *   而距离照样算得出来 —— 不报错，只让所有门店都"离你一万里"。
+ * 所以两个方向都试，并做中国范围校验（经度 73~136 / 纬度 3~54），都不像就放弃。
+ */
+function parseLirenosMapPoint(mapPoint) {
+  const [a, b] = String(mapPoint ?? "")
+    .split(",")
+    .map((x) => Number(String(x).trim()));
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return { lat: null, lng: null };
+  const inLng = (v) => v > 73 && v < 136;
+  const inLat = (v) => v > 3 && v < 54;
+  if (inLng(a) && inLat(b)) return { lng: a, lat: b }; // 实测就是这个顺序
+  if (inLat(a) && inLng(b)) return { lng: b, lat: a }; // 万一上游反了
+  return { lat: null, lng: null };
+}
+
+/**
+ * 折掉地址开头重复的城市前缀："上海市上海市普陀区…" → "上海市普陀区…"。
+ * 利刃把 cityName 直接拼在 address 之前，而 address 自己已经带城市（K57 曹杨路店实测）。
+ * 只折一层，不做更激进的清洗 —— 门牌号一个字都不能动。
+ */
+function collapseDupCity(addr) {
+  const s = String(addr ?? "").trim();
+  return s.replace(/^(.{2,8}?[市省])\1/, "$1");
+}
+
 /* ─────────────────── 嘉禾舞社（app.jiahewushe.com）抓取 ─────────────────── */
 
 /**
@@ -2612,6 +2773,7 @@ export async function crawl(config, date = new Date()) {
   if (config.mode === "qingcheng") return crawlWithQingcheng(config, date);
   if (config.mode === "keepyoga") return crawlWithKeepyoga(config, date);
   if (config.mode === "maimikj") return crawlWithMaimikj(config, date);
+  if (config.mode === "lirenos") return crawlWithLirenos(config, date);
   if (config.mode === "jiahe") return crawlWithJiahe(config, date);
   if (config.mode === "gsteps") return crawlWithGsteps(config, date);
   if (config.mode === "foxdance") return crawlWithFoxdance(config, date);
