@@ -102,12 +102,6 @@
   color: #ff9f6b;
   font-weight: 900;
 }
-.sf-n {
-  font-size: 20rpx;
-  margin-left: 8rpx;
-  opacity: 0.65;
-  font-weight: 700;
-}
 .sf-all {
   flex-shrink: 0;
   font-size: 22rpx;

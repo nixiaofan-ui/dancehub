@@ -23,7 +23,6 @@
         bindtap="tapStore"
       >
         {{item.short}}
-        <text class="sc-count">{{item.count}}</text>
       </view>
     </scroll-view>
   </view>

@@ -104,7 +104,7 @@
         hover-class="press"
         data-id="{{item.id}}"
         bindtap="tapStoreChip"
-      >{{item.short}}<text class="sf-n">{{item.count}}</text></view>
+      >{{item.short}}</view>
     </scroll-view>
     <view class="sf-all {{storeAllOn ? 'is-clear' : ''}}" hover-class="press" bindtap="tapAllStores">
       {{storeAllOn ? '清除' : '全选'}}

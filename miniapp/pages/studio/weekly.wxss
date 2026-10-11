@@ -551,11 +551,6 @@
   background: #00f5d4;
   border-color: #00f5d4;
 }
-.sc-count {
-  font-size: 20rpx;
-  margin-left: 8rpx;
-  opacity: 0.7;
-}
 
 /* 课卡片上的门店标签（多店视图才有） */
 .c-meta-row {
