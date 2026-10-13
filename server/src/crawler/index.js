@@ -368,6 +368,23 @@ export async function maybeDedupeStudios(reason = "tick") {
 }
 
 /**
+ * 手动触发重复门店归并（**不节流**，可预演）。
+ *
+ * 为什么单独开一个：`maybeDedupeStudios` 只在启动/每小时的 tick 里跑，且没有
+ * dryRun —— 云端库不开公网，想「先看看会合并哪些、再决定动不动手」根本没有通道。
+ * 而它要隐藏门店 + 删课，属于不可逆操作，必须能预演。
+ *   GET  /api/crawler/dedupe            → 预演
+ *   POST /api/crawler/dedupe {apply:true} → 执行
+ */
+export async function runDedupeStudios({ dryRun = false } = {}) {
+  return dedupeStudios({
+    log: (m) => console.log(m),
+    targetNames: enabledStudioNames(),
+    dryRun,
+  });
+}
+
+/**
  * 心跳：到期的配置补跑。
  *
  * 并发 + 时间预算：全平台 587 家串行要 8 分钟，云端一轮跑太久既拖慢

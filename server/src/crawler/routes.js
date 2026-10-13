@@ -12,6 +12,7 @@ import {
   tickOnce,
   dueCount,
   probeOutbound,
+  runDedupeStudios,
 } from "./index.js";
 import { previewStudioNameFix, applyStudioNameFix } from "./studio-name-fix.js";
 
@@ -94,6 +95,25 @@ router.post(
   asyncHandler(async (req, res) => {
     if (!req.body?.apply) return ok(res, await previewStudioNameFix(), "预演结果");
     ok(res, await applyStudioNameFix(), "修复完成");
+  })
+);
+
+// 重复门店归并：同一家店被建了两条时的自愈（隐藏多出来的、迁移关注、清孤儿课）。
+// 会改库，所以做成「先预演、再执行」两步 —— 云库不开公网，这是唯一能先看后动的通道。
+//   GET  /api/crawler/dedupe            → 预演（不写库，返回 groups/hidden/…）
+//   POST /api/crawler/dedupe {apply:true} → 执行
+router.get(
+  "/dedupe",
+  requireAdmin,
+  asyncHandler(async (req, res) => ok(res, await runDedupeStudios({ dryRun: true }), "预演结果"))
+);
+
+router.post(
+  "/dedupe",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    if (!req.body?.apply) return ok(res, await runDedupeStudios({ dryRun: true }), "预演结果");
+    ok(res, await runDedupeStudios({ dryRun: false }), "归并完成");
   })
 );
 

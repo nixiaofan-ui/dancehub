@@ -165,6 +165,28 @@ function model(name) {
       return { count: before - rows().length };
     },
     count: async ({ where } = {}) => rows().filter((r) => matches(r, where)).length,
+    // dedupe-studios 要看「这家店有几节课 + 最后一节课什么时候更新的」。
+    // 桩里没有 aggregate 的话，dedupe 一进去就 TypeError —— 也就是说
+    // 「重复门店归并」这条路径同样从来没被烟测覆盖过（和当年 pruneVanished 一个坑）。
+    aggregate: async ({ where, _count, _max } = {}) => {
+      const hit = rows().filter((r) => matches(r, where));
+      const out = {};
+      if (_count) {
+        out._count = {};
+        for (const k of Object.keys(_count)) {
+          // `_all` = 行数；其余按「字段非空」计数（与 Prisma 语义一致）
+          out._count[k] = k === "_all" ? hit.length : hit.filter((r) => r[k] != null).length;
+        }
+      }
+      if (_max) {
+        out._max = {};
+        for (const k of Object.keys(_max)) {
+          const vals = hit.map((r) => r[k]).filter((v) => v != null);
+          out._max[k] = vals.length ? vals.reduce((a, b) => (a > b ? a : b)) : null;
+        }
+      }
+      return out;
+    },
   };
 }
 

@@ -18,15 +18,40 @@
  *   那个「市」吃掉）
  * 「（市秦淮）」vs「（秦淮）」是配置生成器早期的 bug：地址「江苏省南京市秦淮区…」
  * 里紧挨着「区」的三个字是「市秦淮」，被当成了区名（grep 库里能搜出 105 个
- * 「（市XX）」尾巴的店名）。只吃「（市」开头的那一个市，不能无脑删所有「市」——
- * 真店名里有「囍瑜伽（市民之家店）」这种。
+ * 「（市XX）」尾巴的店名）。
  *
- * 只合并「有 appId」的门店：手录店没有 appId，无法证明是同一家，一律不碰。
+ * ⚠ 归一化的「（市」规则是无差别吃掉的 —— 包括真店名「囍瑜伽（市民之家店）」里的那个市，
+ *   以及青岛合法的区名「市南」。这**无害**：canonStudioName 只用于**比较**，
+ *   从不回写门店名，两边同样处理。想「精确只吃半截市名」反而会踩青岛「（市南）」
+ *   这个合法区名（见 memory：青岛「市北/市南」跳过不是 bug）。别改。
+ *
+ * 判重口径分两类（2026-10-13 扩了第二类）：
+ *
+ *   A) **有 appId**（iWOD 系）：同城 + 同 appId + 归一化同名。appId 是强证据，够了。
+ *   B) **无 appId**（gsteps / jiahe 这类不走小程序抓取、平台自研后端的）：
+ *      同城 + 同 platform + 归一化同名，**且**这条链上至少有一方是「启用中配置的目标
+ *      或它的分店」。
+ *
+ * ⛔ 为什么要补 B：A 的查询写死了 `bookingMiniAppId: { not: null }`，于是**无 appId 的
+ *   抓取门店永远躲过归并**。2026-10-13 发现云端 G-STEPS·上海新天地店有 3 条
+ *   （课 402 / 32 / 13），本地也有同样形态的重复。
+ *   成因是 createStudioOnce 的并发复查：新配置上线时两个容器实例同时补跑，
+ *   双方各自把课都写进去了 → 复查里「这条新记录还没挂数据才撤」的保护不成立 →
+ *   两次都保留了（那条保护本身是对的，不能为了去重而删用户刚写进去的课）。
+ *
+ * 只合并 platform 相同的抓取门店：手录/补录店建店时 platform 写死 `OTHER`
+ * （见 routes/import.routes.js），与抓取门店的 `WECHAT` 天然不同组，绝不会被顺手合并。
+ * 两条都是 `OTHER` 的组（两家手录店同名）也一律跳过 —— 那是用户资产，不碰。
  *
  * 保留哪一条（按优先级）：
- *   1) 名字正好是某个**启用中**抓取配置的目标 → 它才是还在被更新的那条
+ *   1) 名字是某个**启用中**抓取配置的目标（或它的分店）→ 它才是还在被更新的那条
+ *      ⚠ 用**归一化前缀**匹配：配置里写的是品牌名「G-STEPS」，库里是
+ *        「G-STEPS·上海新天地店（上海）」——精确相等匹配不到（老实现就是等号，
+ *        所以 G-STEPS 这类「品牌·分店（城市）」的店从来认不出自己的配置）
  *   2) 被关注数多的（用户资产多的那条）
  *   3) 最近被更新过的（MAX(schedule.updatedAt) 新）
+ *      ⚠ 这条比「课多」可靠：抓取总是写同一条（findFirst 精确同名命中 id 最小的），
+ *        所以活跃那条的日期总是最新，孤儿那条停在它被抛弃的那天
  *   4) id 小的（最早建的那条）
  *
  * 被合并的一方怎么处理：
@@ -39,16 +64,24 @@ import { prisma } from "./prisma.js";
 /** 门店名归一化：「D-DAY 舞蹈（市秦淮）」→「dday舞蹈秦淮」 */
 export function canonStudioName(name) {
   return String(name || "")
-    // 只吃「（市X）」里的这个市 —— 那是配置生成器漏进来的半截市名（见文件头说明）。
-    // 不能无脑删所有「市」：真店名里有「囍瑜伽（市民之家店）」这种。
+    // ⚠ 这一条是**无差别**吃掉「（市」的（包括「（市民之家店）」的市、青岛「（市南）」
+    //   的市）。无害：本函数只用于比较、从不回写门店名，且比较双方同样处理。
+    //   改成「只管 1-3 字的半截市名」反而会把青岛合法区名「市南」误伤成「南」。
     .replace(/[（(]市/g, "（")
-    .replace(/[^0-9A-Za-z\u4e00-\u9fa5]/g, "")
+    // ⛔ 必须用 \p{L}\p{N}（任意语言的字母/数字），**不能**只写 [0-9A-Za-z\u4e00-\u9fa5]。
+    //   2026-10-13 踩到的实况：海外店名「알티댄스 시흥사거리점」「리바이브스튜디오」
+    //   「던 댄스 스튜디오」三家**完全不同的韩文店**，被老正则整条过滤成空串 →
+    //   归一化后全都等于 "" → 同城同 platform 下碰撞成一组 → 差点把两家真店
+    //   当成重复门店隐藏掉（还顺手删课）。日文假名店名同理。
+    .replace(/[^\p{L}\p{N}]/gu, "")
     .toLowerCase();
 }
 
 /**
  * @param {{ log?: (msg: string) => void, targetNames?: Set<string>, dryRun?: boolean }} [opts]
- *   targetNames：启用中配置的目标店名集合（不给则跳过「配置优先」这条规则）
+ *   targetNames：启用中配置的目标店名集合。
+ *     ⚠ 不给的话：① 「配置优先」这条排序规则失效；② **无 appId 的门店一律不合并**
+ *     （它们的判重闸门就是「至少一方是这个集合的目标或分店」，没有集合就没有依据）。
  * @returns {Promise<{ groups: number, hidden: number, movedFollows: number, deletedSchedules: number }>}
  */
 export async function dedupeStudios(opts = {}) {
@@ -56,8 +89,20 @@ export async function dedupeStudios(opts = {}) {
   const dryRun = !!opts.dryRun;
   const targetNames = opts.targetNames || null;
 
+  // 启用中配置的「目标店名」归一化前缀（长度 <2 的丢弃：只写了「G」这种会命中一大片）
+  const targetCanon = targetNames
+    ? [...targetNames].map(canonStudioName).filter((t) => t.length >= 2)
+    : null;
+  /** 这条店名是不是某个启用配置的目标（或它的分店） */
+  const isTarget = (name) => {
+    if (!targetCanon || !targetCanon.length) return false;
+    const c = canonStudioName(name);
+    return targetCanon.some((t) => c === t || c.startsWith(t));
+  };
+
   const studios = await prisma.studio.findMany({
-    where: { bookingMiniAppId: { not: null } },
+    // 只看可见的：隐藏的要么是上一轮合并的结果，要么等人工确认，不必再动
+    where: { status: true },
     select: {
       id: true,
       name: true,
@@ -65,14 +110,23 @@ export async function dedupeStudios(opts = {}) {
       status: true,
       address: true,
       bookingMiniAppId: true,
+      platform: true,
       _count: { select: { follows: true } },
     },
   });
 
   const groups = new Map();
   for (const s of studios) {
-    if (!s.bookingMiniAppId) continue;
-    const key = `${s.cityId}|${s.bookingMiniAppId}|${canonStudioName(s.name)}`;
+    const canon = canonStudioName(s.name);
+    // 归一化后为空（纯符号 / 纯 emoji 店名）：没有可比的依据，**不进任何组**。
+    // canonStudioName 现在保留所有语言的字母了，但这是最后一道保险 ——
+    // 空串之间恒等，一旦放进去就是「所有空名店互相碰撞」。
+    if (!canon) continue;
+    const key = s.bookingMiniAppId
+      ? // A) 有 appId：appId 本身就是「同一家店」的强证据
+        `A|${s.cityId}|${s.bookingMiniAppId}|${canon}`
+      : // B) 无 appId：靠 同城 + 同 platform + 同归一化名（后面还要过目标名这道闸）
+        `P|${s.cityId}|${s.platform}|${canon}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(s);
   }
@@ -83,14 +137,20 @@ export async function dedupeStudios(opts = {}) {
   let deletedSchedules = 0;
 
   for (const [key, list] of groups) {
+    // 原本这里是 `alive.length >= 2`（组里至少两条可见才动手）；查询已经
+    // 只取可见的，所以长度即 alive 长度，等价且少一次过滤。
     if (list.length < 2) continue;
 
-    // 只有「多条里至少还有一条活着」才值得动手；全被软隐藏的组等人工确认
-    const alive = list.filter((s) => s.status);
-    if (alive.length < 2) continue;
+    // B 组的额外闸门：无 appId 的店证明力弱，要求「至少一条是启用配置的目标或它的分店」。
+    // 否则两条来源不明的野数据（同一用户在同城手建了两条同名店之类）会被误并。
+    if (key.startsWith("P|")) {
+      if (!targetCanon || !list.some((s) => isTarget(s.name))) continue;
+      // 两条都是手录店（platform=OTHER）→ 用户资产，不碰
+      if (list[0].platform === "OTHER") continue;
+    }
 
     const stats = new Map();
-    for (const s of alive) {
+    for (const s of list) {
       const agg = await prisma.schedule.aggregate({
         where: { studioId: s.id },
         _count: { _all: true },
@@ -102,13 +162,12 @@ export async function dedupeStudios(opts = {}) {
       });
     }
 
-    const ranked = alive.slice().sort((a, b) => {
-      // 1) 是启用中配置的目标 → 最优先
-      if (targetNames) {
-        const ta = targetNames.has(a.name) ? 1 : 0;
-        const tb = targetNames.has(b.name) ? 1 : 0;
-        if (ta !== tb) return tb - ta;
-      }
+    const ranked = list.slice().sort((a, b) => {
+      // 1) 是启用中配置的目标（或它的分店）→ 最优先
+      const ta = isTarget(a.name) ? 1 : 0;
+      const tb = isTarget(b.name) ? 1 : 0;
+      if (ta !== tb) return tb - ta;
+
       // 2) 被关注数多的
       const fa = a._count.follows || 0;
       const fb = b._count.follows || 0;
@@ -123,8 +182,12 @@ export async function dedupeStudios(opts = {}) {
 
     const keeper = ranked[0];
     groupCount += 1;
+    const tag = list[0].bookingMiniAppId
+      ? `appId ${list[0].bookingMiniAppId}`
+      : `${list[0].platform} 无 appId`;
     log(
-      `[dedupe] 重复门店 ${key}：保留 #${keeper.id} ${keeper.name}` +
+      `[dedupe] 重复门店（城 ${list[0].cityId} / ${tag} / ${canonStudioName(list[0].name)}）：` +
+        `保留 #${keeper.id} ${keeper.name}` +
         `（课 ${stats.get(keeper.id).count}、关注 ${keeper._count.follows}），` +
         `合并 ${ranked.slice(1).map((s) => `#${s.id} ${s.name}`).join("、")}`,
     );
