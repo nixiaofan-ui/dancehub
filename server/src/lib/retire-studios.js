@@ -41,6 +41,42 @@ function utcToday() {
 }
 
 /**
+ * 退休**单家**门店：置为不可见 + 清掉「今天及以后、没人管」的课。
+ *
+ * 抽成独立函数是因为现在有两条路会走到这里（口径必须完全一致 —— 以前返工过
+ * 一次「清未来课」的条件，两处各写一份迟早会漂）：
+ *   ① 配置顶层标 `retired: true`（人明确知道这家店没了，见 retireStudios）；
+ *   ② 抓取对账攒够「连续未见轮数」（上游悄悄把店删了，见 lib/reconcile-studios.js）。
+ *
+ * @param {{ id: number, name: string, status?: boolean }} studio
+ * @param {{ today?: Date, log?: (msg: string) => void, reason?: string }} [opts]
+ * @returns {Promise<{ retired: number, pruned: number }>}
+ */
+export async function retireOneStudio(studio, opts = {}) {
+  const log = opts.log || (() => {});
+  const reason = opts.reason || "retire";
+  const today = opts.today || utcToday();
+
+  const del = await prisma.schedule.deleteMany({
+    where: {
+      studioId: studio.id,
+      ownerId: null,
+      scheduleDate: { gte: today },
+      bookings: { none: {} },
+      reminders: { none: {} },
+    },
+  });
+
+  if (studio.status !== false) {
+    await prisma.studio.update({ where: { id: studio.id }, data: { status: false } });
+    log(`[retire] #${studio.id}「${studio.name}」下线（${reason}；清未来课 ${del.count} 节）`);
+    return { retired: 1, pruned: del.count };
+  }
+  if (del.count) log(`[retire] #${studio.id}「${studio.name}」清残留课 ${del.count} 节`);
+  return { retired: 0, pruned: del.count };
+}
+
+/**
  * @param {{ log?: (msg: string) => void, configs?: any[] }} [opts]
  * @returns {Promise<{ targets: number, retired: number, pruned: number, missing: number }>}
  */
@@ -67,24 +103,9 @@ export async function retireStudios(opts = {}) {
     }
 
     for (const s of studios) {
-      const del = await prisma.schedule.deleteMany({
-        where: {
-          studioId: s.id,
-          ownerId: null,
-          scheduleDate: { gte: today },
-          bookings: { none: {} },
-          reminders: { none: {} },
-        },
-      });
-      pruned += del.count;
-
-      if (s.status !== false) {
-        await prisma.studio.update({ where: { id: s.id }, data: { status: false } });
-        retired += 1;
-        log(`[retire] #${s.id}「${s.name}」下线（清未来课 ${del.count} 节）`);
-      } else if (del.count) {
-        log(`[retire] #${s.id}「${s.name}」清残留课 ${del.count} 节`);
-      }
+      const r = await retireOneStudio(s, { today, log, reason: "配置标退休" });
+      retired += r.retired;
+      pruned += r.pruned;
     }
   }
 

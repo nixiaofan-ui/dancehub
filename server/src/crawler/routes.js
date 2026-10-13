@@ -13,6 +13,7 @@ import {
   dueCount,
   probeOutbound,
   runDedupeStudios,
+  runReconcileStudios,
 } from "./index.js";
 import { previewStudioNameFix, applyStudioNameFix } from "./studio-name-fix.js";
 
@@ -114,6 +115,28 @@ router.post(
   asyncHandler(async (req, res) => {
     if (!req.body?.apply) return ok(res, await runDedupeStudios({ dryRun: true }), "预演结果");
     ok(res, await runDedupeStudios({ dryRun: false }), "归并完成");
+  })
+);
+
+// 抓取对账（僵尸门店退休）：上游把店删了，库里那条会带着旧课永久滞留。
+// 判据是「连续 N 轮抓取都没出现」，自动跑在 tick 里；这里给的是「先看后动」的手动通道
+// （与 /dedupe 同理：会改库、云库不开公网，必须能预演）。
+//   GET  /api/crawler/reconcile            → 预演（列出会被退休的门店）
+//   POST /api/crawler/reconcile {apply:true} → 执行
+router.get(
+  "/reconcile",
+  requireAdmin,
+  asyncHandler(async (req, res) =>
+    ok(res, await runReconcileStudios({ dryRun: true }), "预演结果")
+  )
+);
+
+router.post(
+  "/reconcile",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    if (!req.body?.apply) return ok(res, await runReconcileStudios({ dryRun: true }), "预演结果");
+    ok(res, await runReconcileStudios({ dryRun: false }), "对账完成");
   })
 );
 

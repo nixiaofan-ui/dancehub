@@ -27,6 +27,7 @@ import { maybeDedupeSchedules } from "../lib/dedupe-schedules.js";
 import { renameStudios } from "../lib/rename-studios.js";
 import { maybeCalibrateStudioCity } from "../lib/calibrate-studio-city.js";
 import { maybeRetireStudios } from "../lib/retire-studios.js";
+import { reconcileStudios } from "../lib/reconcile-studios.js";
 import { ensureAddress } from "../lib/fill-address.js";
 import { ensureLatLng } from "../lib/fill-latlng.js";
 import { ensureDistrict } from "../lib/fill-district.js";
@@ -73,6 +74,16 @@ const hotRefreshed = new Map();
 const statusMap = new Map(); // configId -> { state, lastRunAt, report, error }
 const running = new Set(); // 正在抓取的 configId，防重入
 let state = {}; // 内存态：configId -> { lastAttemptAt, lastSuccessAt, lastError }
+
+/**
+ * 本轮「成功抓取」的配置 → 它本轮见到的门店名。tick 末尾拿它做抓取对账
+ * （见 lib/reconcile-studios.js：连续 N 轮没出现的门店判上游已删，退休掉）。
+ *
+ * ⚠ 只由 runCrawl 写。热刷新**不走 runCrawl**，所以它不会进来 —— 这是刻意的：
+ *   热刷新只抓今天+明天、20 分钟一轮，让它参与对账的话，「今明两天没课」的店
+ *   1 小时就能攒够 3 轮被误清。
+ */
+const lastSeenStudios = new Map();
 
 /** 启动时把库里的状态灌进内存（已存在的内存键不覆盖——本进程刚写入的更新） */
 hydrate().catch((e) => console.warn("[crawler] 状态 hydrate 失败:", e.message));
@@ -193,6 +204,12 @@ export async function runCrawl(configId, { dryRun = false } = {}) {
     const report = dryRun
       ? { dryRun: true, total: rows.length, rows: rows.map((r) => ({ ...r, _date: r._date.toISOString().slice(0, 10) })) }
       : await importSchedules(config, rows, ensureStudios, { windowDays: loopDates });
+
+    // 本轮见到的门店（按配置记），供 tick 末尾的抓取对账使用。
+    // dryRun 不建店也不写课，记进去会让对账把「没见到」算成一次 —— 必须跳过。
+    if (!dryRun) {
+      lastSeenStudios.set(configId, { at: startedAt, studios: report.studios || [] });
+    }
 
     statusMap.set(configId, { state: "done", lastRunAt: startedAt, report, error: null });
     entry.lastSuccessAt = new Date().toISOString();
@@ -385,6 +402,42 @@ export async function runDedupeStudios({ dryRun = false } = {}) {
 }
 
 /**
+ * 手动触发抓取对账（**不依赖本轮抓取结果**，可预演）。
+ *
+ * 与 maybeReconcileStudios 的分工：那个是「本轮谁没出现 → 计数 +1」的自动节奏；
+ * 这个是「库内计数已达阈值的，立刻清退 / 先看看是谁」。分开是因为云端库不开公网，
+ * 而退休会删课 —— 改生产数据必须有一条能先看后动的通道（和 /dedupe 同一个理由）。
+ *   GET  /api/crawler/reconcile            → 预演（列出会被退休的门店）
+ *   POST /api/crawler/reconcile {apply:true} → 执行
+ */
+export async function runReconcileStudios({ dryRun = false } = {}) {
+  return reconcileStudios({ dryRun, log: (m) => console.log(m) });
+}
+
+/**
+ * 抓取对账的 tick 包装。只在「本轮确实有配置成功抓取」时才有计数效果；
+ * 没有成功抓取（启动后第一轮、或全平台抓取失败）时只有第二部分的清退在跑，
+ * 语义仍然是安全的 —— 计数不会涨，就不会有新店被误判。
+ */
+export async function maybeReconcileStudios(reason = "tick", seen = null) {
+  try {
+    const r = await reconcileStudios({
+      seenByConfig: seen,
+      log: (m) => console.log(m),
+    });
+    if (r.bumped || r.retired) {
+      console.log(
+        `[crawler] 抓取对账（${reason}）：计数 ${r.bumped} 家、退休 ${r.retired} 家、清课 ${r.pruned} 节`,
+      );
+    }
+    return r;
+  } catch (e) {
+    console.warn(`[crawler] 抓取对账失败: ${e.message}`);
+    return null;
+  }
+}
+
+/**
  * 心跳：到期的配置补跑。
  *
  * 并发 + 时间预算：全平台 587 家串行要 8 分钟，云端一轮跑太久既拖慢
@@ -429,6 +482,10 @@ export function fillStudioMeta(reason = "tick") {
 }
 
 async function tick(reason = "heartbeat") {
+  // 上一轮（可能是手动 /api/crawler/run/:id 触发的单配置抓取）留下的「见到」记录
+  // 不能当本轮用 —— 它可能已经是几小时前的事，拿它对账会把别人算成「没出现」。
+  lastSeenStudios.clear();
+
   // 改名必须早于抓取：配置里改了 studio.name 而库里还是旧名时，
   // importer 的「同名 → 归一化同名」两档都命中不了 → 同一家店会被再建一条，
   // 课表分叉到两条记录上（用户看到两家同名门店，其中一条从此不再更新）。
@@ -463,6 +520,10 @@ async function tick(reason = "heartbeat") {
   if (!queue.length) {
     // 没有到期配置不代表没事做：热刷新是另一套节奏（20 分钟），别被这里挡住
     await maybeHotRefresh();
+    // 抓取对账仍要跑：库内计数**早就**达阈值的僵尸店靠这里清退（部署后第一轮
+    // 常常所有配置都没到期，不跑就等于要等到下一个 6 小时窗口才见效）。
+    // 传 null = 只做清退、不做计数。
+    await maybeReconcileStudios(reason, null);
     return;
   }
 
@@ -511,6 +572,11 @@ async function tick(reason = "heartbeat") {
 
   // 常规补跑结束后顺带热刷新一轮（有人正在看的店，人数要新鲜）
   await maybeHotRefresh();
+
+  // 抓取对账：本轮成功抓取的配置，其名下「一家都没见到」的门店计数 +1，
+  // 攒够阈值判上游已删 → 退休（列表/搜索里消失 + 清掉未来那些没人管的幽灵课）。
+  // 放在抓取之后：这一轮的结果就是判据本身。
+  await maybeReconcileStudios(reason, lastSeenStudios);
 
   // 新门店是在抓取里才被创建的，启动时那次回填看不见它们 → 这里补一次
   await fillStudioMeta(reason);

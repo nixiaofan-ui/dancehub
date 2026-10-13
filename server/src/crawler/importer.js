@@ -50,8 +50,31 @@ function sanitizeLatLng(lat, lng, region) {
   return { lat: a, lng: b };
 }
 
+/**
+ * 「本轮见到这家店」的打点。
+ *
+ * 为什么打点只能在这里做：`findOrCreateStudio` 是**唯一**的建店/复用入口，
+ * 抓取路径上的每一家店都必须经过它 —— 在这里打点，就不可能出现「某条引擎路径
+ * 漏了打点、于是它管下的店被误判成僵尸」这种事。
+ *
+ * ⚠ 只有抓取路径才打点（`extra.crawlConfigId` 存在时才写）：
+ *   管理端建店、用户补录、ensure-jiahe-stores 这类调用都不带 configId，
+ *   写进去就等于把「用户自己录的店」标记成抓取门店，下一轮对账会把它当僵尸清掉。
+ */
+function seenPatch(extra = {}) {
+  const configId = extra.crawlConfigId;
+  if (!configId) return null;
+  return {
+    lastSeenAt: new Date(),
+    lastCrawlConfigId: String(configId),
+    // 又见到它了 → 连续未见轮数归零（上游把店加回来时靠这条自动复活的）
+    missedRounds: 0,
+  };
+}
+
 export async function findOrCreateStudio(studioRef, extra = {}) {
   const existing = await resolveExistingStudio(studioRef);
+  const seen = seenPatch(extra);
   // 跳转小程序 appId / 官网地址等新字段：已有店也补写
   // （只在新值非空且不同才更新，减少无谓写入）
   const patch = {};
@@ -85,8 +108,11 @@ export async function findOrCreateStudio(studioRef, extra = {}) {
     patch.lng = studioRef.lng;
   }
 
-  if (Object.keys(patch).length) {
-    return prisma.studio.update({ where: { id: existing.id }, data: patch });
+  if (Object.keys(patch).length || seen) {
+    return prisma.studio.update({
+      where: { id: existing.id },
+      data: { ...patch, ...(seen || {}) },
+    });
   }
   return existing;
 }
@@ -157,6 +183,7 @@ async function resolveExistingStudio(studioRef) {
  * 撤掉，两边结论一致，结果是幂等的。
  */
 async function createStudioOnce(studioRef, extra, city) {
+  const seen = seenPatch(extra);
   const created = await prisma.studio.create({
     data: {
       name: studioRef.name,
@@ -169,6 +196,7 @@ async function createStudioOnce(studioRef, extra, city) {
       status: true,
       bookingMiniAppId: extra.bookingMiniAppId || null,
       officialUrl: studioRef.officialUrl || null,
+      ...(seen || {}),
     },
   });
   // 搜得到的前提是索引里有它 —— 新接入的舞室不能等 10 分钟 TTL
@@ -494,6 +522,7 @@ export async function importSchedules(config, rows, ensureStudios = [], opts = {
       };
       await findOrCreateStudio(studioRef, {
         bookingMiniAppId: config.http?.appId || config.aiwugong?.host,
+        crawlConfigId: config.id,
       });
     } catch (e) {
       console.warn("[importer] 建店失败:", ref && ref.name, e.message);
@@ -517,6 +546,8 @@ export async function importSchedules(config, rows, ensureStudios = [], opts = {
   for (const [studioName, groupRows] of groups) {
     // iWOD / 爱舞功系店铺的约课小程序 appId → Studio.bookingMiniAppId（预约跳转用）
     const extra = {};
+    // 抓取对账的归属标记：这家店本轮是被哪份配置见到的（详见 seenPatch）
+    extra.crawlConfigId = config.id;
     const bookingAppId = config.http?.appId || config.aiwugong?.host;
     if (bookingAppId) extra.bookingMiniAppId = bookingAppId;
     // 多门店配置（如 JustJerk 两个校区各自一个官网页）可在条目级覆盖

@@ -120,6 +120,35 @@ function matches(row, where = {}) {
   return true;
 }
 
+/**
+ * 写入语义：把 Prisma 的 update data 落到行上。
+ *
+ * ⚠ `{ field: { increment: n } }` 是**累加**，不是把对象存进字段。桩里早先直接
+ *   `Object.assign(row, data)`，于是 increment 会被当成普通值写进去（字段值变成
+ *   `{"increment":1}`），断言看起来「写成功了」但语义全错。抓取对账
+ *   （lib/reconcile-studios.js）正是靠 increment 攒「连续未见轮数」，必须有真语义，
+ *   否则僵尸门店要么永远数不满、要么第一轮就数爆。
+ */
+function applyUpdate(row, data = {}) {
+  for (const [k, v] of Object.entries(data)) {
+    if (v && typeof v === "object" && !(v instanceof Date) && !Array.isArray(v)) {
+      if (typeof v.increment === "number") {
+        row[k] = (Number(row[k]) || 0) + v.increment;
+        continue;
+      }
+      if (typeof v.decrement === "number") {
+        row[k] = (Number(row[k]) || 0) - v.decrement;
+        continue;
+      }
+      if ("set" in v) {
+        row[k] = v.set;
+        continue;
+      }
+    }
+    row[k] = v;
+  }
+}
+
 function model(name) {
   const rows = () => db[name];
   return {
@@ -153,7 +182,8 @@ function model(name) {
     update: async ({ where, data }) => {
       const row = rows().find((r) => matches(r, where));
       if (!row) throw new Error(`[${name}] update: no row for ${JSON.stringify(where)}`);
-      Object.assign(row, data, { updatedAt: new Date() });
+      applyUpdate(row, data);
+      row.updatedAt = new Date();
       return row;
     },
     deleteMany: async ({ where } = {}) => {

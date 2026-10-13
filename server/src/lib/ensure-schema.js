@@ -134,6 +134,26 @@ ALTER TABLE \`Studio\`
   ADD COLUMN \`lng\` DOUBLE NULL;
 `;
 
+/**
+ * Studio 抓取对账三件套（见 lib/reconcile-studios.js）。
+ * 对应 schema.prisma 的 model Studio 里的 lastSeenAt / lastCrawlConfigId / missedRounds。
+ *
+ * ⚠ 三列**分开三条 ALTER + 分别判重**。合成一条看着省事，但只要有一列已经存在
+ *   （比如上一个版本的容器只加成功了一部分），整条 ALTER 会抛 1060 被 run() 吞掉，
+ *   剩下的列永远补不上 —— 这种「静默半成品」正是 ensure-schema 这套机制最怕的。
+ */
+const STUDIO_LAST_SEEN_SQL = `
+ALTER TABLE \`Studio\` ADD COLUMN \`lastSeenAt\` DATETIME(3) NULL;
+`;
+
+const STUDIO_LAST_CONFIG_SQL = `
+ALTER TABLE \`Studio\` ADD COLUMN \`lastCrawlConfigId\` VARCHAR(64) NULL;
+`;
+
+const STUDIO_MISSED_ROUNDS_SQL = `
+ALTER TABLE \`Studio\` ADD COLUMN \`missedRounds\` INT NOT NULL DEFAULT 0;
+`;
+
 async function run(label, sql) {
   try {
     await prisma.$executeRawUnsafe(sql);
@@ -254,6 +274,16 @@ export async function ensureSchema() {
   }
   if (!(await columnExists("Studio", "lat"))) {
     await run("Studio.lat/lng", STUDIO_LATLNG_SQL);
+  }
+  // 抓取对账三列（僵尸门店退休的判据载体）
+  if (!(await columnExists("Studio", "lastSeenAt"))) {
+    await run("Studio.lastSeenAt", STUDIO_LAST_SEEN_SQL);
+  }
+  if (!(await columnExists("Studio", "lastCrawlConfigId"))) {
+    await run("Studio.lastCrawlConfigId", STUDIO_LAST_CONFIG_SQL);
+  }
+  if (!(await columnExists("Studio", "missedRounds"))) {
+    await run("Studio.missedRounds", STUDIO_MISSED_ROUNDS_SQL);
   }
   // 老师搜索按名字匹配，存量库的 Coach 表没有这个索引
   if (!(await indexExists("Coach", "Coach_name_idx"))) {

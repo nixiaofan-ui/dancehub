@@ -11,6 +11,7 @@ import { renameStudios } from "./lib/rename-studios.js";
 import { calibrateGstepsCity } from "./lib/calibrate-gsteps-city.js";
 import { calibrateStudioCity } from "./lib/calibrate-studio-city.js";
 import { retireStudios } from "./lib/retire-studios.js";
+import { backfillStudioOwnership } from "./lib/reconcile-studios.js";
 import { clearDefaultCoursePic } from "./lib/clear-default-pic.js";
 import { ensureJiaheStores } from "./lib/ensure-jiahe-stores.js";
 import { ensureManualStores } from "./lib/ensure-manual-stores.js";
@@ -151,6 +152,15 @@ app.listen(port, "0.0.0.0", () => {
     .then(() =>
       retireStudios({ log: (m) => console.log(m) }).catch((err) =>
         console.warn(`[dancehub] 停抓门店退休失败: ${err.message}`)
+      )
+    )
+    // 抓取对账的归属回填（幂等）：给存量门店补上「归哪份配置管 + 从此刻开始计时」，
+    // 否则僵尸店（上游已删、再也不会被抓到的那批）永远进不了对账范围
+    // —— 恰恰是最该被清的店最安全。详见 lib/reconcile-studios.js 的注释。
+    // ⚠ 必须排在 dedupe（隐藏重复店）之后：别给即将隐藏的那条重复记录打归属。
+    .then(() =>
+      backfillStudioOwnership({ log: (m) => console.log(m) }).catch((err) =>
+        console.warn(`[dancehub] 门店归属回填失败: ${err.message}`)
       )
     )
     // 假封面清理（幂等）：iWOD 商家没传封面时上游回落给**平台通用底图**

@@ -163,6 +163,21 @@ model Studio {
   lat              Float?
   lng              Float?
   status           Boolean        @default(true)
+  // ── 抓取对账三件套（见 lib/reconcile-studios.js）──────────────────────
+  // 上游把门店删掉/改名后，我们库里那条会变成「永远不再更新的僵尸店」：
+  // 名字不同、城市可能也不同，归并（dedupe-studios）管不着，唯一可靠的信号是
+  // 「最近若干轮抓取里再也没出现过它」。
+  //
+  // lastSeenAt —— 最后一次被某份**启用中的**抓取配置「见到」（建店或写课）的时刻。
+  //   ⚠ 只由 crawler/importer.js 打点：手录/补录门店永远拿不到这个值，
+  //   所以「lastSeenAt 非空」天然等价于「这是一家抓取来的店」，
+  //   对账机制对用户自己录的店彻底免疫（不需要额外的白名单）。
+  // lastCrawlConfigId —— 见到它的那份配置 id，用来回答「这家店归谁管」。
+  //   比按店名反查配置准：引擎写课用的就是这份配置，不会因为改名而失联。
+  // missedRounds —— 连续多少轮「该配置成功抓取、但结果里没有这家店」。攒够阈值判上游已删。
+  lastSeenAt       DateTime?
+  lastCrawlConfigId String?       @db.VarChar(64)
+  missedRounds     Int            @default(0)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   coaches          Coach[]
