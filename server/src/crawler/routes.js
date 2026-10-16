@@ -16,6 +16,7 @@ import {
   runReconcileStudios,
 } from "./index.js";
 import { previewStudioNameFix, applyStudioNameFix } from "./studio-name-fix.js";
+import { auditStudioLocation } from "../lib/audit-studio-location.js";
 
 const router = Router();
 
@@ -52,6 +53,18 @@ router.get(
       mode,
       configs: { total: all.length, last: all.slice(-6).map((c) => c.id) },
     });
+  })
+);
+
+// 门店地理体检（**只读**，免鉴权）：把「城市挂错 / 坐标与地址矛盾 / 跨市 / 远郊」
+// 按**处置方式**分类报出来。为什么要这个出口：云库不开公网、本地库又和云库**不同步**
+// （实测同一个 id 在两库里是两家不同的店）——「线上那批店到底修没修」没有别的办法确认。
+// 不加鉴权的理由同 /probe：返回的只有门店名/地址/距离，这些 /api/studios 本来就公开可读，
+// 而排查时往往需要在没带 token 的情况下直接 curl 一下。
+router.get(
+  "/audit-location",
+  asyncHandler(async (req, res) => {
+    ok(res, await auditStudioLocation({ log: (m) => console.log(m) }));
   })
 );
 
