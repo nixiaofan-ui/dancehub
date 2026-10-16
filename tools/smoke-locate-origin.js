@@ -5,11 +5,14 @@
  * 查下来是 getOrigin 拿到缓存就直接返回 —— 30 分钟内无论人走到哪，
  * 点多少次开关都还是同一个坐标，列表顺序和「1-3km」这类分档当然纹丝不动。
  *
- * 现在的口径（三条，缺一条就会退回那个 bug）：
+ * 现在的口径（四条，缺一条就会退回那个 bug）：
  *   ① 有用户动作（ask=true）→ **必定真定位**，缓存一律不吃；
  *   ② 没有用户动作（ask=false）→ 只读缓存，**绝不触发授权弹窗**；
  *   ③ 页面显示的静默校准（refreshOriginIfStale）→ 坐标放软了才定位，
- *      且**只有已授权**才去（没授权说明用户从没开过按距离，别平白弹框）。
+ *      且**只有已授权**才去（没授权说明用户从没开过按距离，别平白弹框）；
+ *   ④ 恢复「按距离」开关（readOriginCache）→ **不看坐标新旧**。开关是用户的
+ *      意图，坐标新鲜度交给 ③。以前这里卡 30 分钟，导致开着的开关隔夜
+ *      再进小程序会自己弹回去（用户原话「我明明开着」）。
  *
  *   /usr/local/bin/node tools/smoke-locate-origin.js
  */
@@ -138,7 +141,24 @@ function reset(originAgeMs) {
   check("返回 null", o === null, JSON.stringify(o));
   check("没调定位（否则会平白弹一个授权框）", fuzzyCalls === 0, `calls=${fuzzyCalls}`);
 
-  console.log("\n⑨ 端到端：坐标一变，关注列表顺序就该跟着变");
+  console.log("\n⑨ 恢复开关：坐标旧了也照样恢复（这条让开关不再自己弹回去）");
+  reset(31 * 60 * 1000); // 半小时前的坐标
+  let stale = readOriginCache();
+  check(
+    "半小时前的坐标照样读得出来（开关能恢复，不自己弹回去）",
+    stale && stale.lat === 31.2,
+    JSON.stringify(stale),
+  );
+  reset(12 * 3600 * 1000); // 隔夜
+  check("隔夜的坐标照样读得出来", !!readOriginCache());
+  reset(null); // 缓存被清，从来没有过坐标
+  check(
+    "坐标真没有 → null（开关才不亮：亮着却算不出距离，文案会对不上）",
+    readOriginCache() === null,
+  );
+  check("只读缓存，一次定位都没调（不会白弹授权框）", fuzzyCalls === 0, `calls=${fuzzyCalls}`);
+
+  console.log("\n⑩ 端到端：坐标一变，关注列表顺序就该跟着变");
   const shops = [
     { id: "A", lat: 39.9, lng: 116.4 }, // 北京
     { id: "B", lat: 31.2, lng: 121.47 }, // 上海

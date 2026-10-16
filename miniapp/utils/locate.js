@@ -236,16 +236,30 @@ function readLocateCache() {
 }
 
 /**
- * 同步读「距离排序用的坐标」，拿不到就 null。
+ * 同步读「距离排序用的坐标」，拿不到就 null。**不看它多旧**。
  *
- * 给「按距离」这类开关做恢复判断用：坐标还在（30 分钟内）才恢复开关，
- * 否则开关亮着但算不出距离，列表顺序和按钮文案会对不上。
+ * 用途只有一个：恢复「按距离」开关时，判断手上有没有坐标可以先把列表排出来。
+ *
+ * ⚠ 为什么不能像 readGeo 那样卡 30 分钟：
+ *   开关是**用户的意图**，坐标只是当下的输入。以前恢复开关要求「坐标还在
+ *   30 分钟内」，于是开着按距离的人隔夜/隔几小时再进小程序，开关会自己弹回去
+ *   —— 用户看到的是「我明明开着，怎么变回按关注时间了」。
+ *   旧坐标进页面的那几十毫秒里照样算得出距离（列表有顺序、按钮文案对得上），
+ *   紧接着 onShow 的静默校准（refreshOriginIfStale）就会把它换成「现在」的坐标。
+ *   所以「新旧」根本不是判据 —— 把开关状态交给用户，把坐标新鲜度交给校准。
+ *
  * 注意它**只读**，不会触发授权弹窗 —— 页面加载不该弹定位。
  *
  * @returns {{lat:number,lng:number,at:number}|null}
  */
 function readOriginCache() {
-  return readGeo();
+  try {
+    const c = wx.getStorageSync(GEO_KEY);
+    if (c && c.lat != null && c.lng != null) return c;
+  } catch (e) {
+    /* ignore */
+  }
+  return null;
 }
 
 module.exports = {
