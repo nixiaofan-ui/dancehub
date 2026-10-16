@@ -34,6 +34,16 @@ const CACHE_TTL = 24 * 3600 * 1000;
 // 距离排序用的坐标缓存。比城市缓存短得多：人在城里移动几公里，排序就该变
 const GEO_KEY = "dh_geo_origin";
 const GEO_TTL = 30 * 60 * 1000;
+/**
+ * 页面每次显示时「静默校准」的最小间隔。
+ *
+ * 为什么要软过期这一档：GEO_TTL（30 分钟）只决定缓存**还算不算数**，
+ * 它本身不会触发重新定位 —— 只有用户点了开关才会。用户开着「按距离」
+ * 在城里走一段，回到页面看到的还是出门前那份顺序，反馈原话是
+ * 「按距离显示不随着定位改变，而是固定的」。
+ * 3 分钟是个折中：tab 来回切不会反复定位，走一段路再回来看就能跟上。
+ */
+const GEO_SOFT_TTL = 3 * 60 * 1000;
 
 function readCache() {
   try {
@@ -63,31 +73,65 @@ function readGeo() {
   return null;
 }
 
+function writeGeo(origin) {
+  try {
+    wx.setStorageSync(GEO_KEY, origin);
+  } catch (e) {
+    /* ignore */
+  }
+}
+
 /**
  * 取定位点（经纬度），给「按距离排序」用。
  *
  * @param {{ask?: boolean}} [opts]
  *   ask=false（默认）只读缓存，**绝不弹授权框** —— 页面初次渲染就弹定位权限，
  *   用户还没表达过想看距离，属于过度索取，拒绝率极高。
- *   ask=true 才会在没缓存时真去定位，只在用户点了「按距离」这种明确动作时传。
+ *   ask=true 表示「用户刚刚明确说了要看距离」（点了「按距离」开关）→
+ *   **必定真定位一次，不吃缓存**。
+ *
+ *   ⚠⚠ 这里以前是「缓存有就直接返回」，于是 30 分钟内怎么点都是同一个坐标：
+ *   用户走远了重新点开，列表顺序和「1-3km」这类分档纹丝不动，反馈原话是
+ *   「按距离显示不随着定位改变，而是固定的」。缓存只能给**没有用户动作**的场景用
+ *   （恢复上次开关 = readOriginCache / 页面显示的静默校准 = refreshOriginIfStale）。
+ *   凡是有用户动作的时刻，拿到的必须是「现在」的坐标。
+ *
  * @returns {Promise<{lat:number,lng:number,at:number}|null>} 拿不到就 null，
  *   调用方退回原排序，不打扰用户。
  */
 async function getOrigin(opts) {
-  const cached = readGeo();
-  if (cached) return cached;
-  if (!(opts && opts.ask)) return null;
+  // 没有明确动作 → 只认缓存（顺便保证「恢复开关」那条路不会弹框）
+  if (!(opts && opts.ask)) return readGeo();
 
   const auth = await getAuthState();
   if (auth === "denied") return null;
   const loc = await getFuzzy();
   if (loc.err) return null;
   const origin = { lat: loc.lat, lng: loc.lng, at: Date.now() };
-  try {
-    wx.setStorageSync(GEO_KEY, origin);
-  } catch (e) {
-    /* ignore */
-  }
+  writeGeo(origin);
+  return origin;
+}
+
+/**
+ * 页面显示时静默校准定位（给开着的「按距离」用）。
+ *
+ * 与 getOrigin 的分工：这个**不响应用户动作**，所以① 只在坐标放软了（默认 3 分钟）
+ * 才去定位，② 只在**已经授权过**时才去 —— 没授权说明用户从没开过按距离，
+ * 这时调定位会平白弹一个授权框，正是我们要避免的过度索取。
+ *
+ * @param {number} [maxAgeMs] 坐标多旧算「该校准了」，默认 GEO_SOFT_TTL
+ * @returns {Promise<{lat:number,lng:number,at:number}|null>} 没校准就返回 null
+ */
+async function refreshOriginIfStale(maxAgeMs) {
+  const maxAge = maxAgeMs || GEO_SOFT_TTL;
+  const cached = readGeo();
+  if (cached && Date.now() - cached.at < maxAge) return null;
+  const auth = await getAuthState();
+  if (auth !== "granted") return null;
+  const loc = await getFuzzy();
+  if (loc.err) return null;
+  const origin = { lat: loc.lat, lng: loc.lng, at: Date.now() };
+  writeGeo(origin);
   return origin;
 }
 
@@ -210,5 +254,6 @@ module.exports = {
   readLocateCache,
   readOriginCache,
   getOrigin,
+  refreshOriginIfStale,
   LOCATE_SCOPE: SCOPE,
 };

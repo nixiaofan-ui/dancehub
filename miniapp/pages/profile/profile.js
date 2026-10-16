@@ -20,7 +20,7 @@ const {
   isAllOn,
 } = require("../../utils/style-filter");
 const { sortByDistance, llOf } = require("../../utils/geo");
-const { getOrigin, readOriginCache } = require("../../utils/locate");
+const { getOrigin, readOriginCache, refreshOriginIfStale } = require("../../utils/locate");
 const prefs = require("../../utils/prefs");
 
 /** 一张关注卡片最多铺几节课：再多就成了第二份课表，把门店清单挤没了 */
@@ -90,6 +90,7 @@ Page({
     this.loadFavs();
     this.loadAll();
     this.loadMyCities();
+    this.refreshNearOrigin();
   },
 
   /**
@@ -470,6 +471,21 @@ Page({
     this.nearFirst = true;
     this.setData({ nearFirst: true });
     prefs.writeFollowNear(true);
+    this.applyFollowView();
+  },
+
+  /**
+   * 开关开着时，页面每次显示都静默校准一次定位（3 分钟内不重复调）。
+   *
+   * 没有这一步，「按距离」就只在**点开关那一刻**取一次坐标：之后人走到哪，
+   * 列表顺序和分档都还是那份旧的，看起来就是「固定的」。
+   * 只在校准拿到新坐标时才重排，拿不到（没授权/定位失败）就保持原样，不闪。
+   */
+  async refreshNearOrigin() {
+    if (!this.nearFirst) return;
+    const origin = await refreshOriginIfStale();
+    if (!origin) return;
+    this.origin = origin;
     this.applyFollowView();
   },
 

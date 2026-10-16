@@ -5,7 +5,7 @@ const { API_HOST } = require("../../utils/config");
 const { onNavTop } = require("../../utils/scroll-top");
 const CP = require("../../utils/city-picker-mixin");
 const { buildBrandGroups, splitStudioName } = require("../../utils/brand");
-const { locateCity, getOrigin, readOriginCache } = require("../../utils/locate");
+const { locateCity, getOrigin, readOriginCache, refreshOriginIfStale } = require("../../utils/locate");
 const prefs = require("../../utils/prefs");
 const { sortByDistance, llOf } = require("../../utils/geo");
 const { goToCoach } = require("../../utils/coach-nav");
@@ -234,6 +234,7 @@ Page(
       this.setData(this.syncCityView(g.region, g.cityId, g.cities || []));
       this.load();
     }
+    this.refreshNearOrigin();
   },
 
   async load() {
@@ -792,6 +793,21 @@ Page(
       ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
     });
     prefs.writeDiscoverNear(true);
+  },
+
+  /**
+   * 开关开着时，页面每次显示都静默校准一次定位（3 分钟内不重复调）。
+   *
+   * 没有这一步，「按距离」就只在**点开关那一刻**取一次坐标：之后人走到哪，
+   * 列表顺序都是那份旧的，看起来就是「固定的」。
+   * 只在校准拿到新坐标时才重排，拿不到（没授权/定位失败）就保持原样，不闪。
+   */
+  async refreshNearOrigin() {
+    if (!this.data.nearFirst) return;
+    const origin = await refreshOriginIfStale();
+    if (!origin) return;
+    this.origin = origin;
+    this.setData(this.buildRows(this.applyDistrictFilter(this._studios || [])));
   },
 
   /**
