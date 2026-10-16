@@ -64,6 +64,32 @@ const CRAWLER_DIR = path.resolve(
   "../crawler",
 );
 
+/**
+ * 人工表的键 = **坐标优先**，没坐标才退回 id。
+ *
+ * ⛔ 不能只按 studioId：本地库和云库的 id **不对齐**（实测本地 #2075 的
+ * 「赤热舞蹈阳光栖谷校区」在云上是 #2031），按 id 索引的表换一个库就整张失效 ——
+ * 而这张表存在的意义恰恰是「两个库都要能修」。坐标是上游给的真实值、两库一致。
+ */
+function overrideKeyFor(s) {
+  if (Number.isFinite(s.lat) && Number.isFinite(s.lng)) {
+    return `geo:${s.lat.toFixed(4)},${s.lng.toFixed(4)}`; // 4 位小数≈11m，足够唯一
+  }
+  return `id:${s.id}`;
+}
+
+/**
+ * 命中人工表。坐标键为主、id 键兼容；表里给了 `names` 还要店名对得上 ——
+ * 防止坐标巧合撞上另一家店（也防止门店改名后被硬改到别处）→ 撞上就**不硬改**，留给人工看。
+ */
+function matchOverride(overrides, s) {
+  const hit = overrides.get(overrideKeyFor(s)) || overrides.get(`id:${s.id}`);
+  if (!hit) return null;
+  const names = hit.names;
+  if (Array.isArray(names) && names.length && !names.includes(s.name)) return null;
+  return hit;
+}
+
 /** 人工核定修正表；读不到/格式坏时退化为空表（不能让校准整体挂掉） */
 function loadCityOverrides() {
   try {
@@ -187,7 +213,7 @@ export async function calibrateStudioCity(opts = {}) {
   if (overrides.size) {
     for (const s of studios) {
       if (regionById.get(s.cityId) !== "CN") continue;
-      const ov = overrides.get(String(s.id));
+      const ov = matchOverride(overrides, s);
       if (!ov) continue;
       if (await moveTo(s, ov.city, `人工核定：${ov.why}`)) byOverride += 1;
     }

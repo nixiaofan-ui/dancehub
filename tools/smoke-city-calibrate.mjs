@@ -359,5 +359,55 @@ await prisma.studio.create({
   check("⑭ 广州参考点内聚度不足 → 全城不出手", r.changed, 0);
 }
 
+// ─── ⑮ 人工表按**坐标**索引：换一个库（id 不同）也必须命中 ────────────
+// 真实教训：本地库和云库的 id **不对齐** —— 本地 #2075「赤热舞蹈阳光栖谷校区」
+// 在云上是 #2031。表若按 studioId 索引，云端这一条永远不会被修（而它恰恰错着：
+// 十堰的店挂着上海）。坐标是上游给的真实值、两库一致，所以要按坐标索引。
+{
+  __reset();
+  const sh = await prisma.city.create({ data: { id: 2, name: "上海", region: "CN" } });
+  await prisma.studio.create({
+    data: {
+      id: 2031,
+      name: "赤热舞蹈阳光栖谷校区",
+      address: "栖谷校区： 阳光栖谷天街A区A3电梯上4楼413 /上海路校区：上海路书香嘉苑一楼文荟街内",
+      cityId: sh.id,
+      status: true,
+      lat: 32.656300142,
+      lng: 110.799237643,
+    },
+  });
+  const r = await calibrateStudioCity();
+  check("⑮ 换库（id 不同）也命中人工表", r.changed, 1);
+  check("⑮ 记在 byOverride 名下", r.byOverride, 1);
+  const row = (await prisma.studio.findMany()).find((s) => s.id === 2031);
+  const sy = (await prisma.city.findMany()).find((c) => c.name === "十堰");
+  check("⑮ 十堰的店 → 十堰", row.cityId, sy.id);
+}
+
+// ─── ⑯ 坐标撞上但名字对不上 → 不硬改（留给人工） ────────────────────
+// 人工表里的 `names` 是二次校验：坐标巧合（或门店改名）都不该被硬搬走 ——
+// 搬错一家真店比漏修一家更糟。
+{
+  __reset();
+  await prisma.city.create({ data: { id: 2, name: "上海", region: "CN" } });
+  await prisma.studio.create({
+    data: {
+      id: 3001,
+      name: "完全无关的另一家店",
+      address: null,
+      cityId: 2,
+      status: true,
+      lat: 32.656300142,
+      lng: 110.799237643,
+    },
+  });
+  const r = await calibrateStudioCity();
+  check("⑯ 坐标命中但名字不符 → 不命中人工表", r.byOverride, 0);
+  check("⑯ 也不进坐标判据（本城参考点不足）", r.changed, 0);
+  const row = (await prisma.studio.findMany()).find((s) => s.id === 3001);
+  check("⑯ 店没被搬走", row.cityId, 2);
+}
+
 console.log(failed ? `\n✖ ${failed} 项未通过` : "\n✔ 全部通过");
 process.exit(failed ? 1 : 0);
