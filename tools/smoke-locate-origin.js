@@ -177,7 +177,7 @@ function reset(originAgeMs) {
     inShenzhen.list.map((x) => x.id).join(","),
   );
   check(
-    "分档也跟着变（同一个北京店：上海视角 5km+ / …）",
+    "分档也跟着变（同一家北京店：从上海看和从深圳看不在同一档）",
     inShanghai.list.find((x) => x.id === "A")._dist !==
       inShenzhen.list.find((x) => x.id === "A")._dist ||
       inShanghai.list.find((x) => x.id === "A")._km !==

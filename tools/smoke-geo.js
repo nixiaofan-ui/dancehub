@@ -29,11 +29,15 @@ const km = distanceKm(31.2304, 121.4737, 31.1943, 121.3244);
 check("距离量级正确（上海两站间 ≈15km）", km > 14 && km < 17, km.toFixed(2) + "km");
 check("同点距离为 0", distanceKm(31.2, 121.4, 31.2, 121.4) < 0.001);
 
-// ② 分档文案：刻意不给精确值
+// ② 分档文案：刻意不给精确值。
+// 档位按大城市通勤直觉切，⚠ 边界值单测，改档位必须先改这里
 check("<1km 档", distanceText(0.6) === "<1km", distanceText(0.6));
 check("1-3km 档", distanceText(2.4) === "1-3km", distanceText(2.4));
-check("3-5km 档", distanceText(4.1) === "3-5km", distanceText(4.1));
-check("5km+ 档", distanceText(12) === "5km+", distanceText(12));
+check("3-6km 档（5km 在城里还算「几站地铁」）", distanceText(4.1) === "3-6km", distanceText(4.1));
+check("3-6km 上界仍在档内", distanceText(5.9) === "3-6km", distanceText(5.9));
+check("6-10km 档", distanceText(8.2) === "6-10km", distanceText(8.2));
+check("10-20km 档", distanceText(15) === "10-20km", distanceText(15));
+check("20km+ 档（跨区/邻近城市也算在兜底档）", distanceText(50) === "20km+", distanceText(50));
 check("非法值不显示", distanceText(NaN) === "");
 
 // ③ 坐标校验：挡住脏数据
