@@ -236,6 +236,11 @@
   color: #7a7f99;
   margin-left: 12rpx;
 }
+/* 「定位没更新」：可点的提示，颜色比普通 hint 重一点，但不做成红色警告 */
+.fs-stale {
+  color: #ffb454;
+  text-decoration: underline;
+}
 /* 这家店教什么的速览，和发现页卡片上的标签同一套色 */
 .follow-styles {
   font-size: 22rpx;

@@ -425,6 +425,11 @@
   color: #7a7f99;
   margin-left: 12rpx;
 }
+/* 「定位没更新」：可点的提示，比普通 hint 重一点，但不做成红色警告 */
+.ds-stale {
+  color: #ffb454;
+  text-decoration: underline;
+}
 .city-tag {
   flex-shrink: 0;
   margin-left: 12rpx;

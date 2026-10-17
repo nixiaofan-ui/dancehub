@@ -53,7 +53,9 @@ const { getOrigin, refreshOriginIfStale, readOriginCache } = require(
 const { sortByDistance, llOf } = require(path.join(MINIAPP, "utils/geo.js"));
 
 const GEO_KEY = "dh_geo_origin";
-const SOFT_TTL = 3 * 60 * 1000;
+// 静默校准的软过期。从 3 分钟收到 90 秒：「我的-关注」用户反馈距离不跟定位，
+// 3 分钟里足够坐两站地铁，回页面还在用上车前的坐标。
+const SOFT_TTL = 90 * 1000;
 
 let pass = 0;
 let fail = 0;
@@ -116,7 +118,33 @@ function reset(originAgeMs) {
   fuzzyFails = "getFuzzyLocation:fail auth deny";
   o = await getOrigin({ ask: true });
   check("返回 null", o === null, JSON.stringify(o));
+  check("授权类失败不重试（重试也白等）", fuzzyCalls === 1, `calls=${fuzzyCalls}`);
   fuzzyFails = null;
+
+  console.log("\n⑤b 非授权类失败 → 重试一次（小程序刚恢复时定位模块还没就绪）");
+  reset(null);
+  authSetting = { "scope.userFuzzyLocation": true };
+  fuzzyResult = { lat: 23.1, lng: 113.3 }; // 广州
+  fuzzyFails = "getFuzzyLocation:fail system error";
+  // 第一次失败、第二次成功
+  let n = 0;
+  const realFuzzy = global.wx.getFuzzyLocation;
+  global.wx.getFuzzyLocation = (opt) => {
+    n += 1;
+    if (n === 1) {
+      fuzzyCalls += 1;
+      opt.fail({ errMsg: fuzzyFails });
+    } else {
+      fuzzyFails = null;
+      realFuzzy(opt);
+    }
+  };
+  o = await getOrigin({ ask: true });
+  check("第一次失败后重试拿到坐标", o && o.lat === 23.1, JSON.stringify(o));
+  check("一共调了 2 次", fuzzyCalls === 2, `calls=${fuzzyCalls}`);
+  global.wx.getFuzzyLocation = realFuzzy;
+  fuzzyFails = null;
+  n = 0;
 
   console.log("\n⑥ 静默校准：坐标新鲜就不打扰");
   reset(30 * 1000);

@@ -34,6 +34,11 @@ const MAX_TAGS = 3;
 /** 没定到行政区的门店在筛选条上的档位名（真实区名不会叫这个，不会撞） */
 const UNLABELED = "未标注";
 
+/** 开着「按距离」时，页面停留期间的定位轮询间隔（见 profile 页同名常量的说明） */
+const NEAR_WATCH_MS = 60 * 1000;
+/** 坐标老到这个程度、且校准还失败，才算「定位真的没跟上」并给用户提示 */
+const NEAR_STALE_MS = 10 * 60 * 1000;
+
 /** 字母排序：「#」垫底，其余 A-Z */
 function compareLetter(a, b) {
   if (a === b) return 0;
@@ -144,6 +149,9 @@ Page(
      * ⚠ 关着时绝不碰定位权限 —— 授权弹窗必须由「用户点了按距离」这个动作触发。
      */
     nearFirst: false,
+    // 开关开着但定位没跟上（权限被收回 / 客户端刚恢复定位还没就绪）时为 true。
+    // 静默保持旧坐标是最坏的：距离和顺序都不动，用户只会以为「不随定位变」。
+    nearStale: false,
     // 按距离排完后没能算出距离的店还有几家：要写出来，否则用户以为排序坏了
     unknownCount: 0,
     activeLetter: "",
@@ -235,6 +243,7 @@ Page(
       this.load();
     }
     this.refreshNearOrigin();
+    this.startNearWatch();
   },
 
   async load() {
@@ -779,9 +788,11 @@ Page(
       this.origin = null;
       this.setData({
         nearFirst: false,
+        nearStale: false,
         ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
       });
       prefs.writeDiscoverNear(false);
+      this.stopNearWatch();
       return;
     }
     const origin = await getOrigin({ ask: true });
@@ -793,23 +804,67 @@ Page(
     this.nearFirst = true;
     this.setData({
       nearFirst: true,
+      nearStale: false,
       ...this.buildRows(this.applyDistrictFilter(this._studios || [])),
     });
     prefs.writeDiscoverNear(true);
+    this.startNearWatch();
   },
 
   /**
-   * 开关开着时，页面每次显示都静默校准一次定位（3 分钟内不重复调）。
+   * 开关开着时，页面每次显示都静默校准一次定位（90 秒内不重复调）。
    *
    * 没有这一步，「按距离」就只在**点开关那一刻**取一次坐标：之后人走到哪，
    * 列表顺序都是那份旧的，看起来就是「固定的」。
-   * 只在校准拿到新坐标时才重排，拿不到（没授权/定位失败）就保持原样，不闪。
+   * 只在校准拿到新坐标时才重排，拿不到（没授权/定位失败）就保持原样，不闪 ——
+   * 但「保持原样」久了要出声（nearStale），否则用户以为我们根本不跟定位。
    */
-  async refreshNearOrigin() {
-    if (!this.data.nearFirst) return;
-    const origin = await refreshOriginIfStale();
-    if (!origin) return;
+  async refreshNearOrigin(force) {
+    if (!this.data.nearFirst) {
+      if (this.data.nearStale) this.setData({ nearStale: false });
+      return;
+    }
+    // force = 页面停留期间的轮询：绕开软过期，拿到的一定是「现在」的坐标
+    const origin = force ? await refreshOriginIfStale(1) : await refreshOriginIfStale();
+    if (!origin) {
+      const c = readOriginCache();
+      const age = c && c.at ? Date.now() - c.at : Infinity;
+      const stale = age > NEAR_STALE_MS;
+      if (this.data.nearStale !== stale) this.setData({ nearStale: stale });
+      return;
+    }
     this.origin = origin;
+    if (this.data.nearStale) this.setData({ nearStale: false });
+    this.setData(this.buildRows(this.applyDistrictFilter(this._studios || [])));
+  },
+
+  /** 页面停留期间也跟着定位走（只在这张页面可见、且开着按距离时跑） */
+  startNearWatch() {
+    this.stopNearWatch();
+    if (!this.data.nearFirst) return;
+    if (typeof setInterval !== "function") return;
+    this._nearTimer = setInterval(() => {
+      if (!this.data.nearFirst) return;
+      this.refreshNearOrigin(true);
+    }, NEAR_WATCH_MS);
+  },
+
+  stopNearWatch() {
+    if (this._nearTimer) {
+      clearInterval(this._nearTimer);
+      this._nearTimer = null;
+    }
+  },
+
+  /** 用户点「定位没更新」：强制真定位一次（由用户动作触发，允许弹授权框） */
+  async retryNear() {
+    const origin = await getOrigin({ ask: true });
+    if (!origin) {
+      toast(this, "还是没拿到定位，请检查微信的位置权限");
+      return;
+    }
+    this.origin = origin;
+    this.setData({ nearStale: false });
     this.setData(this.buildRows(this.applyDistrictFilter(this._studios || [])));
   },
 
@@ -967,9 +1022,10 @@ Page(
     }
   },
 
-  /** 页面隐藏时复位手势状态，免得回来气泡还挂着 */
+  /** 页面隐藏时复位手势状态，免得回来气泡还挂着；顺手停掉定位轮询 */
   onHide() {
     this.onIndexEnd();
+    this.stopNearWatch();
   },
 
   _touchY(e) {

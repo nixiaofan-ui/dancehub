@@ -176,7 +176,14 @@
     <view class="ds-chip {{nearFirst ? 'on' : ''}}" hover-class="press" bindtap="tapNearFirst">
       {{nearFirst ? '按距离 ↑' : '按距离'}}
     </view>
-    <text wx:if="{{nearFirst && unknownCount}}" class="ds-hint">另有 {{unknownCount}} 家暂无位置</text>
+    <!-- 开关开着但定位没跟上：必须说出来，否则距离停在旧值会被理解成「不跟定位」 -->
+    <text
+      wx:if="{{nearFirst && nearStale}}"
+      class="ds-hint ds-stale"
+      hover-class="press"
+      bindtap="retryNear"
+    >定位没更新 · 点此重试</text>
+    <text wx:elif="{{nearFirst && unknownCount}}" class="ds-hint">另有 {{unknownCount}} 家暂无位置</text>
   </view>
 
   <!--

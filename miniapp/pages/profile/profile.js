@@ -29,6 +29,19 @@ const COURSES_PER_CARD = 3;
 const COURSE_STUDIO_LIMIT = 30;
 /** 往前看几天的课：够看到周末排课，又不至于把整月都拉回来 */
 const COURSE_DAYS = 7;
+/**
+ * 开着「按距离」时，页面停留期间的定位轮询间隔。
+ *
+ * 光靠 onShow 校准是不够的：用户在地铁上停在「关注」页 20 分钟，人没离开页面，
+ * onShow 一次都不会触发 —— 距离当然是「固定」的。60 秒一次模糊定位（网络定位，
+ * 不是 GPS）换「距离真跟着走」，这个买卖划算。关掉开关或页面隐藏立刻停。
+ */
+const NEAR_WATCH_MS = 60 * 1000;
+/**
+ * 坐标老到这个程度、且校准还失败，才算「定位真的没跟上」并给用户提示。
+ * 比软过期（90 秒）宽得多：偶尔一次跳过校准不是问题，十分钟不动才值得说。
+ */
+const NEAR_STALE_MS = 10 * 60 * 1000;
 
 Page({
   onNavTop,
@@ -51,6 +64,9 @@ Page({
     // 「按距离」开关。默认关：关注列表按关注时间排，且**关着时绝不碰定位权限** ——
     // 页面一进来就弹授权框属于过度索取，用户还没说过想看距离
     nearFirst: false,
+    // 开关开着、但定位没跟上（权限被收回 / 客户端刚恢复定位还没就绪）时为 true。
+    // 以前这种情况是完全静默的：距离停在旧值，用户只会以为「距离不随定位变」。
+    nearStale: false,
     // 排完序后没能算距离的店还有几家（没坐标的排在有坐标的后面，不隐藏也不编距离）
     unknownCount: 0,
     bookings: [],
@@ -91,6 +107,12 @@ Page({
     this.loadAll();
     this.loadMyCities();
     this.refreshNearOrigin();
+    this.startNearWatch();
+  },
+
+  /** 页面不可见就别再轮询定位 —— 耗电，而且回来时 onShow 会立刻校准一次 */
+  onHide() {
+    this.stopNearWatch();
   },
 
   /**
@@ -295,6 +317,8 @@ Page({
     const tab = e.currentTarget.dataset.tab;
     this.setData({ tab });
     prefs.writeProfileTab(tab);
+    // 切回「关注」时顺手校准一次：tab 内部切换不触发 onShow，否则最长要干等 60 秒轮询
+    if (tab === "follows" && this.nearFirst) this.refreshNearOrigin();
   },
 
   goAbout() {
@@ -461,8 +485,9 @@ Page({
     if (this.nearFirst) {
       this.nearFirst = false;
       this.origin = null;
-      this.setData({ nearFirst: false });
+      this.setData({ nearFirst: false, nearStale: false });
       prefs.writeFollowNear(false);
+      this.stopNearWatch();
       this.applyFollowView();
       return;
     }
@@ -473,8 +498,9 @@ Page({
     }
     this.origin = origin;
     this.nearFirst = true;
-    this.setData({ nearFirst: true });
+    this.setData({ nearFirst: true, nearStale: false });
     prefs.writeFollowNear(true);
+    this.startNearWatch();
     this.applyFollowView();
   },
 
@@ -485,11 +511,62 @@ Page({
    * 列表顺序和分档都还是那份旧的，看起来就是「固定的」。
    * 只在校准拿到新坐标时才重排，拿不到（没授权/定位失败）就保持原样，不闪。
    */
-  async refreshNearOrigin() {
-    if (!this.nearFirst) return;
-    const origin = await refreshOriginIfStale();
-    if (!origin) return;
+  async refreshNearOrigin(force) {
+    if (!this.nearFirst) {
+      if (this.data.nearStale) this.setData({ nearStale: false });
+      return;
+    }
+    // force = 页面停留期间的轮询：绕开软过期，拿到的一定是「现在」的坐标
+    const origin = force ? await refreshOriginIfStale(1) : await refreshOriginIfStale();
+    if (!origin) {
+      // 没到校准时间（90 秒内刚定位过）不算失败；坐标真的老了才算「定位没跟上」
+      const c = readOriginCache();
+      const age = c && c.at ? Date.now() - c.at : Infinity;
+      const stale = age > NEAR_STALE_MS;
+      if (this.data.nearStale !== stale) this.setData({ nearStale: stale });
+      return;
+    }
     this.origin = origin;
+    if (this.data.nearStale) this.setData({ nearStale: false });
+    this.applyFollowView();
+  },
+
+  /**
+   * 页面停留期间的定位轮询（只在开着「按距离」时跑）。
+   *
+   * 为什么非要有它：用户开着关注页坐地铁，20 分钟里 onShow 一次都不触发，
+   * 距离就一直是上车前那份 —— 这正是「分店距离不按定位变化」的来源之一。
+   */
+  startNearWatch() {
+    this.stopNearWatch();
+    if (!this.nearFirst) return;
+    if (typeof setInterval !== "function") return;
+    this._nearTimer = setInterval(() => {
+      // 人在「我的老师」「我的课表」这些 tab 时用不到坐标，别白定位
+      if (!this.nearFirst || this.data.tab !== "follows") return;
+      this.refreshNearOrigin(true);
+    }, NEAR_WATCH_MS);
+  },
+
+  stopNearWatch() {
+    if (this._nearTimer) {
+      clearInterval(this._nearTimer);
+      this._nearTimer = null;
+    }
+  },
+
+  /**
+   * 用户点「定位没更新」：强制真定位一次。
+   * 这是唯一会弹授权框的路径之一（另一个是点「按距离」开关），必须由用户动作触发。
+   */
+  async retryNear() {
+    const origin = await getOrigin({ ask: true });
+    if (!origin) {
+      toast(this, "还是没拿到定位，请检查微信的位置权限");
+      return;
+    }
+    this.origin = origin;
+    this.setData({ nearStale: false });
     this.applyFollowView();
   },
 

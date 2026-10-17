@@ -41,9 +41,15 @@ const GEO_TTL = 30 * 60 * 1000;
  * 它本身不会触发重新定位 —— 只有用户点了开关才会。用户开着「按距离」
  * 在城里走一段，回到页面看到的还是出门前那份顺序，反馈原话是
  * 「按距离显示不随着定位改变，而是固定的」。
- * 3 分钟是个折中：tab 来回切不会反复定位，走一段路再回来看就能跟上。
+ *
+ * ⚠ 90 秒（原来是 3 分钟）：3 分钟里足够坐两站地铁，而「我的-关注」的
+ *   用户反馈是「分店距离不按定位变化」—— 对开着开关的人来说，回页面就该是
+ *   当前坐标。tab 来回切（几秒内）仍然不会重复定位，成本可控。
  */
-const GEO_SOFT_TTL = 3 * 60 * 1000;
+const GEO_SOFT_TTL = 90 * 1000;
+/** 定位失败重试：小程序从后台恢复的那一瞬间，客户端经常还没就绪，一次失败不代表没权限 */
+const LOCATE_RETRY = 2;
+const LOCATE_RETRY_DELAY = 400;
 
 function readCache() {
   try {
@@ -82,6 +88,29 @@ function writeGeo(origin) {
 }
 
 /**
+ * 取坐标，失败重试几次。
+ *
+ * ⚠ 为什么必须重试：小程序从后台恢复（切回微信、从别的 app 回来）的那一瞬间，
+ *   页面的 onShow 会立刻触发，而客户端定位模块经常还没就绪，第一次
+ *   getFuzzyLocation 直接 fail。以前这里一次失败就返回 null，调用方「拿不到
+ *   就不动」，于是坐标永远停在上一次 —— 用户走了一整天回来，距离一点没变，
+ *   反馈原话是「分店距离不按照定位变化」。失败一次不代表用户没授权。
+ *
+ * 授权类错误（用户拒绝/隐私未同意）不重试，只会白白多等 800ms。
+ */
+async function getFuzzyWithRetry(tries) {
+  const n = Math.max(1, tries || LOCATE_RETRY + 1);
+  let last = { err: "fail" };
+  for (let i = 0; i < n; i++) {
+    last = await getFuzzy();
+    if (!last.err) return last;
+    if (isAuthError(last.err)) return last;
+    if (i < n - 1) await new Promise((r) => setTimeout(r, LOCATE_RETRY_DELAY));
+  }
+  return last;
+}
+
+/**
  * 取定位点（经纬度），给「按距离排序」用。
  *
  * @param {{ask?: boolean}} [opts]
@@ -105,7 +134,7 @@ async function getOrigin(opts) {
 
   const auth = await getAuthState();
   if (auth === "denied") return null;
-  const loc = await getFuzzy();
+  const loc = await getFuzzyWithRetry();
   if (loc.err) return null;
   const origin = { lat: loc.lat, lng: loc.lng, at: Date.now() };
   writeGeo(origin);
@@ -128,7 +157,7 @@ async function refreshOriginIfStale(maxAgeMs) {
   if (cached && Date.now() - cached.at < maxAge) return null;
   const auth = await getAuthState();
   if (auth !== "granted") return null;
-  const loc = await getFuzzy();
+  const loc = await getFuzzyWithRetry();
   if (loc.err) return null;
   const origin = { lat: loc.lat, lng: loc.lng, at: Date.now() };
   writeGeo(origin);
