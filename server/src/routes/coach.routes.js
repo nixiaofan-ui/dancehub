@@ -24,7 +24,6 @@ const router = Router();
  */
 router.get(
   "/timeline",
-  requireAuth,
   asyncHandler(async (req, res) => {
     const { name, cityId } = req.query;
     if (!name) return fail(res, 400, "name 必填");
@@ -39,15 +38,20 @@ router.get(
     const from = past ? addDays(today, -days) : today;
     const to = past ? addDays(today, -1) : addDays(today, days - 1);
 
+    // 网页版未登录也能查老师（跨店授课是这个维度的核心价值）。
+    // ⚠ booking 查询必须挡住匿名：userId 为 undefined 时 Prisma 会当成「不过滤」，
+    // 把全库预约都捞出来。visibleScope(undefined) 已安全退化为 { ownerId: null }。
     const [schedules, bookings] = await Promise.all([
       getCoachSchedules(name, cityId, from, to, req.userId),
-      prisma.booking.findMany({
-        where: {
-          userId: req.userId,
-          schedule: { scheduleDate: { gte: new Date(from), lte: new Date(to) } },
-        },
-        select: { scheduleId: true, status: true },
-      }),
+      req.userId
+        ? prisma.booking.findMany({
+            where: {
+              userId: req.userId,
+              schedule: { scheduleDate: { gte: new Date(from), lte: new Date(to) } },
+            },
+            select: { scheduleId: true, status: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const bookingMap = new Map(bookings.map((b) => [b.scheduleId, b.status]));
@@ -265,7 +269,6 @@ async function crossCityHint(keyword, excludeCityId) {
  */
 router.get(
   "/search",
-  requireAuth,
   asyncHandler(async (req, res) => {
     const q = String(req.query.q || req.query.keyword || "").trim();
     const cityId = Number(req.query.cityId || 0);
