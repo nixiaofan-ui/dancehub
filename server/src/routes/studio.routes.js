@@ -313,7 +313,12 @@ router.get(
       include: { city: true, coaches: true },
     });
     if (!studio) return fail(res, 404, "舞室不存在");
-    ok(res, studio);
+    // 网页版「我的-关注」从详情接口取每家店的舞种标签和首字母分组；
+    // 列表接口一直有这两个字段，详情漏了会导致关注页舞种筛选悄悄退化，
+    // 口径必须和列表一致（同一份 buildStyleMap / nameMeta）。
+    const styleMap = await buildStyleMap([studio.id]);
+    const [withMeta] = sortStudiosByName([studio]);
+    ok(res, { ...withMeta, styles: styleMap.get(studio.id) || [] });
   }),
 );
 
