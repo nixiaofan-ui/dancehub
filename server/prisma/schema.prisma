@@ -77,6 +77,32 @@ model User {
   favCoaches CoachFollow[]
   schedules  Schedule[]
   studioWatches StudioWatch[]
+  pairCodes  PairCode[]
+}
+
+/// 网页版登录配对码：「小程序里生成一个 6 位码 → 网页输入 → 两边同一个账号」。
+///
+/// 为什么不直接让网页走微信登录：网页扫码登录要微信开放平台**网站应用**（企业主体 +
+/// 300 元/年认证），微信内网页授权要**认证服务号**，个人主体现在都拿不到。
+/// 手机号验证码要备案 + 短信签名审核。配对码是唯一零资质、当天可上线的关联方式，
+/// 本质和「电视投屏码 / Telegram 登录其他设备」同款。
+///
+/// 安全底线（缺一不可，否则 6 位码就是可爆破的）：
+///   ① expiresAt 只有 5 分钟；
+///   ② usedAt 一次性，换到 token 立刻作废；
+///   ③ 兑换接口按 IP 限流 + 每个用户同一时刻只留一条有效码（见 auth.routes.js）。
+/// ⚠ 没有做「每码尝试次数」：码本身不存在时无从计数，能数的时候就说明已经猜中了。
+///   真正挡住爆破的是 TTL + IP 限流 + 一人一码，别指望把计数器加在码上。
+model PairCode {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique @db.VarChar(8)
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /// 门店放课节奏提醒：「这家店每周三中午放课，到点提醒我」。

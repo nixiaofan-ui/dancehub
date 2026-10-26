@@ -84,6 +84,10 @@ Page({
     coaches: [],
     // 我录过课的城市（含库外新建的）
     myCities: [],
+    // 网页版登录码：只在「这台手机已登录小程序」时才拿得到，是网页关联账号的唯一凭据
+    webCode: "",
+    webCodeLeft: 0,
+    webCodeBusy: false,
   },
 
   async onLoad() {
@@ -113,6 +117,79 @@ Page({
   /** 页面不可见就别再轮询定位 —— 耗电，而且回来时 onShow 会立刻校准一次 */
   onHide() {
     this.stopNearWatch();
+    // 登录码跟着页面走：藏起来就别继续倒计时（回来点一下重新生成即可）
+    this.stopWebCodeTimer();
+    this.setData({ webCode: "", webCodeLeft: 0 });
+  },
+
+  onUnload() {
+    this.stopWebCodeTimer();
+  },
+
+  /**
+   * 网页版登录码：让电脑上的网页版关联到**这个**账号。
+   *
+   * 为什么需要它：网页端没有微信登录能力（扫码要开放平台网站应用 = 企业主体 + 300 元/年，
+   * 微信内网页授权要认证服务号），手机号验证码要备案 + 短信签名审核。
+   * 配对码是唯一零资质、当天可用的关联方式，本质和电视投屏码 / Telegram 登录其他设备一样。
+   *
+   * 安全边界：6 位数字 + 5 分钟有效 + 一次性 + 服务端按 IP 限流，并且一人同一时刻只有一条有效码。
+   */
+  async tapWebCode() {
+    if (this.data.webCodeBusy) return;
+    this.setData({ webCodeBusy: true });
+    try {
+      await api.ensureReady();
+      const res = (await api.apiPairCode()) || {};
+      const code = String(res.code || "").replace(/\D/g, "");
+      if (code.length !== 6) throw new Error("没有拿到登录码，请重试");
+      const ttl = Math.max(30, Number(res.ttlSeconds) || 300);
+      this.startWebCodeTimer(ttl);
+      this.setData({ webCode: code });
+      if (wx.vibrateShort) wx.vibrateShort({ type: "light" });
+    } catch (err) {
+      toast(this, (err && err.message) || "生成登录码失败，请重试");
+    } finally {
+      this.setData({ webCodeBusy: false });
+    }
+  },
+
+  startWebCodeTimer(seconds) {
+    this.stopWebCodeTimer();
+    this.setData({ webCodeLeft: seconds });
+    this.webCodeTimer = setInterval(() => {
+      const left = Math.max(0, this.data.webCodeLeft - 1);
+      if (!left) {
+        this.stopWebCodeTimer();
+        this.setData({ webCode: "", webCodeLeft: 0 });
+        return;
+      }
+      this.setData({ webCodeLeft: left });
+    }, 1000);
+  },
+
+  stopWebCodeTimer() {
+    if (this.webCodeTimer) {
+      clearInterval(this.webCodeTimer);
+      this.webCodeTimer = null;
+    }
+  },
+
+  /** 同一台手机上用浏览器打开网页版时，复制粘贴比手打 6 位快得多 */
+  copyWebCode() {
+    const code = this.data.webCode;
+    if (!code) return;
+    wx.setClipboardData({
+      data: code,
+      success: () => toast(this, "登录码已复制"),
+      fail: () => toast(this, "复制失败，请手动输入"),
+    });
+  },
+
+  /** 收起登录码卡片（6 位码贴在屏幕上并不适合久留） */
+  hideWebCode() {
+    this.stopWebCodeTimer();
+    this.setData({ webCode: "", webCodeLeft: 0 });
   },
 
   /**

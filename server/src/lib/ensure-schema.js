@@ -235,6 +235,29 @@ ALTER TABLE \`Reminder\` ADD COLUMN \`kind\` VARCHAR(191) NOT NULL DEFAULT 'CLAS
 `;
 
 /**
+ * PairCode（网页版登录配对码）
+ * 对应 schema.prisma 的 model PairCode
+ *
+ * 新表，存量库里没有 —— CREATE TABLE IF NOT EXISTS，跑一万次也只有第一次生效。
+ * 没有这张表的后果是网页端「输入 6 位码」直接 500，所以必须随服务启动就补上。
+ */
+const PAIR_CODE_SQL = `
+CREATE TABLE IF NOT EXISTS \`PairCode\` (
+  \`id\` INT NOT NULL AUTO_INCREMENT,
+  \`code\` VARCHAR(8) NOT NULL,
+  \`userId\` INT NOT NULL,
+  \`expiresAt\` DATETIME(3) NOT NULL,
+  \`usedAt\` DATETIME(3) NULL,
+  \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (\`id\`),
+  UNIQUE INDEX \`PairCode_code_key\` (\`code\`),
+  INDEX \`PairCode_userId_idx\` (\`userId\`),
+  CONSTRAINT \`PairCode_userId_fkey\`
+    FOREIGN KEY (\`userId\`) REFERENCES \`User\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+`;
+
+/**
  * ⚠️ 顺序不能反。
  * MySQL 的外键必须有索引垫着，而 (userId, scheduleId) 这条唯一键正好被
  * Reminder 的 userId/scheduleId 外键用着 —— 直接 DROP 会报
@@ -302,4 +325,6 @@ export async function ensureSchema() {
       `ALTER TABLE \`Reminder\` DROP INDEX \`${REMINDER_OLD_UNIQ}\``,
     );
   }
+  // 网页版登录配对码（CREATE TABLE IF NOT EXISTS，直接跑，不需要先探测表是否存在）
+  await run("PairCode", PAIR_CODE_SQL);
 }

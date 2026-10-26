@@ -548,3 +548,56 @@
   color: #6b7089;
   font-weight: 700;
 }
+/* ── 网页版登录码 ────────────────────────────────────────────────
+   6 位数字要一眼看清，所以给大字号 + 字距；卡片底色用主色的极淡版，
+   让它看起来是「临时凭据」而不是常驻设置。 */
+.webcode-block {
+  margin-top: 20rpx;
+}
+.webcode-block .about-entry {
+  margin-top: 0;
+}
+.webcode-card {
+  margin-top: 12rpx;
+  padding: 24rpx 28rpx 22rpx;
+  border: 1rpx solid rgba(0, 245, 212, 0.28);
+  border-radius: 16rpx;
+  background: rgba(0, 245, 212, 0.06);
+}
+.webcode-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.webcode-title {
+  color: #cfd5e6;
+  font-size: 24rpx;
+}
+.webcode-close {
+  padding: 4rpx 8rpx;
+  color: #8b93a9;
+  font-size: 22rpx;
+}
+.webcode-digits {
+  margin: 16rpx 0 10rpx;
+  color: #00f5d4;
+  font-size: 60rpx;
+  font-weight: 700;
+  letter-spacing: 12rpx;
+  text-align: center;
+  font-family: Menlo, monospace;
+}
+.webcode-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #8b93a9;
+  font-size: 22rpx;
+}
+.webcode-copy {
+  padding: 4rpx 14rpx;
+  border: 1rpx solid rgba(0, 245, 212, 0.4);
+  border-radius: 8rpx;
+  color: #00f5d4;
+  font-size: 22rpx;
+}

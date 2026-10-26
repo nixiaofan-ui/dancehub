@@ -22,6 +22,27 @@
     <text class="about-arrow">›</text>
   </view>
 
+  <!-- 网页版登录码：电脑上看课表时用它把网页关联到这个账号，关注/常看/屏蔽就能跟着账号走。
+       没生成时只是一行入口；生成后展开成大号数字 + 倒计时，5 分钟一次性。 -->
+  <view class="webcode-block">
+    <view class="about-entry" hover-class="press" bindtap="tapWebCode">
+      <text class="about-ico">⌨</text>
+      <text class="about-txt">{{webCode ? '网页版登录码 · 点此重新生成' : '网页版登录码 · 让电脑同步我的关注'}}</text>
+      <text class="about-arrow">{{webCodeBusy ? '…' : '›'}}</text>
+    </view>
+    <view class="webcode-card" wx:if="{{webCode}}">
+      <view class="webcode-head">
+        <text class="webcode-title">在电脑网页版输入这个码</text>
+        <text class="webcode-close" bindtap="hideWebCode">收起</text>
+      </view>
+      <view class="webcode-digits" bindtap="copyWebCode">{{webCode}}</view>
+      <view class="webcode-foot">
+        <text>剩余 {{webCodeLeft}} 秒 · 只能用一次</text>
+        <text class="webcode-copy" bindtap="copyWebCode">复制</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 我的城市：录入课去过的城市，含库里原本没有、录入时新建的（比如三亚）。
        这些城市在切换城市里未必有入口，这里给它们一个固定的落脚点 -->
   <view class="mycity-block" wx:if="{{myCities.length}}">

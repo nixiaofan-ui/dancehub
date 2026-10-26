@@ -198,12 +198,17 @@ const apiMyCities = () => req.get("/imports/cities");
 const apiSubmitReport = (payload) => req.post("/reports", payload);
 // 定位 → 城市：解析放在服务端（城市中心点表 + 「哪些城市真有课」都在库里）
 const apiLocateCity = (lat, lng) => req.post("/cities/locate", { lat, lng });
+// 网页版登录码：网页输一次即可关联到同一个账号。
+// 走这条路是因为网页扫码登录要开放平台网站应用（企业主体 + 300 元/年认证），
+// 微信内网页授权要认证服务号 —— 个人主体当下都拿不到，而手机号验证码要备案 + 短信审核。
+const apiPairCode = () => req.post("/auth/pair-code", {});
 
 module.exports = {
   ensureReady,
   apiLogin,
   apiCities,
   apiLocateCity,
+  apiPairCode,
   apiTimeline,
   apiMultiTimeline,
   apiBrands,
