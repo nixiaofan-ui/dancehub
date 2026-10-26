@@ -281,4 +281,55 @@ router.post(
   })
 );
 
+/**
+ * 手机日历同步：网页端把本机提醒（课程提醒 + 每周放课提醒）镜像上来，
+ * 换一个 calToken，日历 App 用它匿名拉 ICS（日历 App 不会带请求头）。
+ * 只存白名单字段，别把浏览器里的任意 JSON 整包吞进库。
+ */
+router.post(
+  "/calendar-sync",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const body = req.body || {};
+    const pickReminder = (r) => ({
+      scheduleDate: String(r.scheduleDate || "").slice(0, 10),
+      startTime: String(r.startTime || "").slice(0, 5),
+      endTime: String(r.endTime || r.startTime || "").slice(0, 5),
+      courseName: String(r.courseName || "课程").slice(0, 80),
+      coachName: String(r.coachName || "").slice(0, 40),
+      studioName: String(r.studioName || "").slice(0, 80),
+    });
+    const reminders = (Array.isArray(body.reminders) ? body.reminders : [])
+      .slice(0, 60)
+      .filter((r) => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.scheduleDate || "")))
+      .map(pickReminder);
+    const rawWatches =
+      body.watches && typeof body.watches === "object" && !Array.isArray(body.watches)
+        ? Object.entries(body.watches).slice(0, 20)
+        : [];
+    const watches = {};
+    rawWatches.forEach(([id, w]) => {
+      const weekdays = Array.isArray(w?.weekdays)
+        ? [...new Set(w.weekdays.map(Number).filter((n) => n >= 0 && n <= 6))].slice(0, 7)
+        : [];
+      if (!weekdays.length || !/^\d{2}:\d{2}$/.test(String(w?.time || ""))) return;
+      watches[String(id).slice(0, 24)] = {
+        studioName: String(w.studioName || "").slice(0, 80),
+        weekdays,
+        time: String(w.time),
+      };
+    });
+
+    let calToken = (await prisma.user.findUnique({ where: { id: req.userId }, select: { calToken: true } }))?.calToken;
+    if (!calToken) {
+      calToken = crypto.randomBytes(24).toString("hex");
+    }
+    await prisma.user.update({
+      where: { id: req.userId },
+      data: { calToken, calReminders: { reminders, watches } },
+    });
+    ok(res, { calToken, reminders: reminders.length, watches: Object.keys(watches).length }, "已同步");
+  })
+);
+
 export default router;

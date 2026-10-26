@@ -78,6 +78,12 @@ model User {
   schedules  Schedule[]
   studioWatches StudioWatch[]
   pairCodes  PairCode[]
+
+  /// 手机日历订阅：日历 App 拉ICS不会带 Authorization 头，token 只能进 URL。
+  /// 泄露的最坏后果 = 别人能看到你的提醒课表（不含任何账号凭据），可接受。
+  calToken     String? @unique @db.VarChar(64)
+  /// 网页端本机提醒的镜像（课程提醒 + 每周放课提醒），订阅端点据此生成 ICS。
+  calReminders Json?
 }
 
 /// 网页版登录配对码：「小程序里生成一个 6 位码 → 网页输入 → 两边同一个账号」。

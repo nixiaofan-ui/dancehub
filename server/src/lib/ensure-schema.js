@@ -257,6 +257,14 @@ CREATE TABLE IF NOT EXISTS \`PairCode\` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 `;
 
+// 手机日历订阅：User 上补两列（存量库已存在 User 表，只能 ALTER）。
+// calToken 唯一索引用 MySQL 的命名（User_calToken_key）和 Prisma 保持一致；
+// 唯一索引对 NULL 不生效 → 没开订阅的老账号互不冲突，正好是想要的行为。
+const USER_CAL_TOKEN_SQL = "ALTER TABLE `User` ADD COLUMN `calToken` VARCHAR(64) NULL";
+const USER_CAL_REMINDERS_SQL = "ALTER TABLE `User` ADD COLUMN `calReminders` JSON NULL";
+const USER_CAL_TOKEN_IDX_SQL =
+  "ALTER TABLE `User` ADD UNIQUE INDEX `User_calToken_key` (`calToken`)";
+
 /**
  * ⚠️ 顺序不能反。
  * MySQL 的外键必须有索引垫着，而 (userId, scheduleId) 这条唯一键正好被
@@ -327,4 +335,14 @@ export async function ensureSchema() {
   }
   // 网页版登录配对码（CREATE TABLE IF NOT EXISTS，直接跑，不需要先探测表是否存在）
   await run("PairCode", PAIR_CODE_SQL);
+  // 手机日历订阅（列存在性各自把守；JSON 列 MySQL 5.7+ 才有，云库是 8.x）
+  if (!(await columnExists("User", "calToken"))) {
+    await run("User.calToken", USER_CAL_TOKEN_SQL);
+  }
+  if (!(await columnExists("User", "calReminders"))) {
+    await run("User.calReminders", USER_CAL_REMINDERS_SQL);
+  }
+  if (!(await indexExists("User", "User_calToken_key"))) {
+    await run("User.calToken idx", USER_CAL_TOKEN_IDX_SQL);
+  }
 }

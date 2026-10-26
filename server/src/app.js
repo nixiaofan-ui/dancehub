@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import calendarRoutes from "./routes/calendar.routes.js";
 import cityRoutes from "./routes/city.routes.js";
 import studioRoutes from "./routes/studio.routes.js";
 import coachRoutes from "./routes/coach.routes.js";
@@ -33,6 +34,8 @@ export function createApp() {
 
   app.use("/api", healthRoutes);
   app.use("/api/auth", authRoutes);
+  // 日历订阅：无鉴权（token 即凭证），必须挂在 auth 之外 —— 日历 App 不带请求头
+  app.use("/api/calendar", calendarRoutes);
   app.use("/api/cities", cityRoutes);
   app.use("/api/studios", studioRoutes);
   app.use("/api/coaches", coachRoutes);
