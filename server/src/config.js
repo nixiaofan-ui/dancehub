@@ -33,6 +33,12 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || "dev-secret-do-not-use-in-prod",
   adminToken: process.env.ADMIN_TOKEN || "admin123",
   gatewayIdentity: readGatewayIdentity(),
+  // CORS 白名单（env CORS_ORIGINS，逗号分隔、含协议）。localhost/私网默认放行（开发用），
+  // 正式网页域名上线后配到这里，外部站点就再也不能在浏览器里直接调接口。
+  corsOrigins: String(process.env.CORS_ORIGINS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean),
   wechat: {
     appId: process.env.WECHAT_APPID || "",
     appSecret: process.env.WECHAT_SECRET || "",

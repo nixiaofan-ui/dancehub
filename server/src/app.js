@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import healthRoutes from "./routes/health.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import calendarRoutes from "./routes/calendar.routes.js";
@@ -20,12 +19,19 @@ import adminRoutes from "./routes/admin.routes.js";
 import configRoutes from "./routes/config.routes.js";
 import crawlerRoutes from "./crawler/routes.js";
 import { tagEntry } from "./middleware/entry.js";
+import { securityHeaders, makeRateLimit, corsWhitelist } from "./middleware/security.js";
 import { notFoundHandler, errorHandler } from "./middleware/error.js";
 
 export function createApp() {
   const app = express();
 
-  app.use(cors());
+  app.disable("x-powered-by");
+  app.use(securityHeaders);
+  // 白名单版 CORS：无 Origin（小程序/curl/日历 App）直接过；
+  // 浏览器跨域按白名单发头 —— localhost/私网放行（开发），外部站点收不到 CORS 头。
+  app.use(corsWhitelist);
+  // 全局限流：正常用户一分钟也就几十个请求，300/5min 只会打到脚本和爬虫
+  app.use("/api", makeRateLimit({ windowMs: 5 * 60 * 1000, max: 300 }));
   app.use(express.json());
   // 入口判定：给每个请求打上 req.entry（网关 / 公网）。
   // ⚠ 这是**分流标签，不是鉴权** —— 公网请求可以完整伪造 x-wx-* 头，
@@ -33,7 +39,9 @@ export function createApp() {
   app.use(tagEntry);
 
   app.use("/api", healthRoutes);
-  app.use("/api/auth", authRoutes);
+  // 登录单独收紧：code2session 烧微信配额，不能只靠全局限流兜底
+  const authLimiter = makeRateLimit({ windowMs: 5 * 60 * 1000, max: 40 });
+  app.use("/api/auth", authLimiter, authRoutes);
   // 日历订阅：无鉴权（token 即凭证），必须挂在 auth 之外 —— 日历 App 不带请求头
   app.use("/api/calendar", calendarRoutes);
   app.use("/api/cities", cityRoutes);
