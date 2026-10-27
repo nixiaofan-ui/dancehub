@@ -267,6 +267,50 @@ router.post(
   })
 );
 
+/* ────────────────────────────────────────────────────────────────
+ * 网页版登录（测试期）：邀请码
+ *
+ * 小程序正式上线前，网页需要一条不经过小程序的登录路径。短信验证码要
+ * 备案 + 签名审核、微信扫码要开放平台企业主体 —— 测试期都走不通，
+ * 用「邀请码」顶上：env WEB_ACCESS_CODES 里配逗号分隔的码，网页输码即
+ * 登录（首次自动建号）。
+ *
+ * 身份锚点：openid 存合成值 `web:<sha256(码)>` —— 前缀隔离，不会与微信
+ * openid 撞；同一个码在手机/电脑网页登录拿到的是同一个账号。
+ * ⚠ 邀请码是口令不是一次性凭证：泄露即可登录，只发给可信的测试者；
+ *   正式上线后不配 WEB_ACCESS_CODES 即整体关闭（fail-closed）。
+ * ──────────────────────────────────────────────────────────────── */
+router.post(
+  "/web-login",
+  asyncHandler(async (req, res) => {
+    const ip = req.ip || req.socket?.remoteAddress || "unknown";
+    if (redeemLimited(ip)) {
+      console.warn(`[dancehub] web-login 限流 ip=${ip}`);
+      return fail(res, 429, "尝试次数太多，请 10 分钟后再试");
+    }
+    if (!config.webAccessCodes.length) return fail(res, 403, "邀请码登录未开启");
+
+    const code = String((req.body || {}).code || "").trim();
+    if (!code || code.length < 4 || code.length > 64) return fail(res, 400, "请输入邀请码");
+    if (!config.webAccessCodes.includes(code)) {
+      console.warn(`[dancehub] web-login 无效邀请码 ip=${ip}`);
+      return fail(res, 404, "邀请码无效");
+    }
+
+    const webKey = crypto.createHash("sha256").update(`dancehub:${code}`).digest("hex");
+    const openid = `web:${webKey.slice(0, 32)}`;
+    let user = await prisma.user.findUnique({ where: { openid } });
+    const isNew = !user;
+    if (!user) user = await prisma.user.create({ data: { openid, nickname: "网页用户" } });
+    console.log(`[dancehub] web-login ok ip=${ip} isNew=${isNew} openid=${maskOpenid(openid)}`);
+    ok(
+      res,
+      { token: signToken(user, PAIR_TOKEN_TTL), expiresInDays: 180, user: publicUser(user) },
+      isNew ? "已创建网页账号并登录" : "登录成功"
+    );
+  })
+);
+
 /**
  * 续期：网页每次打开时，只要本地 token 还有效就换一张新的 180 天。
  * 于是「每半年至少来一次」的用户永远不会掉登录，掉登录只发生在真的半年没来过。

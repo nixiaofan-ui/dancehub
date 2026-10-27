@@ -39,6 +39,11 @@ export const config = {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean),
+  // 测试期网页邀请码登录（env WEB_ACCESS_CODES，逗号分隔）。不配 = 入口关闭（fail-closed）。
+  webAccessCodes: String(process.env.WEB_ACCESS_CODES || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean),
   wechat: {
     appId: process.env.WECHAT_APPID || "",
     appSecret: process.env.WECHAT_SECRET || "",
